@@ -1,0 +1,269 @@
+<main class="flex min-h-screen w-full mesh-bg overflow-hidden">
+  <!-- Left Side: Identity & Tagline -->
+  <section
+    class="hidden lg:flex w-1/2 items-center justify-center p-12 relative overflow-hidden"
+  >
+    <div
+      class="glass-1 rounded-3xl p-16 max-w-2xl w-full relative z-10 shadow-[0_0_50px_rgba(0,0,0,0.3)]"
+    >
+      <!-- Brand -->
+      <div class="flex items-center gap-4 mb-10">
+        <div
+          class="w-14 h-14 rounded-xl bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(172,163,255,0.4)]"
+        >
+          <span
+            class="material-symbols-outlined text-on-primary text-3xl fill-icon"
+            >shield</span
+          >
+        </div>
+        <div>
+          <h1
+            class="text-4xl font-black tracking-tighter text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]"
+          >
+            DISASTER AID
+          </h1>
+          <p
+            class="text-[10px] tracking-[0.2em] font-bold text-primary-fixed uppercase opacity-80"
+          >
+            Community Platform Suite
+          </p>
+        </div>
+      </div>
+
+      <!-- Tagline -->
+      <h2
+        class="text-4xl font-bold leading-[1.1] mb-8 text-on-background tracking-tight"
+      >
+        Unifying emergency response and community volunteering
+      </h2>
+
+      <!-- Feature Highlights -->
+      <div class="space-y-6">
+        <div class="flex items-center gap-4 group">
+          <div
+            class="w-10 h-10 rounded-lg glass-2 flex items-center justify-center text-primary group-hover:scale-110 transition-transform"
+          >
+            <span class="material-symbols-outlined">bolt</span>
+          </div>
+          <p class="text-on-surface-variant font-medium">
+            Real-time emergency dispatch &amp; monitoring
+          </p>
+        </div>
+        <div class="flex items-center gap-4 group">
+          <div
+            class="w-10 h-10 rounded-lg glass-2 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform"
+          >
+            <span class="material-symbols-outlined">groups</span>
+          </div>
+          <p class="text-on-surface-variant font-medium">
+            Streamlined volunteer coordination
+          </p>
+        </div>
+        <div class="flex items-center gap-4 group">
+          <div
+            class="w-10 h-10 rounded-lg glass-2 flex items-center justify-center text-tertiary group-hover:scale-110 transition-transform"
+          >
+            <span class="material-symbols-outlined">verified_user</span>
+          </div>
+          <p class="text-on-surface-variant font-medium">
+            Certified infrastructure for resilient cities
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Decorative blobs -->
+    <div
+      class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary/10 blur-[120px] rounded-full"
+    ></div>
+    <div
+      class="absolute bottom-[-10%] right-[10%] w-80 h-80 bg-secondary/10 blur-[100px] rounded-full"
+    ></div>
+  </section>
+
+  <!-- Right Side: Login Form -->
+  <section
+    class="w-full lg:w-1/2 flex items-center justify-center p-6 relative"
+  >
+    <!-- Mobile brand (small screens only) -->
+    <div class="lg:hidden absolute top-12 flex flex-col items-center">
+      <div
+        class="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mb-2"
+      >
+        <span class="material-symbols-outlined text-on-primary fill-icon"
+          >shield</span
+        >
+      </div>
+      <h1 class="text-xl font-black text-white">CPS</h1>
+    </div>
+
+    <!-- Form Card -->
+    <div
+      class="glass-1 w-full max-w-[420px] rounded-[2rem] p-10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]"
+    >
+      <div class="mb-10 text-center lg:text-left">
+        <h3 class="text-[24px] font-bold text-white mb-2">Welcome Back</h3>
+        <p class="text-on-surface-variant text-sm">
+          Access your community dashboard
+        </p>
+      </div>
+
+      <!-- Error message -->
+      <div
+        *ngIf="errorMessage"
+        class="mb-4 px-4 py-3 rounded-xl bg-error-container/30 border border-error/20 text-error text-sm"
+      >
+        {{ errorMessage }}
+      </div>
+
+      <form class="space-y-6" (ngSubmit)="onLogin()">
+        <!-- Email -->
+        <div class="space-y-2">
+          <label
+            class="block text-[11px] font-bold tracking-widest text-primary-fixed uppercase px-1"
+          >
+            Email Address
+          </label>
+          <div class="relative group">
+            <div
+              class="absolute inset-y-0 left-4 flex items-center text-outline group-focus-within:text-primary transition-colors"
+            >
+              <span class="material-symbols-outlined text-[20px]">mail</span>
+            </div>
+            <input
+              type="email"
+              [(ngModel)]="email"
+              name="email"
+              placeholder="name@community.org"
+              class="w-full h-14 glass-2 rounded-xl pl-12 pr-4 text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all outline-none"
+            />
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="space-y-2">
+          <div class="flex justify-between items-center px-1">
+            <label
+              class="block text-[11px] font-bold tracking-widest text-primary-fixed uppercase"
+            >
+              Password
+            </label>
+            <a
+              href="#"
+              class="text-[11px] font-bold text-secondary-dim hover:underline"
+              >Forgot?</a
+            >
+          </div>
+          <div class="relative group">
+            <div
+              class="absolute inset-y-0 left-4 flex items-center text-outline group-focus-within:text-primary transition-colors"
+            >
+              <span class="material-symbols-outlined text-[20px]">lock</span>
+            </div>
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              [(ngModel)]="password"
+              name="password"
+              placeholder="••••••••"
+              class="w-full h-14 glass-2 rounded-xl pl-12 pr-12 text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all outline-none"
+            />
+            <button
+              type="button"
+              (click)="togglePassword()"
+              class="absolute inset-y-0 right-4 flex items-center text-outline hover:text-white transition-colors"
+            >
+              <span class="material-symbols-outlined text-[20px]">
+                {{ showPassword ? "visibility_off" : "visibility" }}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Login Button -->
+        <button
+          type="submit"
+          [disabled]="isLoading"
+          class="w-full h-14 bg-primary text-on-primary font-bold rounded-xl shadow-[0_0_20px_rgba(172,163,255,0.4)] hover:shadow-[0_0_30px_rgba(172,163,255,0.6)] hover:bg-primary-dim transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          <span *ngIf="!isLoading">
+            Login to Platform
+            <span class="material-symbols-outlined text-sm align-middle ml-1"
+              >arrow_forward</span
+            >
+          </span>
+          <span *ngIf="isLoading" class="flex items-center gap-2">
+            <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8z"
+              />
+            </svg>
+            Signing in...
+          </span>
+        </button>
+
+        <!-- Divider -->
+        <div class="flex items-center gap-4 py-2">
+          <div class="h-[1px] flex-1 bg-white/10"></div>
+          <span
+            class="text-[10px] font-bold text-outline uppercase tracking-tighter"
+            >or</span
+          >
+          <div class="h-[1px] flex-1 bg-white/10"></div>
+        </div>
+
+        <!-- Guest Button -->
+        <button
+          type="button"
+          (click)="onGuestLogin()"
+          class="w-full h-14 border border-white/10 text-on-background font-semibold rounded-xl hover:bg-white/5 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+        >
+          <span class="material-symbols-outlined text-lg">person_search</span>
+          Continue as Guest
+        </button>
+      </form>
+
+      <!-- Register Link -->
+      <div class="mt-8 text-center">
+        <p class="text-sm text-on-surface-variant">
+          Don't have an account?
+          <a
+            routerLink="/register"
+            class="text-primary font-bold hover:underline ml-1"
+            >Register Now</a
+          >
+        </p>
+      </div>
+    </div>
+
+    <!-- Footer links -->
+    <div
+      class="absolute bottom-8 left-0 w-full flex justify-center gap-6 text-[10px] font-medium text-outline uppercase tracking-widest opacity-60"
+    >
+      <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+      <a href="#" class="hover:text-white transition-colors"
+        >Terms of Service</a
+      >
+      <a href="#" class="hover:text-white transition-colors">Contact Support</a>
+    </div>
+  </section>
+
+  <!-- Background decoration -->
+  <div class="fixed inset-0 pointer-events-none z-0">
+    <div
+      class="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[150px]"
+    ></div>
+    <div
+      class="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-tertiary/5 rounded-full blur-[180px]"
+    ></div>
+  </div>
+</main>
