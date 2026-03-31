@@ -2,22 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Google Fonts */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
 
-/* Global base */
 body {
   font-family: "Inter", sans-serif;
+  background-color: #020d27;
+  background-image:
+    radial-gradient(
+      circle at 20% 30%,
+      rgba(108, 92, 231, 0.15) 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 80% 70%,
+      rgba(125, 239, 192, 0.1) 0%,
+      transparent 40%
+    ),
+    linear-gradient(to bottom right, #0f1b35, #1a3c6e, #2d1b6b);
+  background-attachment: fixed;
 }
 
-/* Material Icons config */
 .material-symbols-outlined {
   font-variation-settings:
     "FILL" 0,
     "wght" 400,
     "GRAD" 0,
     "opsz" 24;
+  vertical-align: middle;
 }
 
 .fill-icon {
@@ -28,28 +40,36 @@ body {
     "opsz" 24;
 }
 
-/* ── Glass surface system ───────────────── */
+/* ── Glass surfaces ─────────────────────── */
 .glass-1 {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .glass-2 {
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.glass-sidebar {
-  background: rgba(13, 30, 65, 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+.glass-3 {
+  background: rgba(2, 13, 39, 0.85);
+  backdrop-filter: blur(24px);
 }
 
-/* ── Mesh gradient background ───────────── */
+/* ── Ghost border ───────────────────────── */
+.ghost-border {
+  border: 1px solid transparent;
+  background-clip: padding-box, border-box;
+  background-origin: padding-box, border-box;
+  background-image:
+    linear-gradient(to bottom, transparent, transparent),
+    linear-gradient(135deg, rgba(60, 71, 100, 0.3), transparent);
+}
+
+/* ── Mesh background (login page) ────────── */
 .mesh-bg {
   background-color: #0f1b35;
   background-image:
@@ -60,35 +80,7 @@ body {
     radial-gradient(at 100% 100%, hsla(220, 56%, 14%, 1) 0, transparent 50%);
 }
 
-/* ── Animations ─────────────────────────── */
-@keyframes pulse-red {
-  0% {
-    box-shadow: 0 0 0 0 rgba(232, 64, 64, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(232, 64, 64, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(232, 64, 64, 0);
-  }
-}
-
-.pulse-error {
-  animation: pulse-red 2s infinite;
-}
-
-@keyframes pulse-primary {
-  0% {
-    box-shadow: 0 0 0 0 rgba(172, 163, 255, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(172, 163, 255, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(172, 163, 255, 0);
-  }
-}
-
-.pulse-primary {
-  animation: pulse-primary 2s infinite;
+/* ── Tonal shift ────────────────────────── */
+.tonal-shift {
+  background: linear-gradient(to bottom, #081838, #000000);
 }
