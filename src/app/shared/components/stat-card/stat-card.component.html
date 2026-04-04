@@ -1,1 +1,30 @@
-<p>stat-card works!</p>
+<div
+  class="glass-1 p-6 rounded-xl border border-white/5 relative group hover:border-primary/30 transition-all"
+>
+  <!-- Icon — overlaps top edge -->
+  <div
+    class="absolute -top-4 left-6 w-10 h-10 rounded-lg flex items-center justify-center shadow-lg"
+    [ngClass]="iconBg"
+  >
+    <span class="material-symbols-outlined fill-icon" [ngClass]="iconColor">{{
+      icon
+    }}</span>
+  </div>
+
+  <!-- Content -->
+  <div class="mt-4">
+    <p
+      class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1"
+    >
+      {{ label }}
+    </p>
+    <h3 class="text-3xl font-black text-on-surface">{{ value }}</h3>
+    <div
+      *ngIf="trend"
+      class="mt-2 flex items-center text-xs font-bold"
+      [ngClass]="trendColor"
+    >
+      <span>{{ trend }}</span>
+    </div>
+  </div>
+</div>

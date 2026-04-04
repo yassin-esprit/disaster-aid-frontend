@@ -1,0 +1,19 @@
+.orb-fixed {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.15;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.mesh-gradient {
+  background:
+    radial-gradient(circle at 0% 0%, #0f1b35 0%, transparent 50%),
+    radial-gradient(circle at 100% 0%, #1a3c6e 0%, transparent 50%),
+    radial-gradient(circle at 50% 100%, #2d1b6b 0%, transparent 50%), #020d27;
+}
+
+.ambient-glow-primary {
+  box-shadow: 0 0 40px rgba(111, 95, 234, 0.12);
+}

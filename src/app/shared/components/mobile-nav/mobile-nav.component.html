@@ -1,0 +1,28 @@
+<!-- Mobile bottom nav — hidden on md+ screens -->
+<nav
+  class="fixed bottom-0 w-full h-16 bg-slate-900/60 backdrop-blur-2xl md:hidden flex items-center justify-around px-4 z-[60] border-t border-white/5"
+>
+  <!-- Regular items -->
+  <ng-container *ngFor="let item of items; let i = index">
+    <!-- Center FAB button -->
+    <div *ngIf="i === 2" class="relative -top-6">
+      <a
+        routerLink="/report"
+        class="w-14 h-14 bg-primary rounded-full flex items-center justify-center text-on-primary shadow-lg shadow-primary/40 border-4 border-[#020d27] hover:scale-105 transition-transform active:scale-95"
+      >
+        <span class="material-symbols-outlined">add</span>
+      </a>
+    </div>
+
+    <a
+      [routerLink]="item.route"
+      routerLinkActive="text-primary"
+      class="flex flex-col items-center gap-1 text-slate-400 transition-colors"
+    >
+      <span class="material-symbols-outlined">{{ item.icon }}</span>
+      <span class="text-[10px] font-bold uppercase tracking-tight">{{
+        item.label
+      }}</span>
+    </a>
+  </ng-container>
+</nav>
