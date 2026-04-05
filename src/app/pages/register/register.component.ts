@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import {
   ReactiveFormsModule,
   FormBuilder,
@@ -9,6 +9,7 @@ import {
   AbstractControl,
   ValidationErrors,
 } from '@angular/forms';
+import { AuthService } from '../../core/services/auth.service';
 
 type ActiveTab = 'signin' | 'register';
 type UserRole = 'VOLUNTEER' | 'ORGANISATION' | 'RESPONDER';
@@ -62,7 +63,11 @@ export class RegisterComponent implements OnInit {
     },
   ];
 
-  constructor(private fb: FormBuilder) {}
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.signInForm = this.fb.group({
@@ -79,21 +84,20 @@ export class RegisterComponent implements OnInit {
         confirmPassword: ['', Validators.required],
         role: [this.selectedRole, Validators.required],
       },
-      { validators: this.passwordMatchValidator },
+      { validators: this.passwordMatchValidator }
     );
   }
 
-  // ── Validators ──────────────────────────────────
   passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
     const pw = group.get('password')?.value;
     const cpw = group.get('confirmPassword')?.value;
     return pw === cpw ? null : { passwordMismatch: true };
   }
 
-  // ── Password strength ────────────────────────────
   get passwordStrength(): { score: number; label: string; color: string } {
     const pw = this.registerForm?.get('password')?.value || '';
     let score = 0;
+
     if (pw.length >= 8) score++;
     if (/[A-Z]/.test(pw)) score++;
     if (/[0-9]/.test(pw)) score++;
@@ -106,10 +110,10 @@ export class RegisterComponent implements OnInit {
       { score: 3, label: 'Good', color: 'bg-secondary' },
       { score: 4, label: 'Strong', color: 'bg-tertiary-dim' },
     ];
+
     return levels[score] || levels[0];
   }
 
-  // ── Field helpers ────────────────────────────────
   isInvalid(form: FormGroup, field: string): boolean {
     const c = form.get(field);
     return !!(c && c.invalid && (c.dirty || c.touched));
@@ -118,10 +122,13 @@ export class RegisterComponent implements OnInit {
   getError(form: FormGroup, field: string): string {
     const c = form.get(field);
     if (!c || !c.errors) return '';
+
     if (c.errors['required']) return 'This field is required.';
     if (c.errors['email']) return 'Enter a valid email address.';
-    if (c.errors['minlength'])
+    if (c.errors['minlength']) {
       return `Minimum ${c.errors['minlength'].requiredLength} characters.`;
+    }
+
     return '';
   }
 
@@ -132,7 +139,6 @@ export class RegisterComponent implements OnInit {
     );
   }
 
-  // ── Role selection ───────────────────────────────
   selectRole(role: UserRole): void {
     this.selectedRole = role;
     this.registerForm.patchValue({ role });
@@ -142,26 +148,59 @@ export class RegisterComponent implements OnInit {
     return this.selectedRole === roleId;
   }
 
-  // ── Tab switching ────────────────────────────────
   switchTab(tab: ActiveTab): void {
     this.activeTab = tab;
     this.errorMessage = '';
     this.successMessage = '';
   }
 
-  // ── Submit handlers ──────────────────────────────
+private redirectByRole(role: string): void {
+  const normalizedRole = (role || '').trim().toUpperCase();
+  const adminRoles = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN'];
+
+  if (adminRoles.includes(normalizedRole)) {
+    this.router.navigate(['/dashboard']);
+  } else {
+    this.router.navigate(['/landing']);
+  }
+}
+
   onSignIn(): void {
     if (this.signInForm.invalid) {
       this.signInForm.markAllAsTouched();
       return;
     }
+
     this.isLoading = true;
     this.errorMessage = '';
-    console.log('Sign in:', this.signInForm.value);
-    // Wire to AuthService later
-    setTimeout(() => {
-      this.isLoading = false;
-    }, 1500);
+    this.successMessage = '';
+
+    const payload = {
+      email: this.signInForm.value.email,
+      password: this.signInForm.value.password,
+    };
+
+    this.authService.login(payload).subscribe({
+      next: (res) => {
+        console.log('LOGIN SUCCESS', res);
+        this.isLoading = false;
+        this.redirectByRole(res.role);
+      },
+      error: (err) => {
+        console.error('LOGIN ERROR', err);
+        this.isLoading = false;
+
+        if (err?.error?.message) {
+          this.errorMessage = err.error.message;
+        } else if (err?.status === 401) {
+          this.errorMessage = 'Invalid email or password.';
+        } else if (err?.status === 0) {
+          this.errorMessage = 'Cannot connect to the server.';
+        } else {
+          this.errorMessage = 'Login failed. Please try again.';
+        }
+      },
+    });
   }
 
   onRegister(): void {
@@ -169,18 +208,47 @@ export class RegisterComponent implements OnInit {
       this.registerForm.markAllAsTouched();
       return;
     }
+
     this.isLoading = true;
     this.errorMessage = '';
-    console.log('Register:', this.registerForm.value);
-    // Wire to AuthService later
-    setTimeout(() => {
-      this.isLoading = false;
-      this.successMessage =
-        'Account created! Please check your email to verify.';
-    }, 1500);
+    this.successMessage = '';
+
+    const formData = this.registerForm.value;
+
+    const payload = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      password: formData.password,
+      role: formData.role,
+    };
+
+    this.authService.register(payload).subscribe({
+      next: (res) => {
+        console.log('REGISTER SUCCESS', res);
+        this.isLoading = false;
+        this.successMessage = 'Account created successfully.';
+        this.redirectByRole(res.role);
+      },
+      error: (err) => {
+        console.error('REGISTER ERROR', err);
+        this.isLoading = false;
+
+        if (err?.error?.message) {
+          this.errorMessage = err.error.message;
+        } else if (err?.status === 400) {
+          this.errorMessage = 'Invalid registration data.';
+        } else if (err?.status === 0) {
+          this.errorMessage = 'Cannot connect to the server.';
+        } else {
+          this.errorMessage = 'Registration failed. Please try again.';
+        }
+      },
+    });
   }
 
   onGuestContinue(): void {
     console.log('Guest continue');
+    this.router.navigate(['/landing']);
   }
 }

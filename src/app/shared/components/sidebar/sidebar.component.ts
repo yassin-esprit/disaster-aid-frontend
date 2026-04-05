@@ -23,5 +23,6 @@ export class SidebarComponent {
     { label: 'Opportunities', icon: 'explore', route: '/opportunities' },
     { label: 'My Profile', icon: 'person', route: '/profile' },
     { label: 'Settings', icon: 'settings', route: '/settings' },
+    {label: 'Users', icon: 'people', route: '/users-management'}
   ];
 }

@@ -5,7 +5,8 @@ import { RegisterComponent } from './pages/register/register.component';
 import { AuthenticatedLayoutComponent } from './layouts/authenticated-layout/authenticated-layout.component';
 
 export const routes: Routes = [
-  { path: '', component: LandingComponent },
+  { path: '', redirectTo: 'landing', pathMatch: 'full' },
+  { path: 'landing', component: LandingComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
 
@@ -17,39 +18,46 @@ export const routes: Routes = [
         path: 'dashboard',
         loadComponent: () =>
           import('./pages/dashboard/dashboard.component').then(
-            (m) => m.DashboardComponent,
+            (m) => m.DashboardComponent
           ),
       },
       {
         path: 'alerts',
         loadComponent: () =>
           import('./pages/alerts-map/alerts-map.component').then(
-            (m) => m.AlertsMapComponent,
+            (m) => m.AlertsMapComponent
           ),
       },
       {
         path: 'incidents',
         loadComponent: () =>
           import('./pages/incident-form/incident-form.component').then(
-            (m) => m.IncidentFormComponent,
+            (m) => m.IncidentFormComponent
           ),
       },
       {
         path: 'opportunities',
         loadComponent: () =>
           import('./pages/opportunities/opportunities.component').then(
-            (m) => m.OpportunitiesComponent,
+            (m) => m.OpportunitiesComponent
           ),
       },
       {
         path: 'profile',
         loadComponent: () =>
           import('./pages/profile/profile.component').then(
-            (m) => m.ProfileComponent,
+            (m) => m.ProfileComponent
+          ),
+      },
+      {
+        path: 'users-management',
+        loadComponent: () =>
+          import('./pages/users-management/users-management.component').then(
+            (m) => m.UsersManagementComponent
           ),
       },
     ],
   },
 
-  { path: '**', redirectTo: '' },
+  { path: '**', redirectTo: 'landing' },
 ];

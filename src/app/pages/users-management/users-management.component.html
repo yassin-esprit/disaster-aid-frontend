@@ -1,0 +1,179 @@
+<div class="users-page">
+  <div class="users-header">
+    <div>
+      <h2 class="users-title">Users Management</h2>
+      <p class="users-subtitle">Manage platform users and roles</p>
+    </div>
+
+    <div class="users-stats">
+      <div class="stat-chip">
+        <span class="stat-label">Users</span>
+        <span class="stat-value">{{ users.length }}</span>
+      </div>
+
+      <button class="btn-add" (click)="openAddModal()">
+        + Add User
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="errorMessage" class="users-alert error-alert">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="successMessage" class="users-alert success-alert">
+    {{ successMessage }}
+  </div>
+
+  <div class="users-card">
+    <div class="users-toolbar">
+      <div class="search-box">
+        <input
+          type="text"
+          placeholder="Search user..."
+          [(ngModel)]="searchTerm"
+          (input)="applyFilter()"
+        />
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="users-loading">
+      Loading users...
+    </div>
+
+    <div class="table-wrapper" *ngIf="!loading">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th class="actions-col">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngIf="filteredUsers.length === 0">
+            <td colspan="5" class="empty-state">No users found</td>
+          </tr>
+
+          <tr *ngFor="let user of filteredUsers">
+            <td>
+              <div class="user-cell">
+                <div class="avatar">
+                  {{ (user.firstName.charAt(0) || 'U') | uppercase }}
+                </div>
+                <div>
+                  <div class="user-name">
+                    {{ user.firstName }} {{ user.lastName }}
+                  </div>
+                  <div class="user-meta">
+                    {{ user.location || 'No location' }}
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <td class="email-cell">{{ user.email }}</td>
+
+            <td>
+              <span class="badge" [ngClass]="getRoleClass(user.role)">
+                {{ user.role }}
+              </span>
+            </td>
+
+            <td>
+              <span class="badge" [ngClass]="getStatusClass(user.status)">
+                {{ user.status }}
+              </span>
+            </td>
+
+            <td class="actions-col">
+              <div class="actions-group">
+                <button class="btn-edit" (click)="openEditModal(user)">
+                  Edit
+                </button>
+                <button class="btn-delete" (click)="deleteUser(user.userId)">
+                  Delete
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-backdrop" *ngIf="showModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>{{ isEditMode ? 'Edit User' : 'Add User' }}</h3>
+        <button class="btn-close" (click)="closeModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>First Name</label>
+            <input [(ngModel)]="formData.firstName" type="text" />
+          </div>
+
+          <div class="form-group">
+            <label>Last Name</label>
+            <input [(ngModel)]="formData.lastName" type="text" />
+          </div>
+
+          <div class="form-group full-width">
+            <label>Email</label>
+            <input [(ngModel)]="formData.email" type="email" />
+          </div>
+
+          <div class="form-group full-width">
+            <label>Password {{ isEditMode ? '(optional)' : '' }}</label>
+            <input [(ngModel)]="formData.password" type="password" />
+          </div>
+
+          <div class="form-group">
+  <label>Role</label>
+  <select [(ngModel)]="formData.role">
+    <option value="CITIZEN">CITIZEN</option>
+    <option value="VOLUNTEER">VOLUNTEER</option>
+    <option value="RESPONDER">RESPONDER</option>
+    <option value="ORG_ADMIN">ORG_ADMIN</option>
+    <option value="AGENCY_ADMIN">AGENCY_ADMIN</option>
+    <option value="PLATFORM_ADMIN">PLATFORM_ADMIN</option>
+  </select>
+</div>
+
+          <div class="form-group">
+            <label>Status</label>
+            <select [(ngModel)]="formData.status">
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="PENDING">PENDING</option>
+              <option value="SUSPENDED">SUSPENDED</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Phone</label>
+            <input [(ngModel)]="formData.phone" type="text" />
+          </div>
+
+          <div class="form-group">
+            <label>Location</label>
+            <input [(ngModel)]="formData.location" type="text" />
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeModal()">Cancel</button>
+        <button class="btn-save" (click)="submitForm()" [disabled]="saving">
+          {{ saving ? 'Saving...' : (isEditMode ? 'Update' : 'Create') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
