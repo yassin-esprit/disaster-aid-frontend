@@ -1,1 +1,114 @@
-<p>profile works!</p>
+<div class="profile-page text-white">
+  <div class="profile-container">
+    <div class="page-heading">
+      <h1>My Profile</h1>
+      <p>View your personal information and update it when needed.</p>
+    </div>
+
+    <div *ngIf="loading" class="profile-card">
+      <p>Loading profile...</p>
+    </div>
+
+    <div *ngIf="!loading" class="profile-card">
+      <div class="profile-top">
+        <div class="avatar">
+          {{ getInitials() }}
+        </div>
+
+        <div class="identity">
+          <h2>{{ user.firstName }} {{ user.lastName }}</h2>
+          <div class="identity-meta">
+            <span class="role-badge">{{ getRoleLabel(user.role) }}</span>
+            <span class="status-badge">{{ user.status || 'ACTIVE' }}</span>
+          </div>
+          <p class="email">{{ user.email }}</p>
+        </div>
+
+        <div class="top-actions">
+          <button *ngIf="!editMode" class="edit-btn" (click)="enableEdit()">
+            Edit Profile
+          </button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- VIEW MODE -->
+      <div *ngIf="!editMode" class="info-grid">
+        <div class="info-item">
+          <label>First Name</label>
+          <div>{{ user.firstName || '-' }}</div>
+        </div>
+
+        <div class="info-item">
+          <label>Last Name</label>
+          <div>{{ user.lastName || '-' }}</div>
+        </div>
+
+        <div class="info-item">
+          <label>Email</label>
+          <div>{{ user.email || '-' }}</div>
+        </div>
+
+        <div class="info-item">
+          <label>Phone</label>
+          <div>{{ user.phone || '-' }}</div>
+        </div>
+
+        <div class="info-item">
+          <label>Location</label>
+          <div>{{ user.location || '-' }}</div>
+        </div>
+
+        <div class="info-item">
+          <label>Role</label>
+          <div>{{ getRoleLabel(user.role) }}</div>
+        </div>
+      </div>
+
+      <!-- EDIT MODE -->
+      <form *ngIf="editMode" (ngSubmit)="updateProfile()" class="form-grid">
+        <div class="field-group">
+          <label>First Name</label>
+          <input [(ngModel)]="editableUser.firstName" name="firstName" type="text" />
+        </div>
+
+        <div class="field-group">
+          <label>Last Name</label>
+          <input [(ngModel)]="editableUser.lastName" name="lastName" type="text" />
+        </div>
+
+        <div class="field-group">
+          <label>Email</label>
+          <input [value]="user.email" name="email" type="email" disabled />
+        </div>
+
+        <div class="field-group">
+          <label>Phone</label>
+          <input [(ngModel)]="editableUser.phone" name="phone" type="text" placeholder="Phone number" />
+        </div>
+
+        <div class="field-group">
+          <label>Location</label>
+          <input [(ngModel)]="editableUser.location" name="location" type="text" placeholder="Your city" />
+        </div>
+
+        <div class="field-group">
+          <label>Role</label>
+          <input [value]="getRoleLabel(user.role)" name="role" type="text" disabled />
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="cancel-btn" (click)="cancelEdit()">
+            Cancel
+          </button>
+
+          <button type="submit" class="save-btn" [disabled]="saving">
+            {{ saving ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+</div>

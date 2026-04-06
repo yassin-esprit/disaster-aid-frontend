@@ -28,4 +28,12 @@ export class UserService {
   deleteUser(id: number): Observable<void> {
     return this.httpService.delete<void>(`/identity-access/users/${id}`);
   }
+  getMyProfile() {
+  return this.httpService.get<any>('/identity-access/users/me');
+}
+
+updateMyProfile(data: any) {
+  return this.httpService.put<any>('/identity-access/users/me', data);
+}
+
 }

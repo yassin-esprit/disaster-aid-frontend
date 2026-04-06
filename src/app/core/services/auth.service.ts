@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, catchError, throwError } from 'rxjs';
 import { HttpService } from './http.service';
 
 export interface AuthResponse {
@@ -8,6 +8,10 @@ export interface AuthResponse {
   userId: number;
   email: string;
   role: string;
+  message: string;
+}
+
+export interface LogoutResponse {
   message: string;
 }
 
@@ -30,29 +34,28 @@ export class AuthService {
 
   constructor(private httpService: HttpService) {}
 
-  // 🔐 REGISTER
   register(data: RegisterRequest): Observable<AuthResponse> {
     return this.httpService.post<AuthResponse>('/auth/register', data).pipe(
       tap(res => this.storeAuthData(res))
     );
   }
 
-  // 🔐 LOGIN
   login(data: LoginRequest): Observable<AuthResponse> {
     return this.httpService.post<AuthResponse>('/auth/login', data).pipe(
       tap(res => this.storeAuthData(res))
     );
   }
 
-  // 🔓 LOGOUT
-  logout(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('email');
-    localStorage.removeItem('role');
+  logout(): Observable<LogoutResponse> {
+    return this.httpService.post<LogoutResponse>('/auth/logout', {}).pipe(
+      tap(() => this.clearAuthData()),
+      catchError((error) => {
+        this.clearAuthData();
+        return throwError(() => error);
+      })
+    );
   }
 
-  // 💾 STORE TOKEN
   private storeAuthData(res: AuthResponse): void {
     localStorage.setItem('token', res.token);
     localStorage.setItem('userId', res.userId.toString());
@@ -60,7 +63,13 @@ export class AuthService {
     localStorage.setItem('role', res.role);
   }
 
-  // 🔍 GET TOKEN
+  clearAuthData(): void {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('email');
+    localStorage.removeItem('role');
+  }
+
   getToken(): string | null {
     return localStorage.getItem('token');
   }

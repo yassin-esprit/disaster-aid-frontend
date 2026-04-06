@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, RouterLinkActive } from '@angular/router';
 import { NavItem } from '../../models/nav-item.model';
@@ -11,9 +11,7 @@ import { NavItem } from '../../models/nav-item.model';
 })
 export class SidebarComponent {
   @Input() accentColor: string = '#6C5CE7';
-  @Input() accentClass: string = 'text-[#6C5CE7]';
-  @Input() ctaLabel: string = 'New Initiative';
-  @Input() ctaRoute: string = '/';
+  @Output() logoutClicked = new EventEmitter<void>();
 
   navItems: NavItem[] = [
     { label: 'Overview', icon: 'dashboard', route: '/dashboard' },
@@ -23,6 +21,10 @@ export class SidebarComponent {
     { label: 'Opportunities', icon: 'explore', route: '/opportunities' },
     { label: 'My Profile', icon: 'person', route: '/profile' },
     { label: 'Settings', icon: 'settings', route: '/settings' },
-    {label: 'Users', icon: 'people', route: '/users-management'}
+    { label: 'Users', icon: 'people', route: '/users-management' }
   ];
+
+  onLogout(): void {
+    this.logoutClicked.emit();
+  }
 }

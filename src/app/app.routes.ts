@@ -3,6 +3,7 @@ import { LandingComponent } from './pages/landing/landing.component';
 import { LoginComponent } from './pages/login/login.component';
 import { RegisterComponent } from './pages/register/register.component';
 import { AuthenticatedLayoutComponent } from './layouts/authenticated-layout/authenticated-layout.component';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'landing', pathMatch: 'full' },
@@ -13,6 +14,7 @@ export const routes: Routes = [
   {
     path: '',
     component: AuthenticatedLayoutComponent,
+    canActivate: [authGuard],   // ✅ PROTECTION
     children: [
       {
         path: 'dashboard',
