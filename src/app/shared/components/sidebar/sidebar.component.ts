@@ -17,11 +17,12 @@ export class SidebarComponent {
 
   navItems: NavItem[] = [
     { label: 'Overview', icon: 'dashboard', route: '/dashboard' },
+    { label: 'Sensors', icon: 'sensors', route: '/sensors' },
     { label: 'Alerts', icon: 'emergency', route: '/alerts' },
+    { label: 'Geofence Zones', icon: 'map', route: '/geofence' },
+    { label: 'Evacuation', icon: 'directions', route: '/evacuation' },
     { label: 'Incidents', icon: 'report_problem', route: '/incidents' },
-    { label: 'Help Requests', icon: 'volunteer_activism', route: '/help' },
     { label: 'Opportunities', icon: 'explore', route: '/opportunities' },
     { label: 'My Profile', icon: 'person', route: '/profile' },
-    { label: 'Settings', icon: 'settings', route: '/settings' },
   ];
 }
