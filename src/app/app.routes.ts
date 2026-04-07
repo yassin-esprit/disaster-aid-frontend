@@ -21,17 +21,24 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'alerts',
+        path: 'incidents',
         loadComponent: () =>
-          import('./pages/alerts-map/alerts-map.component').then(
-            (m) => m.AlertsMapComponent,
+          import('./pages/incidents/incident-list/incident-list.component').then(
+            (m) => m.IncidentListComponent,
           ),
       },
       {
-        path: 'incidents',
+        path: 'incidents/new',
         loadComponent: () =>
-          import('./pages/incident-form/incident-form.component').then(
+          import('./pages/incidents/incident-form/incident-form.component').then(
             (m) => m.IncidentFormComponent,
+          ),
+      },
+      {
+        path: 'coordination',
+        loadComponent: () =>
+          import('./pages/coordination/help-request-list/help-request-list.component').then(
+            (m) => m.HelpRequestListComponent,
           ),
       },
       {
@@ -46,6 +53,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/profile/profile.component').then(
             (m) => m.ProfileComponent,
+          ),
+      },
+      {
+        path: 'alerts',
+        loadComponent: () =>
+          import('./pages/alerts-map/alerts-map.component').then(
+            (m) => m.AlertsMapComponent,
           ),
       },
     ],
