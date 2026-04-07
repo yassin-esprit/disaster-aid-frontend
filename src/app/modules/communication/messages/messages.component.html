@@ -1,0 +1,119 @@
+<div class="messages-page">
+  <div class="page-header">
+    <div>
+      <h1>Messages Management</h1>
+      <p>Manage conversation messages and attachments</p>
+    </div>
+
+    <div class="header-actions">
+      <div class="stats-card">
+        <span class="stats-label">Messages</span>
+        <span class="stats-value">{{ messages.length }}</span>
+      </div>
+
+      <button class="add-btn" (click)="openCreateModal()">
+        + Add Message
+      </button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="toolbar">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="filterMessages()"
+        placeholder="Search message..."
+        class="search-input"
+      />
+    </div>
+
+    <div *ngIf="loading" class="loading-state">Loading...</div>
+
+    <div *ngIf="!loading" class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Conversation</th>
+            <th>Sender</th>
+            <th>Body</th>
+            <th>Attachments</th>
+            <th>Sent At</th>
+            <th>Deleted</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of filteredMessages">
+            <td>{{ item.messageId }}</td>
+            <td>{{ item.conversationId }}</td>
+            <td>{{ item.senderEmail }}</td>
+            <td>{{ item.body }}</td>
+            <td>{{ item.attachments.join(', ') || '-' }}</td>            
+            <td>{{ item.sentAt ? (item.sentAt | date:'short') : '-' }}</td>
+            <td>
+              <span class="badge" [ngClass]="item.isDeleted ? 'deleted-badge' : 'active-badge'">
+                {{ item.isDeleted ? 'DELETED' : 'ACTIVE' }}
+              </span>
+            </td>
+            <td class="actions-cell">
+              <button class="action-btn edit-btn" (click)="openEditModal(item)">Edit</button>
+              <button class="action-btn delete-btn" (click)="remove(item.messageId)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="filteredMessages.length === 0" class="empty-state">
+        No messages found.
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="showModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>{{ editMode ? 'Edit Message' : 'Add Message' }}</h2>
+        <button class="close-btn" (click)="closeModal()">×</button>
+      </div>
+
+      <form (ngSubmit)="submit()" class="message-form">
+        <div class="form-group">
+          <label>Conversation ID</label>
+          <input [(ngModel)]="form.conversationId" name="conversationId" type="number" required />
+        </div>
+
+        <div class="form-group">
+          <label>Sender ID</label>
+          <input [(ngModel)]="form.senderId" name="senderId" type="number" required />
+        </div>
+
+        <div class="form-group full">
+          <label>Body</label>
+          <textarea [(ngModel)]="form.body" name="body" rows="4"></textarea>
+        </div>
+
+        <div class="form-group full">
+          <label>Attachments (comma separated)</label>
+          <input [(ngModel)]="attachmentsText" name="attachmentsText" type="text" placeholder="file1.png, file2.pdf" />
+        </div>
+
+        <div class="form-group full checkbox-line">
+          <label class="check-item">
+            <input [(ngModel)]="form.isDeleted" name="isDeleted" type="checkbox" />
+            <span>Deleted</span>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="closeModal()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="saving">
+            {{ saving ? 'Saving...' : (editMode ? 'Update' : 'Create') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

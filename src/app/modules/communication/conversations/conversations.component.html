@@ -1,0 +1,116 @@
+<div class="conversations-page">
+  <div class="page-header">
+    <div>
+      <h1>Conversations Management</h1>
+      <p>Manage conversations and participants</p>
+    </div>
+
+    <div class="header-actions">
+      <div class="stats-card">
+        <span class="stats-label">Conversations</span>
+        <span class="stats-value">{{ conversations.length }}</span>
+      </div>
+
+      <button class="add-btn" (click)="openCreateModal()">
+        + Add Conversation
+      </button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="toolbar">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="filterConversations()"
+        placeholder="Search conversation..."
+        class="search-input"
+      />
+    </div>
+
+    <div *ngIf="loading" class="loading-state">Loading...</div>
+
+    <div *ngIf="!loading" class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Type</th>
+            <th>Related Entity ID</th>
+            <th>Related Entity Type</th>
+            <th>Participants</th>
+            <th>Created At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of filteredConversations">
+            <td>{{ item.conversationId }}</td>
+            <td>
+              <span class="badge type-badge">{{ item.type }}</span>
+            </td>
+            <td>{{ item.relatedEntityId || '-' }}</td>
+            <td>{{ item.relatedEntityType || '-' }}</td>
+            <td>{{ item.participantIds.join(', ') }}</td>
+            <td>{{ item.createdAt ? (item.createdAt | date:'short') : '-' }}</td>
+            <td class="actions-cell">
+              <button class="action-btn edit-btn" (click)="openEditModal(item)">Edit</button>
+              <button class="action-btn delete-btn" (click)="remove(item.conversationId)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="filteredConversations.length === 0" class="empty-state">
+        No conversations found.
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal-backdrop" *ngIf="showModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>{{ editMode ? 'Edit Conversation' : 'Add Conversation' }}</h2>
+        <button class="close-btn" (click)="closeModal()">×</button>
+      </div>
+
+      <form (ngSubmit)="submit()" class="conversation-form">
+        <div class="form-group">
+          <label>Type</label>
+          <select [(ngModel)]="form.type" name="type">
+            <option *ngFor="let type of convoTypes" [value]="type">{{ type }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Related Entity ID</label>
+          <input [(ngModel)]="form.relatedEntityId" name="relatedEntityId" type="number" />
+        </div>
+
+        <div class="form-group full">
+          <label>Related Entity Type</label>
+          <input [(ngModel)]="form.relatedEntityType" name="relatedEntityType" type="text" />
+        </div>
+
+        <div class="form-group full">
+          <label>Participant IDs (comma separated)</label>
+          <input
+            [(ngModel)]="participantIdsText"
+            name="participantIdsText"
+            type="text"
+            placeholder="1, 2, 3"
+          />
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="closeModal()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="saving">
+            {{ saving ? 'Saving...' : (editMode ? 'Update' : 'Create') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

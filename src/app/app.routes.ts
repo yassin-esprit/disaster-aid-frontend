@@ -14,7 +14,7 @@ export const routes: Routes = [
   {
     path: '',
     component: AuthenticatedLayoutComponent,
-    canActivate: [authGuard],   // ✅ PROTECTION
+    canActivate: [authGuard],
     children: [
       {
         path: 'dashboard',
@@ -58,6 +58,13 @@ export const routes: Routes = [
             (m) => m.UsersManagementComponent
           ),
       },
+    {
+      path: 'communication',
+      loadComponent: () =>
+        import('./modules/communication/communication/communication.component').then(
+          (m) => m.CommunicationComponent
+        ),
+    },
     ],
   },
 

@@ -1,0 +1,145 @@
+<div class="notifications-page">
+  <div class="page-header">
+    <div>
+      <h1>Notifications Management</h1>
+      <p>Manage platform notifications and communication alerts</p>
+    </div>
+
+    <div class="header-actions">
+      <div class="stats-card">
+        <span class="stats-label">Notifications</span>
+        <span class="stats-value">{{ notifications.length }}</span>
+      </div>
+
+      <button class="add-btn" (click)="openCreateModal()">
+        + Add Notification
+      </button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="toolbar">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="filterNotifications()"
+        placeholder="Search notification..."
+        class="search-input"
+      />
+    </div>
+
+    <div *ngIf="loading" class="loading-state">Loading...</div>
+
+    <div *ngIf="!loading" class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Recipient</th>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Channel</th>
+            <th>Read</th>
+            <th>Critical</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of filteredNotifications">
+            <td>{{ item.notificationId }}</td>
+            <td>{{ item.recipientEmail }}</td>
+            <td>{{ item.title }}</td>
+            <td>
+              <span class="badge type-badge">{{ item.type }}</span>
+            </td>
+            <td>{{ item.channel }}</td>
+            <td>
+              <span class="badge" [ngClass]="item.isRead ? 'read-badge' : 'unread-badge'">
+                {{ item.isRead ? 'READ' : 'UNREAD' }}
+              </span>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="item.isCritical ? 'critical-badge' : 'normal-badge'">
+                {{ item.isCritical ? 'CRITICAL' : 'NORMAL' }}
+              </span>
+            </td>
+            <td class="actions-cell">
+              <button class="action-btn edit-btn" (click)="openEditModal(item)">Edit</button>
+              <button class="action-btn delete-btn" (click)="remove(item.notificationId)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="filteredNotifications.length === 0" class="empty-state">
+        No notifications found.
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal-backdrop" *ngIf="showModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>{{ editMode ? 'Edit Notification' : 'Add Notification' }}</h2>
+        <button class="close-btn" (click)="closeModal()">×</button>
+      </div>
+
+      <form (ngSubmit)="submit()" class="notification-form">
+        <div class="form-group">
+          <label>Recipient ID</label>
+          <input [(ngModel)]="form.recipientId" name="recipientId" type="number" required />
+        </div>
+
+        <div class="form-group">
+          <label>Type</label>
+          <select [(ngModel)]="form.type" name="type">
+            <option *ngFor="let type of notifTypes" [value]="type">{{ type }}</option>
+          </select>
+        </div>
+
+        <div class="form-group full">
+          <label>Title</label>
+          <input [(ngModel)]="form.title" name="title" type="text" required />
+        </div>
+
+        <div class="form-group">
+          <label>Channel</label>
+          <select [(ngModel)]="form.channel" name="channel">
+            <option *ngFor="let channel of channels" [value]="channel">{{ channel }}</option>
+          </select>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label class="check-item">
+            <input [(ngModel)]="form.isRead" name="isRead" type="checkbox" />
+            <span>Read</span>
+          </label>
+
+          <label class="check-item">
+            <input [(ngModel)]="form.isCritical" name="isCritical" type="checkbox" />
+            <span>Critical</span>
+          </label>
+        </div>
+
+        <div class="form-group full">
+          <label>Body</label>
+          <textarea [(ngModel)]="form.body" name="body" rows="4"></textarea>
+        </div>
+
+        <div class="form-group full">
+          <label>Data</label>
+          <textarea [(ngModel)]="form.data" name="data" rows="3"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="closeModal()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="saving">
+            {{ saving ? 'Saving...' : (editMode ? 'Update' : 'Create') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

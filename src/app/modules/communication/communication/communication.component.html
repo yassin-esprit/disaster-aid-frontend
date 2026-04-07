@@ -1,0 +1,49 @@
+<div class="communication-page">
+  <div class="communication-header">
+    <div>
+      <h1>Communication Management</h1>
+      <p>Manage notifications, preferences, conversations and messages from one place.</p>
+    </div>
+  </div>
+
+  <div class="tabs-bar">
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'notifications'"
+      (click)="setTab('notifications')">
+      Notifications
+    </button>
+
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'preferences'"
+      (click)="setTab('preferences')">
+      Preferences
+    </button>
+
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'conversations'"
+      (click)="setTab('conversations')">
+      Conversations
+    </button>
+
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'messages'"
+      (click)="setTab('messages')">
+      Messages
+    </button>
+  </div>
+
+  <div class="tab-panel">
+    <app-notifications *ngIf="activeTab === 'notifications'"></app-notifications>
+    <app-preferences *ngIf="activeTab === 'preferences'"></app-preferences>
+    <app-conversations *ngIf="activeTab === 'conversations'"></app-conversations>
+    <app-messages *ngIf="activeTab === 'messages'"></app-messages>
+  </div>
+</div>
