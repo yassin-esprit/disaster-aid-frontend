@@ -1,0 +1,217 @@
+<div>
+  <!-- Tab nav -->
+  <nav class="mb-8 flex gap-2 border-b border-white/5">
+    <a
+      routerLink="/analytics"
+      class="px-4 py-2 text-sm font-bold text-primary border-b-2 border-primary"
+      >Overview</a
+    >
+    <a
+      routerLink="/analytics/models"
+      class="px-4 py-2 text-sm font-bold text-on-surface-variant hover:text-on-surface"
+      >Predictive Models</a
+    >
+    <a
+      routerLink="/analytics/lookups"
+      class="px-4 py-2 text-sm font-bold text-on-surface-variant hover:text-on-surface"
+      >Lookups</a
+    >
+  </nav>
+
+  <!-- Header -->
+  <section class="mb-8 flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+    <div>
+      <h2 class="text-3xl md:text-4xl font-black tracking-tight text-on-surface mb-1">
+        Analytics Dashboard
+      </h2>
+      <p class="text-on-surface-variant text-base">
+        Live metrics from Disaster (M13) and Volunteer (M14) analytics.
+      </p>
+    </div>
+    <button
+      (click)="loadAll()"
+      [disabled]="loading"
+      class="flex items-center gap-2 px-5 py-2.5 bg-primary/10 border border-primary/20 text-primary rounded-lg font-bold text-sm hover:bg-primary/20 transition-all active:scale-95 disabled:opacity-50"
+    >
+      <span class="material-symbols-outlined text-sm">refresh</span>
+      {{ loading ? 'Loading…' : 'Refresh' }}
+    </button>
+  </section>
+
+  <!-- Error banner -->
+  <div
+    *ngIf="error"
+    class="mb-6 p-4 rounded-lg bg-error/10 border border-error/20 text-error text-sm"
+  >
+    {{ error }}
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading && !disasterReport && !volunteerReport" class="text-on-surface-variant">
+    Loading analytics…
+  </div>
+
+  <!-- KPI cards -->
+  <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+    <div class="p-5 rounded-xl bg-white/5 border border-white/5">
+      <div class="text-xs uppercase tracking-wider text-on-surface-variant mb-1">Total Reports</div>
+      <div class="text-3xl font-black text-on-surface">{{ disasterReport?.totalReports ?? '—' }}</div>
+      <div class="text-xs text-secondary mt-1">{{ verifiedRatio }}% verified</div>
+    </div>
+
+    <div class="p-5 rounded-xl bg-white/5 border border-white/5">
+      <div class="text-xs uppercase tracking-wider text-on-surface-variant mb-1">Help Requests</div>
+      <div class="text-3xl font-black text-on-surface">{{ disasterReport?.totalHelpRequests ?? '—' }}</div>
+      <div class="text-xs text-primary mt-1">{{ resolvedRatio }}% resolved</div>
+    </div>
+
+    <div class="p-5 rounded-xl bg-white/5 border border-white/5">
+      <div class="text-xs uppercase tracking-wider text-on-surface-variant mb-1">Avg Response (min)</div>
+      <div class="text-3xl font-black text-on-surface">
+        {{ (disasterReport?.avgResponseTimeMin | number: '1.0-1') ?? '—' }}
+      </div>
+      <div class="text-xs text-on-surface-variant mt-1">
+        {{ disasterReport?.activeModels ?? 0 }} active ML models
+      </div>
+    </div>
+
+    <div class="p-5 rounded-xl bg-white/5 border border-white/5">
+      <div class="text-xs uppercase tracking-wider text-on-surface-variant mb-1">High-Risk Volunteers</div>
+      <div class="text-3xl font-black text-on-surface">
+        {{ volunteerReport?.highRiskVolunteers ?? '—' }}
+      </div>
+      <div class="text-xs text-error mt-1">Avg churn {{ churnPct }}%</div>
+    </div>
+  </section>
+
+  <!-- Volunteer summary -->
+  <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-10" *ngIf="volunteerReport">
+    <div class="p-5 rounded-xl bg-white/5 border border-white/5">
+      <div class="text-xs uppercase tracking-wider text-on-surface-variant mb-1">Approved Hours</div>
+      <div class="text-2xl font-black text-on-surface">
+        {{ volunteerReport.totalApprovedHours | number: '1.0-1' }}
+      </div>
+    </div>
+    <div class="p-5 rounded-xl bg-white/5 border border-white/5">
+      <div class="text-xs uppercase tracking-wider text-on-surface-variant mb-1">Opportunities</div>
+      <div class="text-2xl font-black text-on-surface">
+        {{ volunteerReport.totalOpportunities }}
+      </div>
+    </div>
+    <div class="p-5 rounded-xl bg-white/5 border border-white/5">
+      <div class="text-xs uppercase tracking-wider text-on-surface-variant mb-1">Organisations Tracked</div>
+      <div class="text-2xl font-black text-on-surface">
+        {{ volunteerReport.organisationsTracked }}
+      </div>
+    </div>
+  </section>
+
+  <!-- Tables -->
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Active predictive models -->
+    <div class="rounded-xl bg-white/5 border border-white/5 overflow-hidden">
+      <header class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+        <h3 class="font-bold text-on-surface">Active Predictive Models</h3>
+        <span class="text-xs text-on-surface-variant">{{ predictiveModels.length }}</span>
+      </header>
+      <div *ngIf="predictiveModels.length === 0" class="p-5 text-sm text-on-surface-variant">
+        No active models.
+      </div>
+      <table *ngIf="predictiveModels.length > 0" class="w-full text-sm">
+        <thead class="text-left text-on-surface-variant text-xs uppercase">
+          <tr>
+            <th class="px-5 py-2">Name</th>
+            <th class="px-5 py-2">Version</th>
+            <th class="px-5 py-2">Type</th>
+            <th class="px-5 py-2">Trained</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of predictiveModels" class="border-t border-white/5">
+            <td class="px-5 py-2 text-on-surface">{{ m.name }}</td>
+            <td class="px-5 py-2 text-on-surface-variant">{{ m.version }}</td>
+            <td class="px-5 py-2">
+              <span class="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary">{{ m.type }}</span>
+            </td>
+            <td class="px-5 py-2 text-on-surface-variant">{{ m.trainedAt | date: 'short' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- High-risk churn -->
+    <div class="rounded-xl bg-white/5 border border-white/5 overflow-hidden">
+      <header class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+        <h3 class="font-bold text-on-surface">High-Risk Churn Predictions</h3>
+        <span class="text-xs text-on-surface-variant">threshold ≥ {{ highRiskThreshold }}</span>
+      </header>
+      <div *ngIf="highRiskChurn.length === 0" class="p-5 text-sm text-on-surface-variant">
+        No high-risk volunteers.
+      </div>
+      <table *ngIf="highRiskChurn.length > 0" class="w-full text-sm">
+        <thead class="text-left text-on-surface-variant text-xs uppercase">
+          <tr>
+            <th class="px-5 py-2">Volunteer</th>
+            <th class="px-5 py-2">Churn Prob.</th>
+            <th class="px-5 py-2">Intervention</th>
+            <th class="px-5 py-2">Predicted</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of highRiskChurn" class="border-t border-white/5">
+            <td class="px-5 py-2 text-on-surface">#{{ c.volunteerId }}</td>
+            <td class="px-5 py-2 text-error font-bold">
+              {{ (c.predictedChurnProb * 100) | number: '1.0-0' }}%
+            </td>
+            <td class="px-5 py-2">
+              <span class="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-400">
+                {{ c.interventionType }}
+              </span>
+            </td>
+            <td class="px-5 py-2 text-on-surface-variant">{{ c.predictedAt | date: 'short' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Audit logs full width -->
+    <div class="rounded-xl bg-white/5 border border-white/5 overflow-hidden lg:col-span-2">
+      <header class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+        <h3 class="font-bold text-on-surface">Recent Audit Logs</h3>
+        <span class="text-xs text-on-surface-variant">{{ auditLogs.length }}</span>
+      </header>
+      <div *ngIf="auditLogs.length === 0" class="p-5 text-sm text-on-surface-variant">
+        No audit entries.
+      </div>
+      <table *ngIf="auditLogs.length > 0" class="w-full text-sm">
+        <thead class="text-left text-on-surface-variant text-xs uppercase">
+          <tr>
+            <th class="px-5 py-2">When</th>
+            <th class="px-5 py-2">Actor</th>
+            <th class="px-5 py-2">Action</th>
+            <th class="px-5 py-2">Entity</th>
+            <th class="px-5 py-2">ML?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let log of auditLogs" class="border-t border-white/5">
+            <td class="px-5 py-2 text-on-surface-variant">{{ log.timestamp | date: 'short' }}</td>
+            <td class="px-5 py-2 text-on-surface">#{{ log.actorId }}</td>
+            <td class="px-5 py-2 text-on-surface">{{ log.action }}</td>
+            <td class="px-5 py-2 text-on-surface-variant">
+              {{ log.entityType }}<span *ngIf="log.entityId"> #{{ log.entityId }}</span>
+            </td>
+            <td class="px-5 py-2">
+              <span
+                *ngIf="log.isMLGenerated"
+                class="text-xs px-2 py-0.5 rounded bg-secondary/10 text-secondary"
+                >ML</span
+              >
+              <span *ngIf="!log.isMLGenerated" class="text-xs text-on-surface-variant">—</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

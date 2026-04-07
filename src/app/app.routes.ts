@@ -11,6 +11,36 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
 
+  // TODO: move under the main authGuard block once the auth branch is merged
+  {
+    path: 'analytics',
+    component: AuthenticatedLayoutComponent,
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./pages/analytics-dashboard/analytics-dashboard.component').then(
+            (m) => m.AnalyticsDashboardComponent
+          ),
+      },
+      {
+        path: 'models',
+        loadComponent: () =>
+          import('./pages/analytics-models/analytics-models.component').then(
+            (m) => m.AnalyticsModelsComponent
+          ),
+      },
+      {
+        path: 'lookups',
+        loadComponent: () =>
+          import('./pages/analytics-lookups/analytics-lookups.component').then(
+            (m) => m.AnalyticsLookupsComponent
+          ),
+      },
+    ],
+  },
+
   {
     path: '',
     component: AuthenticatedLayoutComponent,

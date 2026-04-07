@@ -1,10 +1,10 @@
 <div class="flex min-h-screen">
   <app-sidebar (logoutClicked)="logout()"></app-sidebar>
 
-  <div class="flex-1 flex flex-col min-w-0">
+  <div class="flex-1 flex flex-col min-w-0 md:ml-[240px]">
     <app-header></app-header>
 
-    <main class="flex-1 px-8 pb-6 pt-6 overflow-auto">
+    <main class="flex-1 px-8 pb-6 pt-24 overflow-auto">
       <router-outlet></router-outlet>
     </main>
 
