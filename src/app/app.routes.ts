@@ -3,13 +3,9 @@ import { LandingComponent } from './pages/landing/landing.component';
 import { LoginComponent } from './pages/login/login.component';
 import { RegisterComponent } from './pages/register/register.component';
 import { AuthenticatedLayoutComponent } from './layouts/authenticated-layout/authenticated-layout.component';
-import { authGuard } from './core/guards/auth.guard';
-import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password.component';
-export const routes: Routes = [
 
-  // ===== PUBLIC ROUTES =====
-  { path: '', redirectTo: 'landing', pathMatch: 'full' },
-  { path: 'landing', component: LandingComponent },
+export const routes: Routes = [
+  { path: '', component: LandingComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
@@ -41,41 +37,46 @@ export const routes: Routes = [
   {
     path: '',
     component: AuthenticatedLayoutComponent,
-    canActivate: [authGuard],
     children: [
-
-      // Dashboard page, only accessible to authenticated users
       {
         path: 'dashboard',
         loadComponent: () =>
-          import('./pages/dashboard/dashboard.component')
-            .then(m => m.DashboardComponent),
+          import('./pages/dashboard/dashboard.component').then(
+            (m) => m.DashboardComponent,
+          ),
       },
-
-      // Alerts, requires authentication
       {
-        path: 'alerts',
+        path: 'incidents',
         loadComponent: () =>
-          import('./pages/alerts-map/alerts-map.component')
-            .then(m => m.AlertsMapComponent),
+          import('./pages/incidents/incident-list/incident-list.component').then(
+            (m) => m.IncidentListComponent,
+          ),
       },
 
       // Incident reporting, requires authentication
       {
-        path: 'incidents',
+        path: 'incidents/new',
         loadComponent: () =>
-          import('./pages/incident-form/incident-form.component')
-            .then(m => m.IncidentFormComponent),
+          import('./pages/incidents/incident-form/incident-form.component').then(
+            (m) => m.IncidentFormComponent,
+          ),
       },
 
       // Opportunities page, requires authentication
+      {
+        path: 'coordination',
+        loadComponent: () =>
+          import('./pages/coordination/help-request-list/help-request-list.component').then(
+            (m) => m.HelpRequestListComponent,
+          ),
+      },
       {
         path: 'opportunities',
         loadComponent: () =>
           import('./pages/opportunities/opportunities.component')
             .then(m => m.OpportunitiesComponent),
       },
-      
+
       // Profile page, only accessible to authenticated users
       {
         path: 'profile',
