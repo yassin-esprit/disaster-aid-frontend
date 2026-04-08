@@ -11,8 +11,9 @@ import { RouterModule, RouterLinkActive } from '@angular/router';
 export class MobileNavComponent {
   items = [
     { label: 'Home', icon: 'dashboard', route: '/dashboard' },
-    { label: 'Alerts', icon: 'emergency', route: '/alerts' },
-    { label: 'Browse', icon: 'explore', route: '/opportunities' },
+    { label: 'Resource', icon: 'inventory_2', route: '/resource' },
+    { label: 'Reviews', icon: 'reviews', route: '/reviews' },
+    { label: 'Reports', icon: 'flag', route: '/reports' },
     { label: 'Profile', icon: 'person', route: '/profile' },
   ];
 }

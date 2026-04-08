@@ -1,51 +1,35 @@
-<header
-  class="fixed top-0 w-full h-16 z-50 bg-slate-900/40 backdrop-blur-xl flex items-center justify-between px-8 shadow-[0_0_20px_rgba(108,92,231,0.15)] md:pl-[272px]"
->
-  <!-- Left: title + breadcrumb -->
-  <div class="flex flex-col justify-center">
-    <h1 class="text-lg font-black tracking-tighter text-slate-100 leading-none">
-      {{ pageTitle }}
-    </h1>
-    <p
-      *ngIf="breadcrumb"
-      class="text-[10px] text-slate-500 uppercase tracking-widest mt-0.5"
-    >
-      {{ breadcrumb }}
-    </p>
-  </div>
-
-  <!-- Right: search, actions, avatar -->
-  <div class="flex items-center gap-4 relative">
-    <!-- Search -->
-    <div class="relative hidden sm:block">
-      <input
-        type="text"
-        [(ngModel)]="searchQuery"
-        placeholder="Search..."
-        class="bg-white/5 border-none rounded-full px-4 py-1.5 text-xs w-48 focus:ring-1 focus:ring-primary text-on-surface outline-none"
-      />
+<header class="fixed top-0 w-full h-16 z-50 bg-slate-900/40 backdrop-blur-xl flex items-center justify-between px-8 shadow-[0_0_20px_rgba(108,92,231,0.15)] md:pl-[272px]">
+    <!-- Left: title + breadcrumb -->
+    <div class="flex flex-col justify-center">
+        <h1 class="text-lg font-black tracking-tighter text-slate-100 leading-none">
+            {{ pageTitle }}
+        </h1>
+        <p *ngIf="breadcrumb" class="text-[10px] text-slate-500 uppercase tracking-widest mt-0.5">
+            {{ breadcrumb }}
+        </p>
     </div>
 
-    <!-- Notification bell -->
-    <button
-      (click)="toggleNotifications()"
-      class="relative text-slate-400 hover:text-white transition-all active:scale-95 p-2 rounded-full hover:bg-white/5"
-    >
+    <!-- Right: search, actions, avatar -->
+    <div class="flex items-center gap-4 relative">
+        <a routerLink="/backoffice/resources" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[11px] font-bold uppercase tracking-widest hover:bg-primary/30 transition-all">
+            <span class="material-symbols-outlined text-sm">admin_panel_settings</span> Gestion
+        </a>
+
+        <!-- Search -->
+        <div class="relative hidden sm:block">
+            <input type="text" [(ngModel)]="searchQuery" placeholder="Search..." class="bg-white/5 border-none rounded-full px-4 py-1.5 text-xs w-48 focus:ring-1 focus:ring-primary text-on-surface outline-none" />
+        </div>
+
+        <!-- Notification bell -->
+        <button (click)="toggleNotifications()" class="relative text-slate-400 hover:text-white transition-all active:scale-95 p-2 rounded-full hover:bg-white/5">
       <span class="material-symbols-outlined">notifications</span>
       <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-error"></span>
     </button>
 
-    <!-- Notification dropdown -->
-    <div
-      *ngIf="showNotifications"
-      class="absolute top-12 right-16 w-80 glass-3 rounded-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] z-50 overflow-hidden"
-    >
-      <div
-        class="flex items-center justify-between px-4 py-3 border-b border-white/5"
-      >
-        <span
-          class="text-xs font-bold uppercase tracking-widest text-on-surface-variant"
-          >Notifications</span
+        <!-- Notification dropdown -->
+        <div *ngIf="showNotifications" class="absolute top-12 right-16 w-80 glass-3 rounded-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] z-50 overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-white/5">
+                <span class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Notifications</span
         >
         <button class="text-[10px] text-primary font-bold hover:underline">
           Mark all read
@@ -84,26 +68,17 @@
       class="text-slate-400 hover:text-white transition-all active:scale-95 p-2 rounded-full hover:bg-white/5"
     >
       <span class="material-symbols-outlined">settings</span>
-    </button>
+                </button>
 
-    <!-- Avatar -->
-    <div
-      class="w-8 h-8 rounded-full border border-primary/50 overflow-hidden bg-surface-container-high flex items-center justify-center"
-    >
-      <img
-        *ngIf="userAvatar"
-        [src]="userAvatar"
-        [alt]="userName"
-        class="w-full h-full object-cover"
-      />
-      <span *ngIf="!userAvatar" class="text-xs font-bold text-primary">{{
+                <!-- Avatar -->
+                <div class="w-8 h-8 rounded-full border border-primary/50 overflow-hidden bg-surface-container-high flex items-center justify-center">
+                    <img *ngIf="userAvatar" [src]="userAvatar" [alt]="userName" class="w-full h-full object-cover" />
+                    <span *ngIf="!userAvatar" class="text-xs font-bold text-primary">{{
         userName[0]
       }}</span>
-    </div>
-  </div>
+                </div>
+            </div>
 
-  <!-- Bottom accent line -->
-  <div
-    class="bg-gradient-to-r from-primary/10 to-transparent h-[1px] bottom-0 absolute w-full left-0"
-  ></div>
+            <!-- Bottom accent line -->
+            <div class="bg-gradient-to-r from-primary/10 to-transparent h-[1px] bottom-0 absolute w-full left-0"></div>
 </header>

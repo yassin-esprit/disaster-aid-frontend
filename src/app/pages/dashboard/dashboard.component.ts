@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthenticatedLayoutComponent } from '../../layouts/authenticated-layout/authenticated-layout.component';
+import { ResourceShelterService } from '../../core/services/resource-shelter/resource-shelter.service';
+import { ResourceEntity } from '../../shared/models/resource-shelter/resource-shelter.model';
 
 @Component({
   selector: 'app-dashboard',
@@ -9,33 +11,35 @@ import { AuthenticatedLayoutComponent } from '../../layouts/authenticated-layout
   imports: [CommonModule, RouterModule, AuthenticatedLayoutComponent],
   templateUrl: './dashboard.component.html',
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
+  resources: ResourceEntity[] = [];
+
   stats = [
     {
-      label: 'Total Hours',
-      value: '1,284',
-      icon: 'schedule',
+      label: 'Total Resources',
+      value: '0',
+      icon: 'inventory_2',
       iconBg: 'bg-secondary',
       iconColor: 'text-on-secondary',
-      trend: '+12% this month',
+      trend: 'Live inventory',
       trendColor: 'text-secondary',
     },
     {
-      label: 'Applications',
-      value: '24',
-      icon: 'apps',
+      label: 'Resources Available',
+      value: '0',
+      icon: 'check_circle',
       iconBg: 'bg-primary',
       iconColor: 'text-on-primary',
-      trend: '8 Pending Review',
+      trend: 'Ready for allocation',
       trendColor: 'text-primary',
     },
     {
-      label: 'Achievements',
-      value: '12',
-      icon: 'workspace_premium',
+      label: 'Active Alerts',
+      value: '3',
+      icon: 'emergency',
       iconBg: 'bg-amber-500',
       iconColor: 'text-white',
-      trend: 'Top 5% responder',
+      trend: 'Monitor in real-time',
       trendColor: 'text-amber-500',
     },
     {
@@ -139,4 +143,25 @@ export class DashboardComponent {
       color: 'bg-primary',
     },
   ];
+
+  constructor(private readonly resourceShelterService: ResourceShelterService) {}
+
+  ngOnInit(): void {
+    this.resourceShelterService.getAllResources().subscribe({
+      next: (items) => {
+        this.resources = items;
+        const total = items.length;
+        const available = items.filter((item) => item.status === 'AVAILABLE').length;
+
+        this.stats[0].value = String(total);
+        this.stats[1].value = String(available);
+        this.stats[2].value = String(this.alerts.length);
+      },
+      error: () => {
+        this.stats[0].value = '-';
+        this.stats[1].value = '-';
+        this.stats[2].value = String(this.alerts.length);
+      },
+    });
+  }
 }

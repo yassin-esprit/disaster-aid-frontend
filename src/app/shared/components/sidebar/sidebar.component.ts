@@ -12,16 +12,37 @@ import { NavItem } from '../../models/nav-item.model';
 export class SidebarComponent {
   @Input() accentColor: string = '#6C5CE7';
   @Input() accentClass: string = 'text-[#6C5CE7]';
-  @Input() ctaLabel: string = 'New Initiative';
-  @Input() ctaRoute: string = '/';
+  @Input() ctaLabel: string = 'Back Office';
+  @Input() ctaRoute: string = '/backoffice/resources';
 
   navItems: NavItem[] = [
     { label: 'Overview', icon: 'dashboard', route: '/dashboard' },
     { label: 'Alerts', icon: 'emergency', route: '/alerts' },
-    { label: 'Incidents', icon: 'report_problem', route: '/incidents' },
-    { label: 'Help Requests', icon: 'volunteer_activism', route: '/help' },
-    { label: 'Opportunities', icon: 'explore', route: '/opportunities' },
-    { label: 'My Profile', icon: 'person', route: '/profile' },
-    { label: 'Settings', icon: 'settings', route: '/settings' },
+    { label: 'Resource', icon: 'inventory_2', route: '/resource' },
+    { label: 'Shelter', icon: 'home_work', route: '/shelter' },
+    { label: 'Nearby Shelters', icon: 'location_on', route: '/nearby-shelters' },
+    {
+      label: 'Evac Routes',
+      icon: 'alt_route',
+      route: '/evacuation-routes',
+    },
+    {
+      label: 'Reviews',
+      icon: 'reviews',
+      route: '/reviews',
+    },
+
+
+    {
+      label: 'BO Resources',
+      icon: 'admin_panel_settings',
+      route: '/backoffice/resources',
+    },
+    {
+      label: 'BO Shelters',
+      icon: 'shield_person',
+      route: '/backoffice/shelters',
+    },
+
   ];
 }

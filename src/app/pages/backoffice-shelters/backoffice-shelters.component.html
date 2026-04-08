@@ -1,0 +1,128 @@
+<app-authenticated-layout pageTitle="Back Office Shelters" breadcrumb="Back Office / Shelters">
+    <section class="space-y-6">
+        <div class="glass-1 rounded-2xl border border-white/10 p-5 md:p-6">
+            <h2 class="text-xl font-black mb-4">{{ editingId === null ? 'Create Shelter' : 'Update Shelter #' + editingId }}</h2>
+
+            <form [formGroup]="form" (ngSubmit)="submit()" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <label class="field md:col-span-2">
+          <span>Nom</span>
+          <input type="text" formControlName="name" />
+        </label>
+
+                <label class="field">
+          <span>Status</span>
+          <select formControlName="status">
+            <option *ngFor="let item of statuses" [value]="item">{{ item }}</option>
+          </select>
+        </label>
+
+                <label class="field md:col-span-3">
+          <span>Address</span>
+          <input type="text" formControlName="address" />
+        </label>
+
+                <label class="field md:col-span-3">
+          <span>Location URL</span>
+          <input type="url" formControlName="locationUrl" />
+        </label>
+
+                <label class="field">
+          <span>Capacity</span>
+          <input type="number" min="1" formControlName="capacity" />
+        </label>
+
+                <label class="field">
+          <span>Manager ID</span>
+          <input type="number" min="1" formControlName="managerId" />
+        </label>
+
+                <label class="field md:col-span-3">
+          <span>Amenities</span>
+          <textarea rows="3" formControlName="amenitiesText"></textarea>
+        </label>
+
+                <div class="md:col-span-3 flex flex-wrap items-center gap-3">
+                    <button type="submit" [disabled]="isSaving" class="px-5 py-2.5 rounded-lg bg-secondary text-on-secondary font-bold text-xs uppercase tracking-widest disabled:opacity-60">
+            {{ isSaving ? 'Saving...' : editingId === null ? 'Create' : 'Update' }}
+          </button>
+                    <button *ngIf="editingId !== null" type="button" (click)="cancelEdit()" class="px-5 py-2.5 rounded-lg bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest">
+            Cancel
+          </button>
+                    <p *ngIf="successMessage" class="text-sm font-semibold text-tertiary-dim">{{ successMessage }}</p>
+                    <p *ngIf="errorMessage" class="text-sm font-semibold text-error">{{ errorMessage }}</p>
+                </div>
+            </form>
+        </div>
+
+        <div class="glass-1 rounded-2xl border border-white/10 overflow-hidden">
+            <div class="p-5 border-b border-white/10 flex items-center justify-between">
+                <h3 class="text-lg font-black">Shelters</h3>
+                <div class="flex items-center gap-2">
+                    <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" placeholder="Recherche..." class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm w-48" />
+                    <select [ngModel]="pageSize" (ngModelChange)="onPageSizeChange($event)" class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm">
+            <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} / page</option>
+          </select>
+                    <button type="button" (click)="loadShelters()" class="px-4 py-2 rounded-lg bg-secondary/20 text-secondary border border-secondary/30 text-xs font-bold uppercase tracking-widest">
+            Refresh
+          </button>
+                </div>
+            </div>
+
+            <div *ngIf="isLoading" class="p-6 text-on-surface-variant">Chargement...</div>
+
+            <div *ngIf="!isLoading" class="overflow-x-auto">
+                <table class="w-full min-w-[1000px]">
+                    <thead class="bg-white/5 text-left text-xs uppercase tracking-widest text-on-surface-variant">
+                        <tr>
+                            <th class="px-4 py-3">ID</th>
+                            <th class="px-4 py-3">Nom</th>
+                            <th class="px-4 py-3">Capacity</th>
+                            <th class="px-4 py-3">Occupancy</th>
+                            <th class="px-4 py-3">Status</th>
+                            <th class="px-4 py-3">Amenities</th>
+                            <th class="px-4 py-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let item of paginatedShelters" class="border-t border-white/5 hover:bg-white/5">
+                            <td class="px-4 py-3">{{ item.shelterId }}</td>
+                            <td class="px-4 py-3 font-semibold">{{ item.name }}</td>
+                            <td class="px-4 py-3">{{ item.capacity }}</td>
+                            <td class="px-4 py-3">{{ item.currentOccupancy }}</td>
+                            <td class="px-4 py-3">{{ item.status }}</td>
+                            <td class="px-4 py-3">{{ amenityList(item) }}</td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-2">
+                                    <button type="button" (click)="startEdit(item)" class="px-3 py-1.5 rounded-md bg-secondary/20 text-secondary text-[11px] font-bold uppercase">
+                    Edit
+                  </button>
+                                    <button type="button" (click)="remove(item)" class="px-3 py-1.5 rounded-md bg-error/20 text-error text-[11px] font-bold uppercase">
+                    Delete
+                  </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr *ngIf="filteredShelters.length === 0">
+                            <td class="px-4 py-6 text-on-surface-variant" colspan="7">Aucun shelter disponible.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="p-4 border-t border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <p class="text-xs text-on-surface-variant">
+                    Affichage {{ pageStart }}-{{ pageEnd }} sur {{ totalItems }} element(s)
+                </p>
+                <div class="flex items-center gap-2">
+                    <button type="button" (click)="prevPage()" [disabled]="currentPage === 1" class="px-3 py-1.5 rounded-md bg-white/10 border border-white/10 text-xs font-bold uppercase disabled:opacity-40">
+            Precedent
+          </button>
+                    <span class="text-xs font-bold uppercase tracking-widest">Page {{ currentPage }} / {{ totalPages }}</span>
+                    <button type="button" (click)="nextPage()" [disabled]="currentPage >= totalPages" class="px-3 py-1.5 rounded-md bg-white/10 border border-white/10 text-xs font-bold uppercase disabled:opacity-40">
+            Suivant
+          </button>
+                </div>
+            </div>
+        </div>
+    </section>
+</app-authenticated-layout>

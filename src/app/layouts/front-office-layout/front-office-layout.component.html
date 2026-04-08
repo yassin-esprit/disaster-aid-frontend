@@ -1,1 +1,34 @@
-<p>front-office-layout works!</p>
+<div class="min-h-screen text-on-surface">
+    <header class="front-nav fixed top-0 inset-x-0 z-50 h-16">
+        <div class="h-full max-w-screen-2xl mx-auto px-4 md:px-8 flex items-center justify-between">
+            <a routerLink="/dashboard" class="flex items-center gap-2">
+                <span class="text-lg md:text-xl font-black tracking-tight text-white">CPS</span>
+                <span class="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 bg-primary/20 border border-primary/30 rounded-full text-primary">Hub</span
+				>
+			</a>
+
+			<nav class="hidden md:flex items-center gap-6 text-sm font-semibold">
+				<a
+					*ngFor="let link of links"
+					[routerLink]="link.route"
+					routerLinkActive="text-primary border-b border-primary"
+					[routerLinkActiveOptions]="{ exact: link.route === '/dashboard' }"
+					class="text-slate-300 hover:text-white transition-colors pb-1"
+					>{{ link.label }}</a
+				>
+			</nav>
+
+			<a
+				routerLink="/backoffice/resources"
+				class="px-3 py-1.5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[11px] font-bold uppercase tracking-widest"
+				>Gestion</a
+			>
+		</div>
+	</header>
+
+	<main class="pt-20 pb-10">
+		<div class="max-w-screen-2xl mx-auto px-4 md:px-8">
+			<ng-content></ng-content>
+		</div>
+	</main>
+</div>
