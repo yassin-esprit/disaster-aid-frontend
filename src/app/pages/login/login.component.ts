@@ -34,9 +34,13 @@ export class LoginComponent {
     console.log('Role received:', normalizedRole);
 
     if (adminRoles.includes(normalizedRole)) {
-      this.router.navigate(['/dashboard']);
+      this.router.navigateByUrl('/dashboard').then((success) => {
+        console.log('Navigation to dashboard:', success);
+      });
     } else {
-      this.router.navigate(['/landing']);
+      this.router.navigateByUrl('/communication/chat').then((success) => {
+        console.log('Navigation to chat:', success);
+      });
     }
   }
 
@@ -58,6 +62,7 @@ export class LoginComponent {
     this.authService.login(loginData).subscribe({
       next: (response) => {
         console.log('Login successful:', response);
+        console.log('Stored role:', response.role);
         this.isLoading = false;
         this.redirectByRole(response.role);
       },
@@ -79,6 +84,6 @@ export class LoginComponent {
   }
 
   onGuestLogin(): void {
-    this.router.navigate(['/landing']);
+    this.router.navigateByUrl('/landing');
   }
 }

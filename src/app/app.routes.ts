@@ -12,6 +12,15 @@ export const routes: Routes = [
   { path: 'register', component: RegisterComponent },
 
   {
+    path: 'communication/chat',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./modules/communication/chat/chat.component').then(
+        (m) => m.ChatComponent
+      ),
+  },
+
+  {
     path: '',
     component: AuthenticatedLayoutComponent,
     canActivate: [authGuard],
@@ -57,14 +66,7 @@ export const routes: Routes = [
           import('./pages/users-management/users-management.component').then(
             (m) => m.UsersManagementComponent
           ),
-      },
-    {
-      path: 'communication',
-      loadComponent: () =>
-        import('./modules/communication/communication/communication.component').then(
-          (m) => m.CommunicationComponent
-        ),
-    },
+      }
     ],
   },
 

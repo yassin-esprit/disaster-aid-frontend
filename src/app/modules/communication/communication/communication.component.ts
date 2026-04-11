@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 import { NotificationsComponent } from '../notifications/notifications.component';
 import { PreferencesComponent } from '../preferences/preferences.component';
@@ -14,7 +15,8 @@ import { MessagesComponent } from '../messages/messages.component';
     NotificationsComponent,
     PreferencesComponent,
     ConversationsComponent,
-    MessagesComponent
+    MessagesComponent,
+    FormsModule
   ],
   templateUrl: './communication.component.html',
   styleUrl: './communication.component.scss'
