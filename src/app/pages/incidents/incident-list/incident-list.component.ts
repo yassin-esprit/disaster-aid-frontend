@@ -11,12 +11,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
 @Component({
   selector: 'app-incident-list',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    AuthenticatedLayoutComponent,
-    StatusBadgeComponent,
-  ],
+  imports: [CommonModule, RouterModule, StatusBadgeComponent],
   templateUrl: './incident-list.component.html',
 })
 export class IncidentListComponent implements OnInit {

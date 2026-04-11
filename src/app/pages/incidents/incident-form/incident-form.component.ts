@@ -13,12 +13,7 @@ import { IncidentService } from '../../../core/services/incident.service';
 @Component({
   selector: 'app-incident-form',
   standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    RouterModule,
-    AuthenticatedLayoutComponent,
-  ],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './incident-form.component.html',
 })
 export class IncidentFormComponent implements OnInit {

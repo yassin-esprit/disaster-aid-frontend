@@ -61,8 +61,6 @@ export const routes: Routes = [
             (m) => m.IncidentFormComponent,
           ),
       },
-
-      // Opportunities page, requires authentication
       {
         path: 'coordination',
         loadComponent: () =>
@@ -71,18 +69,27 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'alerts',
+        loadComponent: () =>
+          import('./pages/alerts-map/alerts-map.component').then(
+            (m) => m.AlertsMapComponent,
+          ),
+      },
+      {
         path: 'opportunities',
         loadComponent: () =>
-          import('./pages/opportunities/opportunities.component')
-            .then(m => m.OpportunitiesComponent),
+          import('./pages/opportunities/opportunities.component').then(
+            (m) => m.OpportunitiesComponent,
+          ),
       },
 
       // Profile page, only accessible to authenticated users
       {
         path: 'profile',
         loadComponent: () =>
-          import('./pages/profile/profile.component')
-            .then(m => m.ProfileComponent),
+          import('./pages/profile/profile.component').then(
+            (m) => m.ProfileComponent,
+          ),
       },
 
       // Users management page (Admin only)
