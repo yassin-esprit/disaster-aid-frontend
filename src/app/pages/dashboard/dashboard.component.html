@@ -1,265 +1,261 @@
-<app-authenticated-layout pageTitle="Dashboard" breadcrumb="Home">
-  <!-- Greeting -->
-  <section class="mb-12 relative">
-    <div
-      class="absolute -top-12 -left-12 w-64 h-64 bg-primary/10 blur-[100px] rounded-full pointer-events-none"
-    ></div>
-    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-      <div>
-        <h2
-          class="text-4xl md:text-5xl font-black tracking-tight text-on-surface mb-2"
-        >
-          Good morning, Amina 👋
-        </h2>
-        <p class="text-on-surface-variant text-lg">
-          Your community response readiness is
-          <span class="text-secondary font-bold">98% optimal</span> today.
-        </p>
-      </div>
-      <div class="flex flex-wrap gap-3">
-        <a
-          routerLink="/incidents"
-          class="flex items-center gap-2 px-6 py-3 bg-error/10 border border-error/20 text-error rounded-lg font-bold text-sm hover:bg-error/20 transition-all active:scale-95"
-        >
-          <span class="material-symbols-outlined text-sm">report_problem</span>
-          Report Incident
-        </a>
-        <button
-          class="flex items-center gap-2 px-6 py-3 bg-primary/10 border border-primary/20 text-primary rounded-lg font-bold text-sm hover:bg-primary/20 transition-all active:scale-95 shadow-[0_0_15px_rgba(108,92,231,0.2)]"
-        >
-          <span class="material-symbols-outlined text-sm"
-            >volunteer_activism</span
-          >
-          Offer Help
-        </button>
-        <a
-          routerLink="/opportunities"
-          class="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 text-on-surface rounded-lg font-bold text-sm hover:bg-white/10 transition-all active:scale-95"
-        >
-          <span class="material-symbols-outlined text-sm">explore</span> Browse
-        </a>
-      </div>
+<!-- Greeting -->
+<section class="mb-12 relative">
+  <div
+    class="absolute -top-12 -left-12 w-64 h-64 bg-primary/10 blur-[100px] rounded-full pointer-events-none"
+  ></div>
+  <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+    <div>
+      <h2
+        class="text-4xl md:text-5xl font-black tracking-tight text-on-surface mb-2"
+      >
+        Good morning, Amina 👋
+      </h2>
+      <p class="text-on-surface-variant text-lg">
+        Your community response readiness is
+        <span class="text-secondary font-bold">98% optimal</span> today.
+      </p>
     </div>
-  </section>
+    <div class="flex flex-wrap gap-3">
+      <a
+        routerLink="/incidents"
+        class="flex items-center gap-2 px-6 py-3 bg-error/10 border border-error/20 text-error rounded-lg font-bold text-sm hover:bg-error/20 transition-all active:scale-95"
+      >
+        <span class="material-symbols-outlined text-sm">report_problem</span>
+        Report Incident
+      </a>
+      <button
+        class="flex items-center gap-2 px-6 py-3 bg-primary/10 border border-primary/20 text-primary rounded-lg font-bold text-sm hover:bg-primary/20 transition-all active:scale-95 shadow-[0_0_15px_rgba(108,92,231,0.2)]"
+      >
+        <span class="material-symbols-outlined text-sm"
+          >volunteer_activism</span
+        >
+        Offer Help
+      </button>
+      <a
+        routerLink="/opportunities"
+        class="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 text-on-surface rounded-lg font-bold text-sm hover:bg-white/10 transition-all active:scale-95"
+      >
+        <span class="material-symbols-outlined text-sm">explore</span> Browse
+      </a>
+    </div>
+  </div>
+</section>
 
-  <!-- Stat cards -->
-  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+<!-- Stat cards -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+  <div
+    *ngFor="let s of stats"
+    class="glass-1 p-6 rounded-xl border border-white/5 relative group hover:border-primary/30 transition-all"
+  >
     <div
-      *ngFor="let s of stats"
-      class="glass-1 p-6 rounded-xl border border-white/5 relative group hover:border-primary/30 transition-all"
+      class="absolute -top-4 left-6 w-10 h-10 rounded-lg flex items-center justify-center shadow-lg"
+      [ngClass]="s.iconBg"
     >
+      <span
+        class="material-symbols-outlined fill-icon"
+        [ngClass]="s.iconColor"
+        >{{ s.icon }}</span
+      >
+    </div>
+    <div class="mt-4">
+      <p
+        class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1"
+      >
+        {{ s.label }}
+      </p>
+      <h3 class="text-3xl font-black text-on-surface">{{ s.value }}</h3>
       <div
-        class="absolute -top-4 left-6 w-10 h-10 rounded-lg flex items-center justify-center shadow-lg"
-        [ngClass]="s.iconBg"
+        class="mt-2 flex items-center text-xs font-bold"
+        [ngClass]="s.trendColor"
       >
-        <span
-          class="material-symbols-outlined fill-icon"
-          [ngClass]="s.iconColor"
-          >{{ s.icon }}</span
-        >
-      </div>
-      <div class="mt-4">
-        <p
-          class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1"
-        >
-          {{ s.label }}
-        </p>
-        <h3 class="text-3xl font-black text-on-surface">{{ s.value }}</h3>
-        <div
-          class="mt-2 flex items-center text-xs font-bold"
-          [ngClass]="s.trendColor"
-        >
-          {{ s.trend }}
-        </div>
+        {{ s.trend }}
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- Row 2: Alerts + Opportunities -->
-  <section class="grid grid-cols-1 lg:grid-cols-10 gap-8 mb-12">
-    <!-- Alerts -->
-    <div
-      class="lg:col-span-6 glass-1 rounded-2xl border border-error/10 overflow-hidden relative"
-    >
-      <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-        <span class="material-symbols-outlined text-9xl">emergency_share</span>
-      </div>
-      <div class="p-8">
-        <div class="flex items-center justify-between mb-8">
-          <h3
-            class="text-2xl font-black tracking-tight flex items-center gap-3"
-          >
-            <span class="w-2 h-8 bg-error rounded-full"></span> Active Alerts
-            Near You
-          </h3>
-          <span
-            class="px-3 py-1 bg-error/20 text-error text-[10px] font-bold uppercase tracking-widest rounded-full"
-            >Live Map</span
-          >
-        </div>
-        <div class="space-y-4">
-          <div
-            *ngFor="let a of alerts"
-            class="flex items-center justify-between p-4 rounded-xl hover:bg-white/5 transition-all border-l-4 cursor-pointer"
-            [ngClass]="[a.rowClass, a.borderClass]"
-          >
-            <div class="flex items-center gap-4">
-              <div
-                class="w-12 h-12 rounded-lg flex items-center justify-center"
-                [ngClass]="a.iconBg"
-              >
-                <span class="material-symbols-outlined">{{ a.icon }}</span>
-              </div>
-              <div>
-                <h4 class="font-bold text-on-surface">{{ a.title }}</h4>
-                <p class="text-sm text-on-surface-variant">{{ a.sub }}</p>
-              </div>
-            </div>
-            <span
-              class="px-3 py-1 text-[10px] font-black uppercase tracking-tighter rounded"
-              [ngClass]="a.severityClass"
-            >
-              {{ a.severity }}
-            </span>
-          </div>
-        </div>
-      </div>
+<!-- Row 2: Alerts + Opportunities -->
+<section class="grid grid-cols-1 lg:grid-cols-10 gap-8 mb-12">
+  <!-- Alerts -->
+  <div
+    class="lg:col-span-6 glass-1 rounded-2xl border border-error/10 overflow-hidden relative"
+  >
+    <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+      <span class="material-symbols-outlined text-9xl">emergency_share</span>
     </div>
-
-    <!-- Opportunities -->
-    <div
-      class="lg:col-span-4 glass-1 rounded-2xl border border-primary/10 overflow-hidden"
-    >
-      <div class="p-8 h-full flex flex-col">
-        <h3
-          class="text-2xl font-black tracking-tight flex items-center gap-3 mb-8"
-        >
-          <span class="w-2 h-8 bg-primary rounded-full"></span> My Opportunities
+    <div class="p-8">
+      <div class="flex items-center justify-between mb-8">
+        <h3 class="text-2xl font-black tracking-tight flex items-center gap-3">
+          <span class="w-2 h-8 bg-error rounded-full"></span> Active Alerts Near
+          You
         </h3>
-        <div class="flex-1 space-y-6">
-          <div *ngFor="let o of opportunities" class="group cursor-pointer">
-            <div class="flex justify-between items-start mb-2">
-              <h4
-                class="font-bold text-on-surface group-hover:text-primary transition-colors"
-              >
-                {{ o.title }}
-              </h4>
-              <span
-                class="material-symbols-outlined text-primary opacity-0 group-hover:opacity-100 transition-all"
-                >arrow_forward</span
-              >
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <span
-                class="flex items-center gap-1 text-[10px] uppercase font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded"
-              >
-                <span class="material-symbols-outlined text-[12px]"
-                  >location_on</span
-                >
-                {{ o.location }}
-              </span>
-              <span
-                class="text-[10px] uppercase font-bold px-2 py-0.5 rounded"
-                [ngClass]="o.badgeClass"
-                >{{ o.badge }}</span
-              >
-            </div>
-          </div>
-        </div>
-        <a
-          routerLink="/opportunities"
-          class="block w-full mt-8 py-3 bg-primary text-on-primary font-black text-sm uppercase tracking-widest rounded-xl text-center hover:shadow-[0_0_20px_rgba(108,92,231,0.4)] transition-all"
+        <span
+          class="px-3 py-1 bg-error/20 text-error text-[10px] font-bold uppercase tracking-widest rounded-full"
+          >Live Map</span
         >
-          View All (12)
-        </a>
       </div>
-    </div>
-  </section>
-
-  <!-- Row 3: Activity + Impact + Challenges -->
-  <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
-    <!-- Notifications -->
-    <div class="glass-1 p-6 rounded-2xl border border-white/5">
-      <h4
-        class="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-6 flex items-center gap-2"
-      >
-        <span class="material-symbols-outlined text-base"
-          >notifications_active</span
-        >
-        Recent Activity
-      </h4>
-      <div class="space-y-6">
-        <div *ngFor="let n of notifications" class="flex gap-4">
-          <div
-            class="w-2 h-2 rounded-full mt-1.5 shrink-0"
-            [ngClass]="n.color"
-          ></div>
-          <div>
-            <p class="text-xs text-on-surface-variant mb-1">{{ n.time }}</p>
-            <p class="text-sm font-medium">{{ n.message }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Impact bars -->
-    <div class="glass-1 p-6 rounded-2xl border border-white/5">
-      <h4
-        class="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-6 flex items-center gap-2"
-      >
-        <span class="material-symbols-outlined text-base">analytics</span>
-        Impact Velocity
-      </h4>
-      <div class="space-y-6">
-        <div *ngFor="let bar of impactBars">
-          <div class="flex justify-between text-xs font-bold mb-2">
-            <span>{{ bar.label }}</span>
-            <span class="text-secondary">{{ bar.value }}%</span>
-          </div>
-          <div
-            class="w-full h-2 bg-surface-container rounded-full overflow-hidden"
-          >
-            <div
-              class="h-full bg-gradient-to-r from-secondary/40 to-secondary rounded-full shadow-[0_0_10px_rgba(105,156,255,0.4)] transition-all"
-              [style.width.%]="bar.value"
-            ></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Challenges -->
-    <div class="glass-1 p-6 rounded-2xl border border-white/5">
-      <h4
-        class="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-6 flex items-center gap-2"
-      >
-        <span class="material-symbols-outlined text-base">trophy</span> Season
-        Challenges
-      </h4>
       <div class="space-y-4">
         <div
-          *ngFor="let c of challenges"
-          class="p-3 bg-white/5 rounded-xl border border-white/5"
+          *ngFor="let a of alerts"
+          class="flex items-center justify-between p-4 rounded-xl hover:bg-white/5 transition-all border-l-4 cursor-pointer"
+          [ngClass]="[a.rowClass, a.borderClass]"
         >
-          <div class="flex items-center justify-between mb-2">
-            <p class="text-xs font-bold">{{ c.title }}</p>
-            <span
-              class="text-[10px] font-bold"
-              [ngClass]="c.color.replace('bg-', 'text-')"
-              >{{ c.label }}</span
-            >
-          </div>
-          <div
-            class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden"
-          >
+          <div class="flex items-center gap-4">
             <div
-              class="h-full rounded-full transition-all"
-              [ngClass]="c.color"
-              [style.width.%]="c.progress"
-            ></div>
+              class="w-12 h-12 rounded-lg flex items-center justify-center"
+              [ngClass]="a.iconBg"
+            >
+              <span class="material-symbols-outlined">{{ a.icon }}</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-on-surface">{{ a.title }}</h4>
+              <p class="text-sm text-on-surface-variant">{{ a.sub }}</p>
+            </div>
           </div>
+          <span
+            class="px-3 py-1 text-[10px] font-black uppercase tracking-tighter rounded"
+            [ngClass]="a.severityClass"
+          >
+            {{ a.severity }}
+          </span>
         </div>
       </div>
     </div>
-  </section>
-</app-authenticated-layout>
+  </div>
+
+  <!-- Opportunities -->
+  <div
+    class="lg:col-span-4 glass-1 rounded-2xl border border-primary/10 overflow-hidden"
+  >
+    <div class="p-8 h-full flex flex-col">
+      <h3
+        class="text-2xl font-black tracking-tight flex items-center gap-3 mb-8"
+      >
+        <span class="w-2 h-8 bg-primary rounded-full"></span> My Opportunities
+      </h3>
+      <div class="flex-1 space-y-6">
+        <div *ngFor="let o of opportunities" class="group cursor-pointer">
+          <div class="flex justify-between items-start mb-2">
+            <h4
+              class="font-bold text-on-surface group-hover:text-primary transition-colors"
+            >
+              {{ o.title }}
+            </h4>
+            <span
+              class="material-symbols-outlined text-primary opacity-0 group-hover:opacity-100 transition-all"
+              >arrow_forward</span
+            >
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span
+              class="flex items-center gap-1 text-[10px] uppercase font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded"
+            >
+              <span class="material-symbols-outlined text-[12px]"
+                >location_on</span
+              >
+              {{ o.location }}
+            </span>
+            <span
+              class="text-[10px] uppercase font-bold px-2 py-0.5 rounded"
+              [ngClass]="o.badgeClass"
+              >{{ o.badge }}</span
+            >
+          </div>
+        </div>
+      </div>
+      <a
+        routerLink="/opportunities"
+        class="block w-full mt-8 py-3 bg-primary text-on-primary font-black text-sm uppercase tracking-widest rounded-xl text-center hover:shadow-[0_0_20px_rgba(108,92,231,0.4)] transition-all"
+      >
+        View All (12)
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Row 3: Activity + Impact + Challenges -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+  <!-- Notifications -->
+  <div class="glass-1 p-6 rounded-2xl border border-white/5">
+    <h4
+      class="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-6 flex items-center gap-2"
+    >
+      <span class="material-symbols-outlined text-base"
+        >notifications_active</span
+      >
+      Recent Activity
+    </h4>
+    <div class="space-y-6">
+      <div *ngFor="let n of notifications" class="flex gap-4">
+        <div
+          class="w-2 h-2 rounded-full mt-1.5 shrink-0"
+          [ngClass]="n.color"
+        ></div>
+        <div>
+          <p class="text-xs text-on-surface-variant mb-1">{{ n.time }}</p>
+          <p class="text-sm font-medium">{{ n.message }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Impact bars -->
+  <div class="glass-1 p-6 rounded-2xl border border-white/5">
+    <h4
+      class="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-6 flex items-center gap-2"
+    >
+      <span class="material-symbols-outlined text-base">analytics</span>
+      Impact Velocity
+    </h4>
+    <div class="space-y-6">
+      <div *ngFor="let bar of impactBars">
+        <div class="flex justify-between text-xs font-bold mb-2">
+          <span>{{ bar.label }}</span>
+          <span class="text-secondary">{{ bar.value }}%</span>
+        </div>
+        <div
+          class="w-full h-2 bg-surface-container rounded-full overflow-hidden"
+        >
+          <div
+            class="h-full bg-gradient-to-r from-secondary/40 to-secondary rounded-full shadow-[0_0_10px_rgba(105,156,255,0.4)] transition-all"
+            [style.width.%]="bar.value"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Challenges -->
+  <div class="glass-1 p-6 rounded-2xl border border-white/5">
+    <h4
+      class="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-6 flex items-center gap-2"
+    >
+      <span class="material-symbols-outlined text-base">trophy</span> Season
+      Challenges
+    </h4>
+    <div class="space-y-4">
+      <div
+        *ngFor="let c of challenges"
+        class="p-3 bg-white/5 rounded-xl border border-white/5"
+      >
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-xs font-bold">{{ c.title }}</p>
+          <span
+            class="text-[10px] font-bold"
+            [ngClass]="c.color.replace('bg-', 'text-')"
+            >{{ c.label }}</span
+          >
+        </div>
+        <div
+          class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden"
+        >
+          <div
+            class="h-full rounded-full transition-all"
+            [ngClass]="c.color"
+            [style.width.%]="c.progress"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

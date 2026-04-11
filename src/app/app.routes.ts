@@ -42,6 +42,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'alerts',
+        loadComponent: () =>
+          import('./pages/alerts-map/alerts-map.component').then(
+            (m) => m.AlertsMapComponent,
+          ),
+      },
+      {
         path: 'opportunities',
         loadComponent: () =>
           import('./pages/opportunities/opportunities.component').then(
@@ -53,13 +60,6 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/profile/profile.component').then(
             (m) => m.ProfileComponent,
-          ),
-      },
-      {
-        path: 'alerts',
-        loadComponent: () =>
-          import('./pages/alerts-map/alerts-map.component').then(
-            (m) => m.AlertsMapComponent,
           ),
       },
     ],
