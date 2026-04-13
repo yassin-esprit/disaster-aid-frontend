@@ -1,0 +1,290 @@
+<!-- Header -->
+<div
+  class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8"
+>
+  <div>
+    <div
+      class="w-16 h-1 mb-3"
+      style="background: #3b82f6; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5)"
+    ></div>
+    <h1 class="text-3xl font-black tracking-tighter text-white">
+      Coordination
+    </h1>
+    <p class="text-slate-400 text-sm mt-1">
+      {{ filtered.length }} request(s) · Admin view
+    </p>
+  </div>
+  <div class="flex gap-3 flex-wrap">
+    <select
+      [(ngModel)]="statusFilter"
+      (change)="applyFilters()"
+      class="px-4 py-2 rounded-xl text-sm font-bold text-white outline-none"
+      style="
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      "
+    >
+      <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+    </select>
+    <select
+      [(ngModel)]="typeFilter"
+      (change)="applyFilters()"
+      class="px-4 py-2 rounded-xl text-sm font-bold text-white outline-none"
+      style="
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      "
+    >
+      <option *ngFor="let t of types" [value]="t">{{ t }}</option>
+    </select>
+    <button
+      (click)="load()"
+      class="px-4 py-2 rounded-xl text-sm font-bold text-blue-400 hover:bg-blue-500/10 transition-all"
+      style="border: 1px solid rgba(59, 130, 246, 0.2)"
+    >
+      <span class="material-symbols-outlined text-sm align-middle"
+        >refresh</span
+      >
+      Refresh
+    </button>
+  </div>
+</div>
+
+<div
+  *ngIf="errorMessage"
+  class="mb-6 p-4 rounded-xl text-red-400 text-sm flex items-center gap-2"
+  style="
+    background: rgba(255, 110, 132, 0.1);
+    border: 1px solid rgba(255, 110, 132, 0.2);
+  "
+>
+  <span class="material-symbols-outlined text-sm">error</span>{{ errorMessage }}
+</div>
+
+<div *ngIf="isLoading" class="flex justify-center py-20">
+  <svg
+    class="animate-spin h-10 w-10 text-blue-400"
+    viewBox="0 0 24 24"
+    fill="none"
+  >
+    <circle
+      class="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      stroke-width="4"
+    />
+    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+  </svg>
+</div>
+
+<div
+  *ngIf="!isLoading && filtered.length === 0 && !errorMessage"
+  class="rounded-2xl p-16 text-center"
+  style="
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  "
+>
+  <span class="material-symbols-outlined text-6xl text-slate-600 block mb-4"
+    >inbox</span
+  >
+  <p class="text-slate-400">No requests match the current filters.</p>
+</div>
+
+<!-- Requests -->
+<div *ngIf="!isLoading" class="space-y-3">
+  <div
+    *ngFor="let r of filtered"
+    class="rounded-2xl overflow-hidden"
+    style="
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    "
+  >
+    <!-- Row header -->
+    <div
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 cursor-pointer hover:bg-white/5 transition-colors"
+      (click)="toggle(r.id!)"
+    >
+      <div class="flex items-center gap-4">
+        <div class="font-mono text-xs text-slate-500">#{{ r.id }}</div>
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span
+              class="text-xs font-bold uppercase px-2 py-0.5 rounded border"
+              style="
+                background: rgba(59, 130, 246, 0.1);
+                color: #60a5fa;
+                border-color: rgba(59, 130, 246, 0.2);
+              "
+            >
+              {{ r.type }}
+            </span>
+            <span
+              class="inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border"
+              [ngClass]="
+                statusBadge[r.status || ''] ||
+                'bg-white/5 text-slate-400 border-white/10'
+              "
+            >
+              {{ r.status }}
+            </span>
+          </div>
+          <p class="text-white font-bold">{{ r.location }}</p>
+          <p class="text-slate-400 text-xs line-clamp-1">{{ r.description }}</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="flex gap-0.5">
+          <div
+            *ngFor="let d of [0, 1, 2, 3, 4]"
+            class="w-1.5 h-1.5 rounded-full"
+            [ngClass]="
+              d < r.urgency
+                ? urgencyColor[r.urgency].replace('text-', 'bg-')
+                : 'bg-white/10'
+            "
+          ></div>
+        </div>
+        <span
+          class="material-symbols-outlined text-slate-400 text-sm transition-transform"
+          [ngClass]="expandedId === r.id ? 'rotate-180' : ''"
+          >expand_more</span
+        >
+      </div>
+    </div>
+
+    <!-- Expanded -->
+    <div
+      *ngIf="expandedId === r.id"
+      style="
+        border-top: 1px solid rgba(59, 130, 246, 0.1);
+        background: rgba(59, 130, 246, 0.03);
+      "
+    >
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Left: status actions -->
+        <div>
+          <p
+            class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3"
+          >
+            Request Actions
+          </p>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <button
+              *ngFor="
+                let s of [
+                  'OPEN',
+                  'ASSIGNED',
+                  'IN_PROGRESS',
+                  'RESOLVED',
+                  'CANCELLED',
+                ]
+              "
+              (click)="updateRequestStatus(r.id!, s); $event.stopPropagation()"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
+              [ngClass]="r.status === s ? 'ring-2 ring-white/20' : ''"
+              [style]="
+                r.status === s
+                  ? 'background:rgba(59,130,246,0.3);color:#93c5fd;border:1px solid rgba(59,130,246,0.4)'
+                  : 'background:rgba(255,255,255,0.05);color:#94a3b8;border:1px solid rgba(255,255,255,0.08)'
+              "
+            >
+              {{ s }}
+            </button>
+          </div>
+          <button
+            (click)="deleteRequest(r.id!); $event.stopPropagation()"
+            class="px-4 py-2 rounded-xl text-xs font-bold w-full transition-all"
+            style="
+              background: rgba(255, 110, 132, 0.08);
+              color: #ff6e84;
+              border: 1px solid rgba(255, 110, 132, 0.15);
+            "
+          >
+            Delete Request
+          </button>
+        </div>
+
+        <!-- Right: assignments -->
+        <div>
+          <p
+            class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3"
+          >
+            assignmentsMap[r.id!].length
+          </p>
+          <div
+            *ngIf="!assignmentsMap[r.id!]?.length"
+            class="text-xs text-slate-500"
+          >
+            None yet.
+          </div>
+          <div class="space-y-2">
+            <div
+              *ngFor="let a of assignmentsMap[r.id!]"
+              class="flex items-center justify-between p-3 rounded-xl"
+              style="
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(255, 255, 255, 0.07);
+              "
+            >
+              <div class="text-sm">
+                <span class="font-mono text-slate-500 text-xs"
+                  >#{{ a.id }}</span
+                >
+                <span class="text-white ml-2"
+                  >Responder {{ a.responderId }}</span
+                >
+              </div>
+              <div class="flex items-center gap-2">
+                <span
+                  class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  [ngClass]="
+                    aStatusBadge[a.status || ''] || 'bg-white/5 text-slate-400'
+                  "
+                >
+                  {{ a.status }}
+                </span>
+                <button
+                  *ngIf="a.status === 'ASSIGNED'"
+                  (click)="
+                    updateAssignStatus(a.id!, 'ACCEPTED', r.id!);
+                    $event.stopPropagation()
+                  "
+                  class="text-[10px] px-2 py-1 rounded font-bold"
+                  style="background: rgba(105, 156, 255, 0.1); color: #699cff"
+                >
+                  Accept
+                </button>
+                <button
+                  *ngIf="a.status === 'ACCEPTED'"
+                  (click)="
+                    updateAssignStatus(a.id!, 'COMPLETED', r.id!);
+                    $event.stopPropagation()
+                  "
+                  class="text-[10px] px-2 py-1 rounded font-bold"
+                  style="background: rgba(52, 211, 153, 0.1); color: #34d399"
+                >
+                  Complete
+                </button>
+                <button
+                  *ngIf="a.status !== 'COMPLETED' && a.status !== 'REJECTED'"
+                  (click)="
+                    updateAssignStatus(a.id!, 'REJECTED', r.id!);
+                    $event.stopPropagation()
+                  "
+                  class="text-[10px] px-2 py-1 rounded font-bold"
+                  style="background: rgba(255, 110, 132, 0.1); color: #ff6e84"
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

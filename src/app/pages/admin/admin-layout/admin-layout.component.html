@@ -1,0 +1,91 @@
+<div class="min-h-screen text-on-surface" style="background: #0d1117">
+  <!-- Sidebar -->
+  <aside
+    class="fixed left-0 top-0 h-full w-[240px] z-50 flex flex-col py-6"
+    style="
+      background: rgba(10, 22, 40, 0.95);
+      border-right: 1px solid rgba(59, 130, 246, 0.15);
+    "
+  >
+    <div class="px-6 mb-8 flex items-center gap-3">
+      <div
+        class="w-10 h-10 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center"
+      >
+        <span class="material-symbols-outlined text-blue-400"
+          >admin_panel_settings</span
+        >
+      </div>
+      <div>
+        <h2 class="text-base font-bold text-white">Back Office</h2>
+        <p
+          class="text-[10px] uppercase tracking-widest text-blue-400/70 font-bold"
+        >
+          Admin Panel
+        </p>
+      </div>
+    </div>
+
+    <nav class="flex-1 flex flex-col gap-1">
+      <a
+        *ngFor="let item of navItems"
+        [routerLink]="item.route"
+        routerLinkActive="bg-white/10 text-white shadow-[inset_4px_0_0_#3B82F6]"
+        class="text-slate-400 hover:text-slate-200 py-3 px-4 ml-2 mr-4 flex items-center gap-3 transition-all hover:bg-white/5 rounded-lg text-[13px] font-medium tracking-wide uppercase"
+      >
+        <span class="material-symbols-outlined">{{ item.icon }}</span>
+        {{ item.label }}
+      </a>
+    </nav>
+
+    <div class="px-4 mt-auto">
+      <a
+        routerLink="/dashboard"
+        class="flex items-center gap-2 text-slate-400 hover:text-white text-xs px-4 py-3 rounded-lg hover:bg-white/5 transition-all"
+      >
+        <span class="material-symbols-outlined text-sm">arrow_back</span>
+        Back to Front Office
+      </a>
+    </div>
+  </aside>
+
+  <!-- Header -->
+  <header
+    class="fixed top-0 left-[240px] right-0 h-16 z-40 flex items-center justify-between px-8"
+    style="
+      background: rgba(10, 22, 40, 0.9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+    "
+  >
+    <span class="text-white font-black tracking-tighter text-xl"
+      >CPS Admin</span
+    >
+    <div class="flex items-center gap-3">
+      <span
+        class="text-xs px-3 py-1 rounded-full font-bold uppercase tracking-widest"
+        style="
+          background: rgba(59, 130, 246, 0.1);
+          color: #3b82f6;
+          border: 1px solid rgba(59, 130, 246, 0.2);
+        "
+      >
+        Admin Mode
+      </span>
+      <div
+        class="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center text-white text-xs font-bold"
+      >
+        A
+      </div>
+    </div>
+    <div
+      class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-blue-500/20 to-transparent"
+    ></div>
+  </header>
+
+  <!-- Content -->
+  <main class="ml-[240px] pt-16 min-h-screen">
+    <div class="p-8">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

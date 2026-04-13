@@ -6,7 +6,7 @@ import { AuthenticatedLayoutComponent } from '../../layouts/authenticated-layout
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, AuthenticatedLayoutComponent],
+  imports: [CommonModule, RouterModule],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent {

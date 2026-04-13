@@ -16,6 +16,7 @@ export class SidebarComponent {
   @Input() ctaRoute: string = '/';
 
   navItems: NavItem[] = [
+    { label: 'Admin', icon: 'admin_panel_settings', route: '/admin' },
     { label: 'Overview', icon: 'dashboard', route: '/dashboard' },
     { label: 'Incidents', icon: 'report_problem', route: '/incidents' },
     {

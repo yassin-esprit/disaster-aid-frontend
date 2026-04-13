@@ -3,12 +3,15 @@ import { LandingComponent } from './pages/landing/landing.component';
 import { LoginComponent } from './pages/login/login.component';
 import { RegisterComponent } from './pages/register/register.component';
 import { AuthenticatedLayoutComponent } from './layouts/authenticated-layout/authenticated-layout.component';
+import { AdminLayoutComponent } from './pages/admin/admin-layout/admin-layout.component';
 
 export const routes: Routes = [
+  // Public
   { path: '', component: LandingComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
 
+  // Front Office — authenticated layout
   {
     path: '',
     component: AuthenticatedLayoutComponent,
@@ -42,6 +45,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'coordination/new',
+        loadComponent: () =>
+          import('./pages/coordination/help-request-form/help-request-form.component').then(
+            (m) => m.HelpRequestFormComponent,
+          ),
+      },
+      {
         path: 'alerts',
         loadComponent: () =>
           import('./pages/alerts-map/alerts-map.component').then(
@@ -60,6 +70,29 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/profile/profile.component').then(
             (m) => m.ProfileComponent,
+          ),
+      },
+    ],
+  },
+
+  // Back Office — admin layout
+  {
+    path: 'admin',
+    component: AdminLayoutComponent,
+    children: [
+      { path: '', redirectTo: 'incidents', pathMatch: 'full' },
+      {
+        path: 'incidents',
+        loadComponent: () =>
+          import('./pages/admin/admin-incidents/admin-incidents.component').then(
+            (m) => m.AdminIncidentsComponent,
+          ),
+      },
+      {
+        path: 'coordination',
+        loadComponent: () =>
+          import('./pages/admin/admin-coordination/admin-coordination.component').then(
+            (m) => m.AdminCoordinationComponent,
           ),
       },
     ],
