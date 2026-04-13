@@ -14,6 +14,7 @@ export class SidebarComponent {
   @Output() logoutClicked = new EventEmitter<void>();
 
   navItems: NavItem[] = [
+    { label: 'Admin', icon: 'admin_panel_settings', route: '/admin' },
     { label: 'Overview', icon: 'dashboard', route: '/dashboard' },
     { label: 'Incidents', icon: 'report_problem', route: '/incidents' },
     {

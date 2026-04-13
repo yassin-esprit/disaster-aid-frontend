@@ -3,8 +3,10 @@ import { LandingComponent } from './pages/landing/landing.component';
 import { LoginComponent } from './pages/login/login.component';
 import { RegisterComponent } from './pages/register/register.component';
 import { AuthenticatedLayoutComponent } from './layouts/authenticated-layout/authenticated-layout.component';
+import { AdminLayoutComponent } from './pages/admin/admin-layout/admin-layout.component';
 
 export const routes: Routes = [
+  // Public
   { path: '', component: LandingComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
@@ -34,6 +36,7 @@ export const routes: Routes = [
   },
 
   // ===== AUTHENTICATED LAYOUT =====
+  // Front Office — authenticated layout
   {
     path: '',
     component: AuthenticatedLayoutComponent,
@@ -66,6 +69,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/coordination/help-request-list/help-request-list.component').then(
             (m) => m.HelpRequestListComponent,
+          ),
+      },
+      {
+        path: 'coordination/new',
+        loadComponent: () =>
+          import('./pages/coordination/help-request-form/help-request-form.component').then(
+            (m) => m.HelpRequestFormComponent,
           ),
       },
       {
@@ -110,6 +120,30 @@ export const routes: Routes = [
     ],
   },
 
+  // Back Office — admin layout
+  {
+    path: 'admin',
+    component: AdminLayoutComponent,
+    children: [
+      { path: '', redirectTo: 'incidents', pathMatch: 'full' },
+      {
+        path: 'incidents',
+        loadComponent: () =>
+          import('./pages/admin/admin-incidents/admin-incidents.component').then(
+            (m) => m.AdminIncidentsComponent,
+          ),
+      },
+      {
+        path: 'coordination',
+        loadComponent: () =>
+          import('./pages/admin/admin-coordination/admin-coordination.component').then(
+            (m) => m.AdminCoordinationComponent,
+          ),
+      },
+    ],
+  },
+
+  { path: '**', redirectTo: '' },
   // ===== FALLBACK ROUTE =====
   { path: '**', redirectTo: 'landing' },
 ];
