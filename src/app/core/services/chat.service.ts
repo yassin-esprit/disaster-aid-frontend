@@ -90,26 +90,27 @@ export class ChatService {
   }
 
   onTyping(conversationId: number): Observable<any> {
-    return new Observable((observer) => {
+    return new Observable<any>((observer) => {
+      let subscription: StompSubscription | null = null;
+
       const waitForConnection = setInterval(() => {
         if (this.stompClient && this.stompClient.active) {
           clearInterval(waitForConnection);
 
-          const subscription: StompSubscription = this.stompClient.subscribe(
+          subscription = this.stompClient.subscribe(
             `/topic/typing/${conversationId}`,
             (msg: IMessage) => {
               observer.next(JSON.parse(msg.body));
             }
           );
-
-          return () => {
-            subscription.unsubscribe();
-          };
         }
       }, 200);
 
       return () => {
         clearInterval(waitForConnection);
+        if (subscription) {
+          subscription.unsubscribe();
+        }
       };
     });
   }

@@ -92,6 +92,7 @@
 
 .chat-hero h1 span {
   background: linear-gradient(135deg, #a78bfa, #60a5fa, #86efac);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
