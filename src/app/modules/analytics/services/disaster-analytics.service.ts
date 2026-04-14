@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 
 import { HttpService } from '../../../core/services/http.service';
 import { ApiResponse } from '../../../core/models/api-response.model';
@@ -19,47 +19,66 @@ export class DisasterAnalyticsService {
 
   constructor(private http: HttpService) {}
 
+  private unwrap<T>(res: ApiResponse<T>): Observable<T> {
+    if (!res.success) {
+      return throwError(() => ({ error: { message: res.message } }));
+    }
+    return [res.data] as unknown as Observable<T>;
+  }
+
+  private extract<T>() {
+    return (source: Observable<ApiResponse<T>>): Observable<T> =>
+      source.pipe(
+        switchMap((res) => {
+          if (!res.success) {
+            return throwError(() => ({ error: { message: res.message } }));
+          }
+          return [res.data];
+        }),
+      );
+  }
+
   getGlobalReport(): Observable<DisasterAnalyticsReportDto> {
     return this.http
       .get<ApiResponse<DisasterAnalyticsReportDto>>(`${this.base}/report`)
-      .pipe(map((res) => res.data));
+      .pipe(this.extract());
   }
 
   getAllStats(): Observable<DisasterStatistics[]> {
     return this.http
       .get<ApiResponse<DisasterStatistics[]>>(`${this.base}/stats`)
-      .pipe(map((res) => res.data));
+      .pipe(this.extract());
   }
 
   getStatsByAlert(alertId: number): Observable<DisasterStatistics[]> {
     return this.http
       .get<ApiResponse<DisasterStatistics[]>>(`${this.base}/stats/alert/${alertId}`)
-      .pipe(map((res) => res.data));
+      .pipe(this.extract());
   }
 
   getLatestStatsByAlert(alertId: number): Observable<DisasterStatistics> {
     return this.http
       .get<ApiResponse<DisasterStatistics>>(`${this.base}/stats/alert/${alertId}/latest`)
-      .pipe(map((res) => res.data));
+      .pipe(this.extract());
   }
 
   getLatestAuditLogs(): Observable<AuditLog[]> {
     return this.http
       .get<ApiResponse<AuditLog[]>>(`${this.base}/audit-logs`)
-      .pipe(map((res) => res.data));
+      .pipe(this.extract());
   }
 
   getPredictiveModels(activeOnly = false): Observable<PredictiveModel[]> {
     const params = new HttpParams().set('activeOnly', String(activeOnly));
     return this.http
       .get<ApiResponse<PredictiveModel[]>>(`${this.base}/predictive-models`, params)
-      .pipe(map((res) => res.data));
+      .pipe(this.extract());
   }
 
   addPredictiveModel(payload: PredictiveModelRequestDto): Observable<PredictiveModel> {
     return this.http
       .post<ApiResponse<PredictiveModel>>(`${this.base}/add_model`, payload)
-      .pipe(map((res) => res.data));
+      .pipe(this.extract());
   }
 
   modifyPredictiveModel(
@@ -71,7 +90,7 @@ export class DisasterAnalyticsService {
         `${this.base}/modify_model?modelId=${modelId}`,
         payload,
       )
-      .pipe(map((res) => res.data));
+      .pipe(this.extract());
   }
 
   deletePredictiveModel(modelId: number): Observable<void> {

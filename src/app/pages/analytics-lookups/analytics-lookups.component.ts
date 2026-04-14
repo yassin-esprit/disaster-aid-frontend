@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { AnalyticsNavComponent } from '../../shared/components/analytics-nav/analytics-nav.component';
 import { FormsModule } from '@angular/forms';
 
 import { DisasterAnalyticsService } from '../../modules/analytics/services/disaster-analytics.service';
@@ -15,7 +16,7 @@ import {
 @Component({
   selector: 'app-analytics-lookups',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, AnalyticsNavComponent],
   templateUrl: './analytics-lookups.component.html',
 })
 export class AnalyticsLookupsComponent implements OnInit {
@@ -26,6 +27,20 @@ export class AnalyticsLookupsComponent implements OnInit {
   allStats: DisasterStatistics[] = [];
   allStatsLoading = false;
   allStatsError: string | null = null;
+  statsSearchTerm = '';
+
+  get filteredStats(): DisasterStatistics[] {
+    if (!this.statsSearchTerm.trim()) return this.allStats;
+    const term = this.statsSearchTerm.trim().toLowerCase();
+    return this.allStats.filter(s =>
+      String(s.alertId).includes(term) ||
+      String(s.totalReports).includes(term) ||
+      String(s.verifiedReports).includes(term) ||
+      String(s.totalHelpRequests).includes(term) ||
+      String(s.resolvedRequests).includes(term) ||
+      String(s.activeResponders).includes(term)
+    );
+  }
 
   // Disaster stats by alert
   alertId: number | null = null;
@@ -81,7 +96,7 @@ export class AnalyticsLookupsComponent implements OnInit {
     this.disasterSvc.getStatsByAlert(this.alertId).subscribe({
       next: (list) => (this.alertStats = list),
       error: (err) =>
-        (this.alertError = err?.error?.message ?? 'No stats for this alert.'),
+        (this.alertError = this.extractError(err, 'No stats for this alert.')),
     });
 
     this.disasterSvc.getLatestStatsByAlert(this.alertId).subscribe({
@@ -89,7 +104,10 @@ export class AnalyticsLookupsComponent implements OnInit {
         this.latestAlertStat = s;
         this.alertLoading = false;
       },
-      error: () => (this.alertLoading = false),
+      error: (err) => {
+        this.alertError = this.extractError(err, 'No stats for this alert.');
+        this.alertLoading = false;
+      },
     });
   }
 
@@ -104,7 +122,7 @@ export class AnalyticsLookupsComponent implements OnInit {
         this.volunteerLoading = false;
       },
       error: (err) => {
-        this.volunteerError = err?.error?.message ?? 'Volunteer not found.';
+        this.volunteerError = this.extractError(err, 'Volunteer not found.');
         this.volunteerLoading = false;
       },
     });
@@ -121,7 +139,7 @@ export class AnalyticsLookupsComponent implements OnInit {
         this.orgLoading = false;
       },
       error: (err) => {
-        this.orgError = err?.error?.message ?? 'Organisation not found.';
+        this.orgError = this.extractError(err, 'Organisation not found.');
         this.orgLoading = false;
       },
     });
@@ -138,9 +156,14 @@ export class AnalyticsLookupsComponent implements OnInit {
         this.churnLoading = false;
       },
       error: (err) => {
-        this.churnError = err?.error?.message ?? 'No churn prediction found.';
+        this.churnError = this.extractError(err, 'No churn prediction found.');
         this.churnLoading = false;
       },
     });
+  }
+
+  private extractError(err: unknown, fallback: string): string {
+    const e = err as { error?: { message?: string }; message?: string };
+    return e?.error?.message ?? e?.message ?? fallback;
   }
 }

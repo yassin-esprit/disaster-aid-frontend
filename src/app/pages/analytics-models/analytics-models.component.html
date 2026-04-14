@@ -1,221 +1,306 @@
 <div>
-  <!-- Tab nav -->
-  <nav class="mb-8 flex gap-2 border-b border-white/5">
-    <a
-      routerLink="/analytics"
-      class="px-4 py-2 text-sm font-bold text-on-surface-variant hover:text-on-surface"
-      >Overview</a
-    >
-    <a
-      routerLink="/analytics/models"
-      class="px-4 py-2 text-sm font-bold text-primary border-b-2 border-primary"
-      >Predictive Models</a
-    >
-    <a
-      routerLink="/analytics/lookups"
-      class="px-4 py-2 text-sm font-bold text-on-surface-variant hover:text-on-surface"
-      >Lookups</a
-    >
-  </nav>
+  <app-analytics-nav></app-analytics-nav>
 
   <!-- Header -->
-  <section class="mb-6">
-    <h2 class="text-3xl font-black tracking-tight text-on-surface mb-1">
-      Predictive Models
-    </h2>
-    <p class="text-on-surface-variant">Create, edit and manage ML models used by the platform.</p>
+  <section class="mb-10 relative">
+    <div
+      class="absolute -top-16 -left-16 w-72 h-72 bg-primary/10 blur-[120px] rounded-full pointer-events-none"
+    ></div>
+    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+      <div>
+        <h2 class="text-4xl md:text-5xl font-black tracking-tight text-on-surface mb-2">
+          Predictive Models
+        </h2>
+        <p class="text-on-surface-variant text-lg">
+          Create, edit and manage <span class="text-primary font-semibold">ML models</span> used by the platform.
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-xs text-on-surface-variant">
+          <span class="font-bold text-on-surface">{{ models.length }}</span> models registered
+        </span>
+      </div>
+    </div>
   </section>
 
   <!-- Messages -->
   <div
     *ngIf="error"
-    class="mb-4 p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm"
+    class="mb-6 p-4 rounded-xl bg-error/10 border border-error/20 text-error text-sm flex items-center gap-3"
   >
+    <span class="material-symbols-outlined">error</span>
     {{ error }}
   </div>
   <div
     *ngIf="successMsg"
-    class="mb-4 p-3 rounded-lg bg-secondary/10 border border-secondary/20 text-secondary text-sm"
+    class="mb-6 p-4 rounded-xl bg-secondary/10 border border-secondary/20 text-secondary text-sm flex items-center gap-3"
   >
+    <span class="material-symbols-outlined">check_circle</span>
     {{ successMsg }}
   </div>
 
   <!-- Form -->
-  <section class="mb-8 p-5 rounded-xl bg-white/5 border border-white/5">
-    <h3 class="font-bold text-on-surface mb-4">
-      {{ editingId == null ? 'Add new model' : 'Edit model #' + editingId }}
-    </h3>
+  <section class="mb-10 glass-1 rounded-2xl border border-primary/10 overflow-hidden">
+    <header class="px-6 py-5 border-b border-white/5 flex items-center justify-between">
+      <h3 class="font-bold text-on-surface flex items-center gap-3">
+        <span class="w-2 h-7 bg-primary rounded-full"></span>
+        {{ editingId == null ? 'Add New Model' : 'Editing Model #' + editingId }}
+      </h3>
+      <div
+        *ngIf="editingId != null"
+        class="px-3 py-1 bg-amber-500/10 text-amber-400 text-[10px] font-bold uppercase tracking-widest rounded-full border border-amber-500/20"
+      >
+        Edit Mode
+      </div>
+    </header>
 
-    <form [formGroup]="form" (ngSubmit)="save()" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label class="block text-xs uppercase text-on-surface-variant mb-1">Name *</label>
-        <input
-          formControlName="name"
-          type="text"
-          class="w-full px-3 py-2 rounded-lg bg-black/20 border border-white/10 text-on-surface focus:outline-none focus:border-primary"
-        />
-        <div
-          *ngIf="form.controls['name'].touched && form.controls['name'].invalid"
-          class="text-xs text-error mt-1"
-        >
-          Name is required.
+    <form [formGroup]="form" (ngSubmit)="save()" class="p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Name -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+            <span class="material-symbols-outlined text-xs align-middle mr-1">badge</span>
+            Name *
+          </label>
+          <input
+            formControlName="name"
+            type="text"
+            placeholder="e.g. Flood Spread Predictor"
+            class="w-full px-4 py-3 rounded-xl bg-black/20 border border-white/10 text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
+          />
+          <div
+            *ngIf="form.controls['name'].touched && form.controls['name'].invalid"
+            class="text-xs text-error mt-1.5 flex items-center gap-1"
+          >
+            <span class="material-symbols-outlined text-xs">error</span>
+            Name is required.
+          </div>
+        </div>
+
+        <!-- Version -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+            <span class="material-symbols-outlined text-xs align-middle mr-1">tag</span>
+            Version *
+          </label>
+          <input
+            formControlName="version"
+            type="text"
+            placeholder="e.g. 1.0.0"
+            class="w-full px-4 py-3 rounded-xl bg-black/20 border border-white/10 text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all font-mono"
+          />
+          <div
+            *ngIf="form.controls['version'].touched && form.controls['version'].invalid"
+            class="text-xs text-error mt-1.5 flex items-center gap-1"
+          >
+            <span class="material-symbols-outlined text-xs">error</span>
+            Version is required.
+          </div>
+        </div>
+
+        <!-- Type -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+            <span class="material-symbols-outlined text-xs align-middle mr-1">category</span>
+            Type *
+          </label>
+          <select
+            formControlName="type"
+            class="w-full px-4 py-3 rounded-xl bg-black/20 border border-white/10 text-on-surface focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
+          >
+            <option *ngFor="let t of modelTypes" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+
+        <!-- Artifact URL -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+            <span class="material-symbols-outlined text-xs align-middle mr-1">link</span>
+            Artifact URL
+          </label>
+          <input
+            formControlName="artifactUrl"
+            type="text"
+            placeholder="https://storage.example.com/model.bin"
+            class="w-full px-4 py-3 rounded-xl bg-black/20 border border-white/10 text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
+          />
+        </div>
+
+        <!-- Active toggle -->
+        <div class="flex items-end pb-1">
+          <label class="flex items-center gap-3 cursor-pointer group">
+            <div class="relative">
+              <input
+                id="isActive"
+                formControlName="isActive"
+                type="checkbox"
+                class="sr-only peer"
+              />
+              <div class="w-11 h-6 bg-white/10 rounded-full peer-checked:bg-secondary/30 transition-colors border border-white/10 peer-checked:border-secondary/30"></div>
+              <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-on-surface-variant rounded-full peer-checked:translate-x-5 peer-checked:bg-secondary transition-all shadow-md"></div>
+            </div>
+            <span class="text-sm text-on-surface font-medium group-hover:text-primary transition-colors">
+              Active
+            </span>
+          </label>
+        </div>
+
+        <!-- Metrics -->
+        <div class="md:col-span-2 lg:col-span-3">
+          <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+            <span class="material-symbols-outlined text-xs align-middle mr-1">data_object</span>
+            Metrics (JSON)
+          </label>
+          <textarea
+            formControlName="metrics"
+            rows="3"
+            placeholder='{"accuracy": 0.92, "f1_score": 0.89}'
+            class="w-full px-4 py-3 rounded-xl bg-black/20 border border-white/10 text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all font-mono text-sm"
+          ></textarea>
         </div>
       </div>
 
-      <div>
-        <label class="block text-xs uppercase text-on-surface-variant mb-1">Version *</label>
-        <input
-          formControlName="version"
-          type="text"
-          placeholder="e.g. 1.0.0"
-          class="w-full px-3 py-2 rounded-lg bg-black/20 border border-white/10 text-on-surface focus:outline-none focus:border-primary"
-        />
-        <div
-          *ngIf="form.controls['version'].touched && form.controls['version'].invalid"
-          class="text-xs text-error mt-1"
-        >
-          Version is required.
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-xs uppercase text-on-surface-variant mb-1">Type *</label>
-        <select
-          formControlName="type"
-          class="w-full px-3 py-2 rounded-lg bg-black/20 border border-white/10 text-on-surface focus:outline-none focus:border-primary"
-        >
-          <option *ngFor="let t of modelTypes" [value]="t">{{ t }}</option>
-        </select>
-      </div>
-
-      <div>
-        <label class="block text-xs uppercase text-on-surface-variant mb-1">Artifact URL</label>
-        <input
-          formControlName="artifactUrl"
-          type="text"
-          class="w-full px-3 py-2 rounded-lg bg-black/20 border border-white/10 text-on-surface focus:outline-none focus:border-primary"
-        />
-      </div>
-
-      <div class="md:col-span-2">
-        <label class="block text-xs uppercase text-on-surface-variant mb-1">Metrics (JSON)</label>
-        <textarea
-          formControlName="metrics"
-          rows="3"
-          placeholder='{"accuracy": 0.92}'
-          class="w-full px-3 py-2 rounded-lg bg-black/20 border border-white/10 text-on-surface focus:outline-none focus:border-primary"
-        ></textarea>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <input
-          id="isActive"
-          formControlName="isActive"
-          type="checkbox"
-          class="w-4 h-4 accent-primary"
-        />
-        <label for="isActive" class="text-sm text-on-surface">Active</label>
-      </div>
-
-      <div class="md:col-span-2 flex gap-2">
+      <!-- Action buttons -->
+      <div class="flex gap-3 mt-6 pt-5 border-t border-white/5">
         <button
           type="submit"
           [disabled]="saving"
-          class="px-5 py-2 bg-primary/10 border border-primary/20 text-primary rounded-lg font-bold text-sm hover:bg-primary/20 disabled:opacity-50"
+          class="flex items-center gap-2 px-6 py-3 bg-primary/10 border border-primary/20 text-primary rounded-lg font-bold text-sm hover:bg-primary/20 transition-all active:scale-95 shadow-[0_0_15px_rgba(108,92,231,0.15)] disabled:opacity-50"
         >
-          {{ saving ? 'Saving…' : editingId == null ? 'Create model' : 'Update model' }}
+          <span class="material-symbols-outlined text-sm">
+            {{ saving ? 'progress_activity' : editingId == null ? 'add_circle' : 'save' }}
+          </span>
+          {{ saving ? 'Saving...' : editingId == null ? 'Create Model' : 'Update Model' }}
         </button>
         <button
           *ngIf="editingId != null"
           type="button"
           (click)="cancelEdit()"
-          class="px-5 py-2 bg-white/5 border border-white/10 text-on-surface-variant rounded-lg font-bold text-sm hover:bg-white/10"
+          class="flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 text-on-surface-variant rounded-lg font-bold text-sm hover:bg-white/10 transition-all active:scale-95"
         >
+          <span class="material-symbols-outlined text-sm">close</span>
           Cancel
         </button>
       </div>
     </form>
   </section>
 
-  <!-- List -->
-  <section class="rounded-xl bg-white/5 border border-white/5 overflow-hidden">
-    <header class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
-      <h3 class="font-bold text-on-surface">
-        Models ({{ models.length }})
+  <!-- Model List -->
+  <section class="glass-1 rounded-2xl border border-white/5 overflow-hidden">
+    <header class="px-6 py-5 border-b border-white/5 flex items-center justify-between">
+      <h3 class="font-bold text-on-surface flex items-center gap-3">
+        <span class="w-2 h-7 bg-secondary rounded-full"></span>
+        All Models
+        <span
+          class="px-3 py-1 bg-white/5 text-on-surface-variant text-[10px] font-bold uppercase tracking-widest rounded-full border border-white/10"
+        >
+          {{ models.length }}
+        </span>
       </h3>
-      <div class="flex items-center gap-2">
-        <label class="flex items-center gap-2 text-xs text-on-surface-variant">
-          <input
-            type="checkbox"
-            [checked]="activeOnly"
-            (change)="toggleActiveOnly()"
-            class="w-4 h-4 accent-primary"
-          />
-          Active only
+      <div class="flex items-center gap-3">
+        <label class="flex items-center gap-2 cursor-pointer group">
+          <div class="relative">
+            <input
+              type="checkbox"
+              [checked]="activeOnly"
+              (change)="toggleActiveOnly()"
+              class="sr-only peer"
+            />
+            <div class="w-9 h-5 bg-white/10 rounded-full peer-checked:bg-secondary/30 transition-colors border border-white/10 peer-checked:border-secondary/30"></div>
+            <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-on-surface-variant rounded-full peer-checked:translate-x-4 peer-checked:bg-secondary transition-all shadow-md"></div>
+          </div>
+          <span class="text-xs text-on-surface-variant font-bold uppercase tracking-wider group-hover:text-on-surface transition-colors">
+            Active only
+          </span>
         </label>
         <button
           (click)="load()"
-          class="text-xs px-3 py-1.5 bg-white/5 border border-white/10 text-on-surface-variant rounded hover:bg-white/10"
+          class="flex items-center gap-1.5 text-xs px-4 py-2 bg-white/5 border border-white/10 text-on-surface-variant rounded-lg font-bold hover:bg-white/10 transition-all active:scale-95"
         >
+          <span class="material-symbols-outlined text-xs">refresh</span>
           Refresh
         </button>
       </div>
     </header>
 
-    <div *ngIf="loading" class="p-5 text-sm text-on-surface-variant">Loading…</div>
-    <div *ngIf="!loading && models.length === 0" class="p-5 text-sm text-on-surface-variant">
-      No models.
+    <div *ngIf="loading" class="p-6 text-sm text-on-surface-variant flex items-center gap-2">
+      <span class="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+      Loading models...
+    </div>
+    <div *ngIf="!loading && models.length === 0" class="p-8 text-center">
+      <span class="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-3 block">model_training</span>
+      <p class="text-sm text-on-surface-variant">No models found.</p>
+      <p class="text-xs text-on-surface-variant/50 mt-1">Create your first model using the form above.</p>
     </div>
 
-    <table *ngIf="!loading && models.length > 0" class="w-full text-sm">
-      <thead class="text-left text-on-surface-variant text-xs uppercase">
-        <tr>
-          <th class="px-5 py-2">ID</th>
-          <th class="px-5 py-2">Name</th>
-          <th class="px-5 py-2">Version</th>
-          <th class="px-5 py-2">Type</th>
-          <th class="px-5 py-2">Active</th>
-          <th class="px-5 py-2">Trained</th>
-          <th class="px-5 py-2 text-right">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let m of models" class="border-t border-white/5">
-          <td class="px-5 py-2 text-on-surface-variant">#{{ m.modelId }}</td>
-          <td class="px-5 py-2 text-on-surface">{{ m.name }}</td>
-          <td class="px-5 py-2 text-on-surface-variant">{{ m.version }}</td>
-          <td class="px-5 py-2">
-            <span class="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary">{{ m.type }}</span>
-          </td>
-          <td class="px-5 py-2">
-            <span
-              *ngIf="m.isActive"
-              class="text-xs px-2 py-0.5 rounded bg-secondary/10 text-secondary"
-              >yes</span
-            >
-            <span
-              *ngIf="!m.isActive"
-              class="text-xs px-2 py-0.5 rounded bg-white/5 text-on-surface-variant"
-              >no</span
-            >
-          </td>
-          <td class="px-5 py-2 text-on-surface-variant">{{ m.trainedAt | date: 'short' }}</td>
-          <td class="px-5 py-2 text-right">
-            <button
-              (click)="startEdit(m)"
-              class="text-xs px-3 py-1 mr-1 bg-primary/10 border border-primary/20 text-primary rounded hover:bg-primary/20"
-            >
-              Edit
-            </button>
-            <button
-              (click)="remove(m)"
-              class="text-xs px-3 py-1 bg-error/10 border border-error/20 text-error rounded hover:bg-error/20"
-            >
-              Delete
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div *ngIf="!loading && models.length > 0" class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="text-left text-on-surface-variant text-xs uppercase tracking-wider">
+          <tr class="border-b border-white/5">
+            <th class="px-6 py-3">ID</th>
+            <th class="px-6 py-3">Name</th>
+            <th class="px-6 py-3">Version</th>
+            <th class="px-6 py-3">Type</th>
+            <th class="px-6 py-3">Status</th>
+            <th class="px-6 py-3">Trained</th>
+            <th class="px-6 py-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let m of models"
+            class="border-t border-white/5 hover:bg-white/5 transition-colors group"
+          >
+            <td class="px-6 py-4 text-on-surface-variant font-mono text-xs">#{{ m.modelId }}</td>
+            <td class="px-6 py-4">
+              <span class="text-on-surface font-medium">{{ m.name }}</span>
+            </td>
+            <td class="px-6 py-4 text-on-surface-variant font-mono text-xs">{{ m.version }}</td>
+            <td class="px-6 py-4">
+              <span
+                class="inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full bg-primary/10 text-primary font-bold uppercase tracking-wider border border-primary/20"
+              >
+                {{ m.type }}
+              </span>
+            </td>
+            <td class="px-6 py-4">
+              <span
+                *ngIf="m.isActive"
+                class="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-secondary/10 text-secondary font-bold uppercase tracking-wider border border-secondary/20"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+                Active
+              </span>
+              <span
+                *ngIf="!m.isActive"
+                class="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-white/5 text-on-surface-variant font-bold uppercase tracking-wider border border-white/10"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-on-surface-variant"></span>
+                Inactive
+              </span>
+            </td>
+            <td class="px-6 py-4 text-on-surface-variant text-xs">{{ m.trainedAt | date: 'medium' }}</td>
+            <td class="px-6 py-4 text-right">
+              <div class="flex items-center justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                <button
+                  (click)="startEdit(m)"
+                  class="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-primary/10 border border-primary/20 text-primary rounded-lg font-bold hover:bg-primary/20 transition-all active:scale-95"
+                >
+                  <span class="material-symbols-outlined text-xs">edit</span>
+                  Edit
+                </button>
+                <button
+                  (click)="remove(m)"
+                  class="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-error/10 border border-error/20 text-error rounded-lg font-bold hover:bg-error/20 transition-all active:scale-95"
+                >
+                  <span class="material-symbols-outlined text-xs">delete</span>
+                  Delete
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 </div>

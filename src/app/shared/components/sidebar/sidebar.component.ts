@@ -15,7 +15,8 @@ export class SidebarComponent {
 
   navItems: NavItem[] = [
     { label: 'Overview', icon: 'dashboard', route: '/dashboard' },
-    { label: 'Alerts', icon: 'emergency', route: '/alerts' },
+    { label: 'Alerts Map', icon: 'emergency', route: '/alerts' },
+    { label: 'Command Center', icon: 'crisis_alert', route: '/emergency' },
     { label: 'Incidents', icon: 'report_problem', route: '/incidents' },
     { label: 'Help Requests', icon: 'volunteer_activism', route: '/help' },
     { label: 'Opportunities', icon: 'explore', route: '/opportunities' },

@@ -1,272 +1,453 @@
 <div>
-  <!-- Tab nav -->
-  <nav class="mb-8 flex gap-2 border-b border-white/5">
-    <a
-      routerLink="/analytics"
-      class="px-4 py-2 text-sm font-bold text-on-surface-variant hover:text-on-surface"
-      >Overview</a
-    >
-    <a
-      routerLink="/analytics/models"
-      class="px-4 py-2 text-sm font-bold text-on-surface-variant hover:text-on-surface"
-      >Predictive Models</a
-    >
-    <a
-      routerLink="/analytics/lookups"
-      class="px-4 py-2 text-sm font-bold text-primary border-b-2 border-primary"
-      >Lookups</a
-    >
-  </nav>
+  <app-analytics-nav></app-analytics-nav>
 
-  <section class="mb-6">
-    <h2 class="text-3xl font-black tracking-tight text-on-surface mb-1">Lookups</h2>
-    <p class="text-on-surface-variant">Search stats by alert, volunteer, organisation or churn risk.</p>
+  <!-- Header -->
+  <section class="mb-10 relative">
+    <div
+      class="absolute -top-16 -left-16 w-72 h-72 bg-secondary/10 blur-[120px] rounded-full pointer-events-none"
+    ></div>
+    <div>
+      <h2 class="text-4xl md:text-5xl font-black tracking-tight text-on-surface mb-2">
+        Lookups
+      </h2>
+      <p class="text-on-surface-variant text-lg">
+        Search stats by <span class="text-primary font-semibold">alert</span>,
+        <span class="text-secondary font-semibold">volunteer</span>,
+        <span class="text-tertiary font-semibold">organisation</span> or
+        <span class="text-error font-semibold">churn risk</span>.
+      </p>
+    </div>
   </section>
 
-  <!-- Two-column lookup grid -->
-  <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+  <!-- Lookup cards grid -->
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+
     <!-- Disaster stats by alert -->
-    <div class="p-5 rounded-xl bg-white/5 border border-white/5">
-      <h3 class="font-bold text-on-surface mb-3">Disaster stats by alert</h3>
-      <div class="flex gap-2 mb-3">
-        <input
-          type="number"
-          [(ngModel)]="alertId"
-          placeholder="Alert ID"
-          class="flex-1 px-3 py-2 rounded-lg bg-black/20 border border-white/10 text-on-surface focus:outline-none focus:border-primary"
-        />
-        <button
-          (click)="searchByAlert()"
-          [disabled]="alertId == null || alertLoading"
-          class="px-4 py-2 bg-primary/10 border border-primary/20 text-primary rounded-lg font-bold text-sm hover:bg-primary/20 disabled:opacity-50"
-        >
-          Search
-        </button>
-      </div>
-      <div *ngIf="alertError" class="text-xs text-error mb-2">{{ alertError }}</div>
-
-      <div *ngIf="latestAlertStat" class="mb-3 p-3 rounded bg-black/20 text-xs space-y-1">
-        <div class="font-bold text-on-surface mb-1">Latest</div>
-        <div class="text-on-surface-variant">
-          Total reports: <span class="text-on-surface">{{ latestAlertStat.totalReports }}</span>
+    <div class="glass-1 rounded-2xl border border-primary/10 overflow-hidden">
+      <header class="px-6 py-5 border-b border-white/5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30">
+          <span class="material-symbols-outlined fill-icon text-primary">emergency</span>
         </div>
-        <div class="text-on-surface-variant">
-          Verified: <span class="text-on-surface">{{ latestAlertStat.verifiedReports }}</span>
+        <div>
+          <h3 class="font-bold text-on-surface">Disaster Stats by Alert</h3>
+          <p class="text-xs text-on-surface-variant">Look up statistics for a specific alert ID</p>
         </div>
-        <div class="text-on-surface-variant">
-          Help requests:
-          <span class="text-on-surface">{{ latestAlertStat.totalHelpRequests }}</span>
-          (resolved {{ latestAlertStat.resolvedRequests }})
-        </div>
-        <div class="text-on-surface-variant">
-          Avg response:
-          <span class="text-on-surface"
-            >{{ latestAlertStat.avgResponseTimeMin ?? '—' }} min</span
+      </header>
+      <div class="p-6">
+        <div class="flex gap-2 mb-4">
+          <div class="relative flex-1">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant text-sm">tag</span>
+            <input
+              type="number"
+              [(ngModel)]="alertId"
+              (keydown.enter)="searchByAlert()"
+              placeholder="Alert ID"
+              class="w-full pl-10 pr-4 py-3 rounded-xl bg-black/20 border border-white/10 text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
+            />
+          </div>
+          <button
+            (click)="searchByAlert()"
+            [disabled]="alertId == null || alertLoading"
+            class="flex items-center gap-2 px-5 py-3 bg-primary/10 border border-primary/20 text-primary rounded-xl font-bold text-sm hover:bg-primary/20 transition-all active:scale-95 disabled:opacity-50"
           >
+            <span class="material-symbols-outlined text-sm" [class.animate-spin]="alertLoading">
+              {{ alertLoading ? 'progress_activity' : 'search' }}
+            </span>
+            Search
+          </button>
         </div>
-        <div class="text-on-surface-variant">
-          Computed at:
-          <span class="text-on-surface">{{ latestAlertStat.computedAt | date: 'short' }}</span>
-        </div>
-      </div>
 
-      <div
-        *ngIf="alertStats.length > 1"
-        class="text-xs text-on-surface-variant"
-      >
-        {{ alertStats.length }} historical entries.
+        <div *ngIf="alertError" class="text-xs text-error mb-3 flex items-center gap-1">
+          <span class="material-symbols-outlined text-xs">error</span>
+          {{ alertError }}
+        </div>
+
+        <div
+          *ngIf="latestAlertStat"
+          class="p-4 rounded-xl bg-black/20 border border-white/5 space-y-3"
+        >
+          <div class="flex items-center gap-2 mb-2">
+            <span class="material-symbols-outlined text-primary text-sm">insights</span>
+            <span class="font-bold text-on-surface text-sm">Latest Snapshot</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-3 rounded-lg bg-white/5">
+              <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Total Reports</p>
+              <p class="text-lg font-black text-on-surface">{{ latestAlertStat.totalReports }}</p>
+            </div>
+            <div class="p-3 rounded-lg bg-white/5">
+              <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Verified</p>
+              <p class="text-lg font-black text-secondary">{{ latestAlertStat.verifiedReports }}</p>
+            </div>
+            <div class="p-3 rounded-lg bg-white/5">
+              <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Help Requests</p>
+              <p class="text-lg font-black text-on-surface">{{ latestAlertStat.totalHelpRequests }}</p>
+            </div>
+            <div class="p-3 rounded-lg bg-white/5">
+              <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Resolved</p>
+              <p class="text-lg font-black text-secondary">{{ latestAlertStat.resolvedRequests }}</p>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-xs text-on-surface-variant pt-2 border-t border-white/5">
+            <span>
+              <span class="material-symbols-outlined text-xs align-middle mr-1">schedule</span>
+              Avg response: <span class="text-on-surface font-bold">{{ latestAlertStat.avgResponseTimeMin ?? '---' }} min</span>
+            </span>
+            <span>{{ latestAlertStat.computedAt | date: 'medium' }}</span>
+          </div>
+        </div>
+
+        <div
+          *ngIf="alertStats.length > 1"
+          class="mt-3 text-xs text-on-surface-variant flex items-center gap-1"
+        >
+          <span class="material-symbols-outlined text-xs">history</span>
+          {{ alertStats.length }} historical entries available.
+        </div>
       </div>
     </div>
 
     <!-- Volunteer lookup -->
-    <div class="p-5 rounded-xl bg-white/5 border border-white/5">
-      <h3 class="font-bold text-on-surface mb-3">Volunteer stats</h3>
-      <div class="flex gap-2 mb-3">
-        <input
-          type="number"
-          [(ngModel)]="volunteerId"
-          placeholder="Volunteer ID"
-          class="flex-1 px-3 py-2 rounded-lg bg-black/20 border border-white/10 text-on-surface focus:outline-none focus:border-primary"
-        />
-        <button
-          (click)="searchVolunteer()"
-          [disabled]="volunteerId == null || volunteerLoading"
-          class="px-4 py-2 bg-primary/10 border border-primary/20 text-primary rounded-lg font-bold text-sm hover:bg-primary/20 disabled:opacity-50"
-        >
-          Search
-        </button>
-      </div>
-      <div *ngIf="volunteerError" class="text-xs text-error mb-2">{{ volunteerError }}</div>
-
-      <div *ngIf="volunteerStats" class="p-3 rounded bg-black/20 text-xs space-y-1">
-        <div class="text-on-surface-variant">
-          Approved hours:
-          <span class="text-on-surface">{{ volunteerStats.totalApprovedHours }}</span>
+    <div class="glass-1 rounded-2xl border border-secondary/10 overflow-hidden">
+      <header class="px-6 py-5 border-b border-white/5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-secondary/20 flex items-center justify-center border border-secondary/30">
+          <span class="material-symbols-outlined fill-icon text-secondary">person</span>
         </div>
-        <div class="text-on-surface-variant">
-          Opportunities:
-          <span class="text-on-surface">{{ volunteerStats.totalOpportunities }}</span>
+        <div>
+          <h3 class="font-bold text-on-surface">Volunteer Stats</h3>
+          <p class="text-xs text-on-surface-variant">View performance metrics for a volunteer</p>
         </div>
-        <div class="text-on-surface-variant">
-          Current streak:
-          <span class="text-on-surface">{{ volunteerStats.currentStreak }}</span>
-          (longest {{ volunteerStats.longestStreak }})
-        </div>
-        <div class="text-on-surface-variant">
-          Achievements:
-          <span class="text-on-surface">{{ volunteerStats.achievementCount }}</span>
-        </div>
-        <div class="text-on-surface-variant">
-          Avg rating:
-          <span class="text-on-surface">{{ volunteerStats.avgRating ?? '—' }}</span>
-        </div>
-        <div class="text-on-surface-variant">
-          Churn prob:
-          <span class="text-on-surface"
-            >{{ ((volunteerStats.churnProbability ?? 0) * 100) | number: '1.0-0' }}%</span
+      </header>
+      <div class="p-6">
+        <div class="flex gap-2 mb-4">
+          <div class="relative flex-1">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant text-sm">tag</span>
+            <input
+              type="number"
+              [(ngModel)]="volunteerId"
+              (keydown.enter)="searchVolunteer()"
+              placeholder="Volunteer ID"
+              class="w-full pl-10 pr-4 py-3 rounded-xl bg-black/20 border border-white/10 text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:border-secondary/50 focus:ring-1 focus:ring-secondary/20 transition-all"
+            />
+          </div>
+          <button
+            (click)="searchVolunteer()"
+            [disabled]="volunteerId == null || volunteerLoading"
+            class="flex items-center gap-2 px-5 py-3 bg-secondary/10 border border-secondary/20 text-secondary rounded-xl font-bold text-sm hover:bg-secondary/20 transition-all active:scale-95 disabled:opacity-50"
           >
+            <span class="material-symbols-outlined text-sm" [class.animate-spin]="volunteerLoading">
+              {{ volunteerLoading ? 'progress_activity' : 'search' }}
+            </span>
+            Search
+          </button>
+        </div>
+
+        <div *ngIf="volunteerError" class="text-xs text-error mb-3 flex items-center gap-1">
+          <span class="material-symbols-outlined text-xs">error</span>
+          {{ volunteerError }}
+        </div>
+
+        <div
+          *ngIf="volunteerStats"
+          class="p-4 rounded-xl bg-black/20 border border-white/5 space-y-3"
+        >
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-3 rounded-lg bg-white/5">
+              <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Approved Hours</p>
+              <p class="text-lg font-black text-on-surface">{{ volunteerStats.totalApprovedHours }}</p>
+            </div>
+            <div class="p-3 rounded-lg bg-white/5">
+              <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Opportunities</p>
+              <p class="text-lg font-black text-on-surface">{{ volunteerStats.totalOpportunities }}</p>
+            </div>
+            <div class="p-3 rounded-lg bg-white/5">
+              <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Current Streak</p>
+              <p class="text-lg font-black text-on-surface">
+                {{ volunteerStats.currentStreak }}
+                <span class="text-xs font-normal text-on-surface-variant">(best {{ volunteerStats.longestStreak }})</span>
+              </p>
+            </div>
+            <div class="p-3 rounded-lg bg-white/5">
+              <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Achievements</p>
+              <p class="text-lg font-black text-on-surface">{{ volunteerStats.achievementCount }}</p>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-xs pt-2 border-t border-white/5">
+            <span class="text-on-surface-variant">
+              <span class="material-symbols-outlined text-xs align-middle mr-1">star</span>
+              Rating: <span class="text-on-surface font-bold">{{ volunteerStats.avgRating ?? '---' }}</span>
+            </span>
+            <span class="text-on-surface-variant">
+              Churn:
+              <span
+                class="font-bold"
+                [ngClass]="(volunteerStats.churnProbability ?? 0) > 0.7 ? 'text-error' : (volunteerStats.churnProbability ?? 0) > 0.4 ? 'text-amber-400' : 'text-secondary'"
+              >
+                {{ ((volunteerStats.churnProbability ?? 0) * 100) | number: '1.0-0' }}%
+              </span>
+            </span>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Organisation lookup -->
-    <div class="p-5 rounded-xl bg-white/5 border border-white/5">
-      <h3 class="font-bold text-on-surface mb-3">Organisation stats</h3>
-      <div class="flex gap-2 mb-3">
-        <input
-          type="number"
-          [(ngModel)]="orgId"
-          placeholder="Organisation ID"
-          class="flex-1 px-3 py-2 rounded-lg bg-black/20 border border-white/10 text-on-surface focus:outline-none focus:border-primary"
-        />
-        <button
-          (click)="searchOrg()"
-          [disabled]="orgId == null || orgLoading"
-          class="px-4 py-2 bg-primary/10 border border-primary/20 text-primary rounded-lg font-bold text-sm hover:bg-primary/20 disabled:opacity-50"
-        >
-          Search
-        </button>
-      </div>
-      <div *ngIf="orgError" class="text-xs text-error mb-2">{{ orgError }}</div>
-
-      <div *ngIf="orgStats" class="p-3 rounded bg-black/20 text-xs space-y-1">
-        <div class="text-on-surface-variant">
-          Volunteers:
-          <span class="text-on-surface">{{ orgStats.totalVolunteers }}</span>
-          (active {{ orgStats.activeVolunteers }})
+    <div class="glass-1 rounded-2xl border border-tertiary/10 overflow-hidden">
+      <header class="px-6 py-5 border-b border-white/5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-tertiary/20 flex items-center justify-center border border-tertiary/30">
+          <span class="material-symbols-outlined fill-icon text-tertiary">corporate_fare</span>
         </div>
-        <div class="text-on-surface-variant">
-          Hours delivered:
-          <span class="text-on-surface">{{ orgStats.totalHoursDelivered }}</span>
+        <div>
+          <h3 class="font-bold text-on-surface">Organisation Stats</h3>
+          <p class="text-xs text-on-surface-variant">View metrics for an organisation</p>
         </div>
-        <div class="text-on-surface-variant">
-          Retention:
-          <span class="text-on-surface"
-            >{{ ((orgStats.retentionRate ?? 0) * 100) | number: '1.0-0' }}%</span
+      </header>
+      <div class="p-6">
+        <div class="flex gap-2 mb-4">
+          <div class="relative flex-1">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant text-sm">tag</span>
+            <input
+              type="number"
+              [(ngModel)]="orgId"
+              (keydown.enter)="searchOrg()"
+              placeholder="Organisation ID"
+              class="w-full pl-10 pr-4 py-3 rounded-xl bg-black/20 border border-white/10 text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:border-tertiary/50 focus:ring-1 focus:ring-tertiary/20 transition-all"
+            />
+          </div>
+          <button
+            (click)="searchOrg()"
+            [disabled]="orgId == null || orgLoading"
+            class="flex items-center gap-2 px-5 py-3 bg-tertiary/10 border border-tertiary/20 text-tertiary rounded-xl font-bold text-sm hover:bg-tertiary/20 transition-all active:scale-95 disabled:opacity-50"
           >
+            <span class="material-symbols-outlined text-sm" [class.animate-spin]="orgLoading">
+              {{ orgLoading ? 'progress_activity' : 'search' }}
+            </span>
+            Search
+          </button>
         </div>
-        <div class="text-on-surface-variant">
-          Open positions:
-          <span class="text-on-surface">{{ orgStats.openPositions }}</span>
+
+        <div *ngIf="orgError" class="text-xs text-error mb-3 flex items-center gap-1">
+          <span class="material-symbols-outlined text-xs">error</span>
+          {{ orgError }}
+        </div>
+
+        <div
+          *ngIf="orgStats"
+          class="p-4 rounded-xl bg-black/20 border border-white/5 space-y-3"
+        >
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-3 rounded-lg bg-white/5">
+              <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Total Volunteers</p>
+              <p class="text-lg font-black text-on-surface">{{ orgStats.totalVolunteers }}</p>
+            </div>
+            <div class="p-3 rounded-lg bg-white/5">
+              <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Active</p>
+              <p class="text-lg font-black text-secondary">{{ orgStats.activeVolunteers }}</p>
+            </div>
+            <div class="p-3 rounded-lg bg-white/5">
+              <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Hours Delivered</p>
+              <p class="text-lg font-black text-on-surface">{{ orgStats.totalHoursDelivered }}</p>
+            </div>
+            <div class="p-3 rounded-lg bg-white/5">
+              <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Open Positions</p>
+              <p class="text-lg font-black text-on-surface">{{ orgStats.openPositions }}</p>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-xs pt-2 border-t border-white/5">
+            <span class="text-on-surface-variant">
+              Retention:
+              <span class="text-secondary font-bold">
+                {{ ((orgStats.retentionRate ?? 0) * 100) | number: '1.0-0' }}%
+              </span>
+            </span>
+            <span class="text-on-surface-variant">
+              <span class="material-symbols-outlined text-xs align-middle mr-1">star</span>
+              Rating: <span class="text-on-surface font-bold">{{ orgStats.avgRating ?? '---' }}</span>
+            </span>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Churn lookup -->
-    <div class="p-5 rounded-xl bg-white/5 border border-white/5">
-      <h3 class="font-bold text-on-surface mb-3">Churn prediction by volunteer</h3>
-      <div class="flex gap-2 mb-3">
-        <input
-          type="number"
-          [(ngModel)]="churnVolunteerId"
-          placeholder="Volunteer ID"
-          class="flex-1 px-3 py-2 rounded-lg bg-black/20 border border-white/10 text-on-surface focus:outline-none focus:border-primary"
-        />
-        <button
-          (click)="searchChurn()"
-          [disabled]="churnVolunteerId == null || churnLoading"
-          class="px-4 py-2 bg-primary/10 border border-primary/20 text-primary rounded-lg font-bold text-sm hover:bg-primary/20 disabled:opacity-50"
-        >
-          Search
-        </button>
+    <div class="glass-1 rounded-2xl border border-error/10 overflow-hidden relative">
+      <div class="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
+        <span class="material-symbols-outlined text-7xl">trending_down</span>
       </div>
-      <div *ngIf="churnError" class="text-xs text-error mb-2">{{ churnError }}</div>
-
-      <div *ngIf="churnPrediction" class="p-3 rounded bg-black/20 text-xs space-y-1">
-        <div class="text-on-surface-variant">
-          Prob:
-          <span class="text-error font-bold"
-            >{{ (churnPrediction.predictedChurnProb * 100) | number: '1.0-0' }}%</span
+      <header class="px-6 py-5 border-b border-white/5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-error/20 flex items-center justify-center border border-error/30">
+          <span class="material-symbols-outlined fill-icon text-error">warning</span>
+        </div>
+        <div>
+          <h3 class="font-bold text-on-surface">Churn Prediction</h3>
+          <p class="text-xs text-on-surface-variant">Check churn risk for a specific volunteer</p>
+        </div>
+      </header>
+      <div class="p-6">
+        <div class="flex gap-2 mb-4">
+          <div class="relative flex-1">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant text-sm">tag</span>
+            <input
+              type="number"
+              [(ngModel)]="churnVolunteerId"
+              (keydown.enter)="searchChurn()"
+              placeholder="Volunteer ID"
+              class="w-full pl-10 pr-4 py-3 rounded-xl bg-black/20 border border-white/10 text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:border-error/50 focus:ring-1 focus:ring-error/20 transition-all"
+            />
+          </div>
+          <button
+            (click)="searchChurn()"
+            [disabled]="churnVolunteerId == null || churnLoading"
+            class="flex items-center gap-2 px-5 py-3 bg-error/10 border border-error/20 text-error rounded-xl font-bold text-sm hover:bg-error/20 transition-all active:scale-95 disabled:opacity-50"
           >
+            <span class="material-symbols-outlined text-sm" [class.animate-spin]="churnLoading">
+              {{ churnLoading ? 'progress_activity' : 'search' }}
+            </span>
+            Search
+          </button>
         </div>
-        <div class="text-on-surface-variant">
-          Intervention:
-          <span class="text-on-surface">{{ churnPrediction.interventionType }}</span>
+
+        <div *ngIf="churnError" class="text-xs text-error mb-3 flex items-center gap-1">
+          <span class="material-symbols-outlined text-xs">error</span>
+          {{ churnError }}
         </div>
-        <div class="text-on-surface-variant">
-          Predicted at:
-          <span class="text-on-surface">{{ churnPrediction.predictedAt | date: 'short' }}</span>
-        </div>
-        <div class="text-on-surface-variant">
-          Reactivated:
-          <span class="text-on-surface">{{ churnPrediction.reactivated ? 'yes' : 'no' }}</span>
-        </div>
-        <div class="text-on-surface-variant" *ngIf="churnPrediction.modelVersion">
-          Model version:
-          <span class="text-on-surface">{{ churnPrediction.modelVersion }}</span>
+
+        <div
+          *ngIf="churnPrediction"
+          class="p-4 rounded-xl bg-black/20 border border-white/5 space-y-4"
+        >
+          <!-- Churn probability gauge -->
+          <div class="text-center">
+            <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Churn Probability</p>
+            <div class="relative w-full h-3 bg-surface-container rounded-full overflow-hidden mb-2">
+              <div
+                class="h-full rounded-full transition-all"
+                [ngClass]="churnPrediction.predictedChurnProb > 0.7 ? 'bg-gradient-to-r from-error/60 to-error' : churnPrediction.predictedChurnProb > 0.4 ? 'bg-gradient-to-r from-amber-500/60 to-amber-400' : 'bg-gradient-to-r from-secondary/60 to-secondary'"
+                [style.width.%]="churnPrediction.predictedChurnProb * 100"
+              ></div>
+            </div>
+            <span
+              class="text-2xl font-black"
+              [ngClass]="churnPrediction.predictedChurnProb > 0.7 ? 'text-error' : churnPrediction.predictedChurnProb > 0.4 ? 'text-amber-400' : 'text-secondary'"
+            >
+              {{ (churnPrediction.predictedChurnProb * 100) | number: '1.0-0' }}%
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-3 rounded-lg bg-white/5">
+              <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Intervention</p>
+              <span
+                class="inline-flex items-center text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 font-bold uppercase tracking-wider border border-amber-500/20"
+              >
+                {{ churnPrediction.interventionType }}
+              </span>
+            </div>
+            <div class="p-3 rounded-lg bg-white/5">
+              <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Reactivated</p>
+              <span
+                class="inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider"
+                [ngClass]="churnPrediction.reactivated ? 'bg-secondary/10 text-secondary border border-secondary/20' : 'bg-white/5 text-on-surface-variant border border-white/10'"
+              >
+                <span class="w-1.5 h-1.5 rounded-full" [ngClass]="churnPrediction.reactivated ? 'bg-secondary' : 'bg-on-surface-variant'"></span>
+                {{ churnPrediction.reactivated ? 'Yes' : 'No' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs text-on-surface-variant pt-2 border-t border-white/5">
+            <span>Predicted: {{ churnPrediction.predictedAt | date: 'medium' }}</span>
+            <span *ngIf="churnPrediction.modelVersion" class="font-mono">
+              v{{ churnPrediction.modelVersion }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- All disaster stats -->
-  <section class="rounded-xl bg-white/5 border border-white/5 overflow-hidden">
-    <header class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
-      <h3 class="font-bold text-on-surface">All Disaster Statistics</h3>
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-on-surface-variant">{{ allStats.length }}</span>
+  <!-- All disaster stats table -->
+  <section class="glass-1 rounded-2xl border border-white/5 overflow-hidden">
+    <header class="px-6 py-5 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <h3 class="font-bold text-on-surface flex items-center gap-3">
+        <span class="w-2 h-7 bg-primary rounded-full"></span>
+        All Disaster Statistics
+        <span
+          class="px-3 py-1 bg-white/5 text-on-surface-variant text-[10px] font-bold uppercase tracking-widest rounded-full border border-white/10"
+        >
+          {{ filteredStats.length }}<span *ngIf="statsSearchTerm.trim()"> / {{ allStats.length }}</span>
+        </span>
+      </h3>
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant text-sm">filter_list</span>
+          <input
+            type="text"
+            [(ngModel)]="statsSearchTerm"
+            placeholder="Filter by alert, reports..."
+            class="pl-10 pr-4 py-2 w-56 rounded-lg bg-black/20 border border-white/10 text-on-surface text-xs placeholder-on-surface-variant/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
+          />
+        </div>
         <button
           (click)="loadAllStats()"
-          class="text-xs px-3 py-1.5 bg-white/5 border border-white/10 text-on-surface-variant rounded hover:bg-white/10"
+          class="flex items-center gap-1.5 text-xs px-4 py-2 bg-white/5 border border-white/10 text-on-surface-variant rounded-lg font-bold hover:bg-white/10 transition-all active:scale-95"
         >
+          <span class="material-symbols-outlined text-xs">refresh</span>
           Refresh
         </button>
       </div>
     </header>
-    <div *ngIf="allStatsLoading" class="p-5 text-sm text-on-surface-variant">Loading…</div>
-    <div *ngIf="allStatsError" class="p-5 text-sm text-error">{{ allStatsError }}</div>
+
+    <div *ngIf="allStatsLoading" class="p-6 text-sm text-on-surface-variant flex items-center gap-2">
+      <span class="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+      Loading statistics...
+    </div>
+    <div *ngIf="allStatsError" class="p-6 text-sm text-error flex items-center gap-2">
+      <span class="material-symbols-outlined text-sm">error</span>
+      {{ allStatsError }}
+    </div>
     <div
       *ngIf="!allStatsLoading && !allStatsError && allStats.length === 0"
-      class="p-5 text-sm text-on-surface-variant"
+      class="p-8 text-center"
     >
-      No statistics.
+      <span class="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-3 block">analytics</span>
+      <p class="text-sm text-on-surface-variant">No statistics available yet.</p>
     </div>
 
-    <table *ngIf="!allStatsLoading && allStats.length > 0" class="w-full text-sm">
-      <thead class="text-left text-on-surface-variant text-xs uppercase">
-        <tr>
-          <th class="px-5 py-2">Stat ID</th>
-          <th class="px-5 py-2">Alert</th>
-          <th class="px-5 py-2">Reports</th>
-          <th class="px-5 py-2">Verified</th>
-          <th class="px-5 py-2">Requests</th>
-          <th class="px-5 py-2">Resolved</th>
-          <th class="px-5 py-2">Responders</th>
-          <th class="px-5 py-2">Computed</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let s of allStats" class="border-t border-white/5">
-          <td class="px-5 py-2 text-on-surface-variant">#{{ s.statId }}</td>
-          <td class="px-5 py-2 text-on-surface">#{{ s.alertId }}</td>
-          <td class="px-5 py-2 text-on-surface">{{ s.totalReports }}</td>
-          <td class="px-5 py-2 text-on-surface">{{ s.verifiedReports }}</td>
-          <td class="px-5 py-2 text-on-surface">{{ s.totalHelpRequests }}</td>
-          <td class="px-5 py-2 text-on-surface">{{ s.resolvedRequests }}</td>
-          <td class="px-5 py-2 text-on-surface">{{ s.activeResponders }}</td>
-          <td class="px-5 py-2 text-on-surface-variant">{{ s.computedAt | date: 'short' }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <div
+      *ngIf="!allStatsLoading && allStats.length > 0 && filteredStats.length === 0"
+      class="p-8 text-center"
+    >
+      <span class="material-symbols-outlined text-3xl text-on-surface-variant/30 mb-2 block">search_off</span>
+      <p class="text-sm text-on-surface-variant">No results matching "{{ statsSearchTerm }}"</p>
+    </div>
+
+    <div *ngIf="!allStatsLoading && filteredStats.length > 0" class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="text-left text-on-surface-variant text-xs uppercase tracking-wider">
+          <tr class="border-b border-white/5">
+            <th class="px-6 py-3">Reports</th>
+            <th class="px-6 py-3">Verified</th>
+            <th class="px-6 py-3">Requests</th>
+            <th class="px-6 py-3">Resolved</th>
+            <th class="px-6 py-3">Responders</th>
+            <th class="px-6 py-3">Computed</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let s of filteredStats"
+            class="border-t border-white/5 hover:bg-white/5 transition-colors"
+          >
+            <td class="px-6 py-3 text-on-surface font-medium">{{ s.totalReports }}</td>
+            <td class="px-6 py-3 text-secondary font-medium">{{ s.verifiedReports }}</td>
+            <td class="px-6 py-3 text-on-surface font-medium">{{ s.totalHelpRequests }}</td>
+            <td class="px-6 py-3 text-secondary font-medium">{{ s.resolvedRequests }}</td>
+            <td class="px-6 py-3 text-on-surface">{{ s.activeResponders }}</td>
+            <td class="px-6 py-3 text-on-surface-variant text-xs">{{ s.computedAt | date: 'medium' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 </div>

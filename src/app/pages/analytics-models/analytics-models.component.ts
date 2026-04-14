@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { AnalyticsNavComponent } from '../../shared/components/analytics-nav/analytics-nav.component';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { DisasterAnalyticsService } from '../../modules/analytics/services/disaster-analytics.service';
@@ -13,7 +14,7 @@ import {
 @Component({
   selector: 'app-analytics-models',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, AnalyticsNavComponent],
   templateUrl: './analytics-models.component.html',
 })
 export class AnalyticsModelsComponent implements OnInit {

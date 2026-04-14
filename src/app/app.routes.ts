@@ -38,6 +38,20 @@ export const routes: Routes = [
             (m) => m.AnalyticsLookupsComponent
           ),
       },
+      {
+        path: 'alerts',
+        loadComponent: () =>
+          import('./pages/alerts-map/alerts-map.component').then(
+            (m) => m.AlertsMapComponent
+          ),
+      },
+      {
+        path: 'emergency',
+        loadComponent: () =>
+          import('./pages/emergency-dashboard/emergency-dashboard.component').then(
+            (m) => m.EmergencyDashboardComponent
+          ),
+      },
     ],
   },
 
@@ -51,13 +65,6 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/dashboard/dashboard.component').then(
             (m) => m.DashboardComponent
-          ),
-      },
-      {
-        path: 'alerts',
-        loadComponent: () =>
-          import('./pages/alerts-map/alerts-map.component').then(
-            (m) => m.AlertsMapComponent
           ),
       },
       {

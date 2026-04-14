@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { AnalyticsNavComponent } from '../../shared/components/analytics-nav/analytics-nav.component';
 import { forkJoin, of } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 
@@ -19,7 +20,7 @@ import {
 @Component({
   selector: 'app-analytics-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, AnalyticsNavComponent],
   templateUrl: './analytics-dashboard.component.html',
 })
 export class AnalyticsDashboardComponent implements OnInit {
