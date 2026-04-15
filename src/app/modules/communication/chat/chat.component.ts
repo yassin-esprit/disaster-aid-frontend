@@ -11,7 +11,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
+
 import { ChatService } from '../../../core/services/chat.service';
+import { DiscussionRequestService } from '../../../core/services/discussion-request.service';
+
 import { Conversation } from '../models/conversation.model';
 import { Message, MessageRequest } from '../models/message.model';
 
@@ -36,6 +39,13 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
 
   unreadCount: { [key: number]: number } = {};
 
+  subject = '';
+  description = '';
+  showRequestForm = false;
+  requestSuccessMessage = '';
+  requestErrorMessage = '';
+  isSendingRequest = false;
+
   private typingTimeout: any;
   private messageSubscription?: Subscription;
   private typingSubscription?: Subscription;
@@ -45,6 +55,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
 
   constructor(
     private chatService: ChatService,
+    private discussionRequestService: DiscussionRequestService,
     private router: Router
   ) {}
 
@@ -166,6 +177,45 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
       },
       error: (err) => {
         console.error('Erreur envoi message:', err);
+      }
+    });
+  }
+
+  sendRequest(): void {
+    this.requestSuccessMessage = '';
+    this.requestErrorMessage = '';
+
+    const citizenId = Number(localStorage.getItem('userId'));
+
+    if (!citizenId) {
+      this.requestErrorMessage = 'Utilisateur non connecté.';
+      return;
+    }
+
+    if (!this.subject.trim() || !this.description.trim()) {
+      this.requestErrorMessage = 'Veuillez remplir tous les champs.';
+      return;
+    }
+
+    this.isSendingRequest = true;
+
+    this.discussionRequestService.createRequest(citizenId, {
+      subject: this.subject.trim(),
+      description: this.description.trim()
+    }).subscribe({
+      next: (response) => {
+        console.log('Demande créée :', response);
+        this.isSendingRequest = false;
+        this.requestSuccessMessage = 'Demande envoyée avec succès.';
+        this.subject = '';
+        this.description = '';
+        this.showRequestForm = false;
+      },
+      error: (error) => {
+        console.error('Erreur création demande :', error);
+        this.isSendingRequest = false;
+        this.requestErrorMessage =
+          error?.error?.message || 'Erreur lors de l’envoi de la demande.';
       }
     });
   }

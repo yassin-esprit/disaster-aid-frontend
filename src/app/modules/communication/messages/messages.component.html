@@ -1,119 +1,118 @@
 <div class="messages-page">
   <div class="page-header">
     <div>
-      <h1>Messages Management</h1>
-      <p>Manage conversation messages and attachments</p>
-    </div>
-
-    <div class="header-actions">
-      <div class="stats-card">
-        <span class="stats-label">Messages</span>
-        <span class="stats-value">{{ messages.length }}</span>
-      </div>
-
-      <button class="add-btn" (click)="openCreateModal()">
-        + Add Message
-      </button>
+      <h1>Messages</h1>
+      <p>Répondez au citoyen dans la conversation acceptée.</p>
     </div>
   </div>
 
-  <div class="table-card">
-    <div class="toolbar">
-      <input
-        type="text"
-        [(ngModel)]="searchTerm"
-        (input)="filterMessages()"
-        placeholder="Search message..."
-        class="search-input"
-      />
-    </div>
-
-    <div *ngIf="loading" class="loading-state">Loading...</div>
-
-    <div *ngIf="!loading" class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Conversation</th>
-            <th>Sender</th>
-            <th>Body</th>
-            <th>Attachments</th>
-            <th>Sent At</th>
-            <th>Deleted</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <tr *ngFor="let item of filteredMessages">
-            <td>{{ item.messageId }}</td>
-            <td>{{ item.conversationId }}</td>
-            <td>{{ item.senderEmail }}</td>
-            <td>{{ item.body }}</td>
-            <td>{{ item.attachments.join(', ') || '-' }}</td>            
-            <td>{{ item.sentAt ? (item.sentAt | date:'short') : '-' }}</td>
-            <td>
-              <span class="badge" [ngClass]="item.isDeleted ? 'deleted-badge' : 'active-badge'">
-                {{ item.isDeleted ? 'DELETED' : 'ACTIVE' }}
-              </span>
-            </td>
-            <td class="actions-cell">
-              <button class="action-btn edit-btn" (click)="openEditModal(item)">Edit</button>
-              <button class="action-btn delete-btn" (click)="remove(item.messageId)">Delete</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div *ngIf="filteredMessages.length === 0" class="empty-state">
-        No messages found.
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-backdrop" *ngIf="showModal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2>{{ editMode ? 'Edit Message' : 'Add Message' }}</h2>
-        <button class="close-btn" (click)="closeModal()">×</button>
-      </div>
-
-      <form (ngSubmit)="submit()" class="message-form">
-        <div class="form-group">
-          <label>Conversation ID</label>
-          <input [(ngModel)]="form.conversationId" name="conversationId" type="number" required />
-        </div>
-
-        <div class="form-group">
-          <label>Sender ID</label>
-          <input [(ngModel)]="form.senderId" name="senderId" type="number" required />
-        </div>
-
-        <div class="form-group full">
-          <label>Body</label>
-          <textarea [(ngModel)]="form.body" name="body" rows="4"></textarea>
-        </div>
-
-        <div class="form-group full">
-          <label>Attachments (comma separated)</label>
-          <input [(ngModel)]="attachmentsText" name="attachmentsText" type="text" placeholder="file1.png, file2.pdf" />
-        </div>
-
-        <div class="form-group full checkbox-line">
-          <label class="check-item">
-            <input [(ngModel)]="form.isDeleted" name="isDeleted" type="checkbox" />
-            <span>Deleted</span>
-          </label>
-        </div>
-
-        <div class="form-actions">
-          <button type="button" class="btn-secondary" (click)="closeModal()">Cancel</button>
-          <button type="submit" class="btn-primary" [disabled]="saving">
-            {{ saving ? 'Saving...' : (editMode ? 'Update' : 'Create') }}
+  <div class="chat-card">
+    <div class="chat-toolbar">
+      <div class="conversation-box">
+        <label for="conversationId">Conversation ID</label>
+        <div class="conversation-actions">
+          <input
+            id="conversationId"
+            type="number"
+            [(ngModel)]="conversationId"
+            placeholder="Ex: 12"
+            class="conversation-input"
+          />
+          <button class="load-btn" (click)="loadConversation(true)">
+            Charger
           </button>
         </div>
-      </form>
+      </div>
+
+      <div class="live-indicator" *ngIf="conversationId">
+        <span class="live-dot"></span>
+        ONLINE
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="state-box">
+      Chargement des messages...
+    </div>
+
+    <div *ngIf="errorMessage" class="state-box error-box">
+      {{ errorMessage }}
+    </div>
+
+    <div class="messages-wrapper" *ngIf="!loading">
+      <div #messagesContainer class="messages-scroll">
+        <div *ngIf="messages.length === 0" class="empty-chat-state">
+          <div class="empty-icon">💬</div>
+          <h3>Aucun message</h3>
+          <p>Chargez une conversation pour afficher son historique.</p>
+        </div>
+
+        <div *ngIf="messages.length > 0" class="messages-list">
+          <div
+            class="message-row"
+            *ngFor="let item of messages"
+            [class.mine-row]="isMine(item)"
+          >
+            <div class="message-bubble" [class.mine]="isMine(item)">
+              <div class="message-meta">
+                <strong>{{ getDisplayName(item) }}</strong>
+                <span>{{ formatTime(item.sentAt) }}</span>
+              </div>
+
+              <div class="message-body">
+                {{ item.body }}
+              </div>
+
+              <div class="message-attachments" *ngIf="item.attachments?.length">
+                <span *ngFor="let file of item.attachments" class="attachment-chip">
+                  {{ file }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button
+        *ngIf="showScrollButton"
+        class="scroll-bottom-btn"
+        (click)="scrollToBottomManual()"
+        title="Aller en bas"
+      >
+        ↓
+      </button>
+
+      <div *ngIf="newMessageBadge" class="new-message-badge" (click)="scrollToBottomManual()">
+        New messages
+      </div>
+    </div>
+
+    <div class="typing-indicator" *ngIf="isTyping">
+      {{ typingUser }} typing...
+    </div>
+
+    <div class="reply-section" *ngIf="conversationId">
+      <div *ngIf="successMessage" class="reply-feedback success-box">
+        {{ successMessage }}
+      </div>
+
+      <textarea
+        [(ngModel)]="newMessage"
+        rows="4"
+        placeholder="Écrire votre réponse... (Entrée pour envoyer, Shift+Entrée pour une nouvelle ligne)"
+        class="reply-textarea"
+        (input)="onTyping()"
+        (keydown.enter)="handleEnter($event)"
+      ></textarea>
+
+      <div class="reply-actions">
+        <button
+          class="send-btn"
+          (click)="sendMessage()"
+          [disabled]="sending || !newMessage.trim()"
+        >
+          {{ sending ? 'Envoi...' : 'Envoyer' }}
+        </button>
+      </div>
     </div>
   </div>
 </div>

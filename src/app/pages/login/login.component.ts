@@ -31,16 +31,10 @@ export class LoginComponent {
     const normalizedRole = (role || '').trim().toUpperCase();
     const adminRoles = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN'];
 
-    console.log('Role received:', normalizedRole);
-
     if (adminRoles.includes(normalizedRole)) {
-      this.router.navigateByUrl('/dashboard').then((success) => {
-        console.log('Navigation to dashboard:', success);
-      });
+      this.router.navigateByUrl('/dashboard');
     } else {
-      this.router.navigateByUrl('/communication/chat').then((success) => {
-        console.log('Navigation to chat:', success);
-      });
+      this.router.navigateByUrl('/landing');
     }
   }
 
@@ -54,20 +48,15 @@ export class LoginComponent {
 
     this.isLoading = true;
 
-    const loginData = {
+    this.authService.login({
       email: this.email,
       password: this.password
-    };
-
-    this.authService.login(loginData).subscribe({
+    }).subscribe({
       next: (response) => {
-        console.log('Login successful:', response);
-        console.log('Stored role:', response.role);
         this.isLoading = false;
         this.redirectByRole(response.role);
       },
       error: (error) => {
-        console.error('Login error:', error);
         this.isLoading = false;
 
         if (error?.error?.message) {
@@ -85,5 +74,13 @@ export class LoginComponent {
 
   onGuestLogin(): void {
     this.router.navigateByUrl('/landing');
+  }
+
+  loginWithGoogle(): void {
+    window.location.href = 'http://localhost:8089/oauth2/authorization/google';
+  }
+
+  loginWithFacebook(): void {
+    window.location.href = 'http://localhost:8089/oauth2/authorization/facebook';
   }
 }

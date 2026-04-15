@@ -1,0 +1,27 @@
+.google-btn,
+.facebook-btn {
+  width: 100%;
+  height: 56px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: 0.2s ease;
+}
+
+.google-btn {
+  background: #ffffff;
+  color: #111827;
+}
+
+.facebook-btn {
+  background: #1877f2;
+  color: #ffffff;
+}
+
+.google-btn:hover,
+.facebook-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.96;
+}

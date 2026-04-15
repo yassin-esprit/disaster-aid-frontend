@@ -1,15 +1,19 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
+import { ChatComponent } from '../../modules/communication/chat/chat.component';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, ChatComponent],
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.scss'],
 })
-export class LandingComponent {
+export class LandingComponent implements OnInit {
+  isAuthenticated = false;
+  isChatOpen = false;
+
   stats = [
     { value: '12', label: 'Active Alerts', color: 'text-error' },
     { value: '4.2k', label: 'Registered Volunteers', color: 'text-primary' },
@@ -66,7 +70,7 @@ export class LandingComponent {
         'Registering as a digital volunteer allowed me to support the national efforts even while working my day job. Every hour logged feels like it matters.',
       name: 'Leila',
       role: 'Data Analyst, Tunis',
-      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDFGdDsZBD-vBp5ImGxvZTJMCY1pQYYD_udXm-wjWwpGy407guE6z1B_3jg_xo6KGnpYVgBGTWIdgkdWieHbG4TIw8YiKmFVgaQpazNhwdJHQ03UX063AheARIzAOw9q5A4CT2jrWzAR0xVtIDuuNEmn7XjyxiA3d0M_L1iXxzk03HA-9XM16hbEbv8x7eV2af9-IflD1yzQQCSDnyBMGJM_I-U0g7fv9cFV4roW8MuYPse4nkdlpVfS1joGLhLLk09d6ftAycrVrJL',
+      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDFGdDsZBD-vBp5ImGxvZTJMCY1pQYYD_udXm-wjWwpGy407guE6z1B_3jg_xo6KGnpYVgBGTWIdgkdWieHbG4TIW8YiKmFVgaQpazNhwdJHQ03UX063AheARIzAOw9q5A4CT2jrWzAR0xVtIDuuNEmn7XjyxiA3d0M_L1iXxzk03HA-9XM16hbEbv8x7eV2af9-IflD1yzQQCSDnyBMGJM_I-U0g7fv9cFV4roW8MuYPse4nkdlpVfS1joGLhLLk09d6ftAycrVrJL',
     },
     {
       quote:
@@ -76,6 +80,39 @@ export class LandingComponent {
       img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAQuX3z9XrVsVdOKc0IkSHgta_KejRROITRjWF_rJd15R1f84i6KNcqaDj1jgXw5rQRnT34U38ctrdSnAURa0abMkVvXNCMHc0ScG93pBh_vvHYCRCSGdfTGUNqbCNc2IycvExEUkOnp6r_GsMmGffxqEv0GjH5U1hOn3DjI-5Fxo75pTYnMv3FI-dCO9QSJi9ih7WyMZnu-gHvuzxcFcBq0ahHFUyLmnMbIAc3N84MDZZv9jgNcNKxcr_OYfaImuzNgE-I41PAAKEH',
     },
   ];
+
+  constructor(private router: Router) {}
+
+  ngOnInit(): void {
+    this.checkAuthState();
+  }
+
+  checkAuthState(): void {
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+    const email = localStorage.getItem('email');
+
+    this.isAuthenticated = !!(token && userId && email);
+
+    if (!this.isAuthenticated) {
+      this.isChatOpen = false;
+    }
+  }
+
+  toggleChat(): void {
+    this.checkAuthState();
+
+    if (!this.isAuthenticated) {
+      this.router.navigateByUrl('/login');
+      return;
+    }
+
+    this.isChatOpen = !this.isChatOpen;
+  }
+
+  closeChat(): void {
+    this.isChatOpen = false;
+  }
 
   onRespondToAlerts(): void {
     console.log('Navigate to alerts');

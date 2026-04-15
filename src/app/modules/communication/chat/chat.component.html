@@ -1,149 +1,144 @@
-<div class="chat-page">
-  <header class="chat-navbar">
-    <div class="brand">
-      <span class="brand-main">CPS</span>
-      <span class="brand-badge">HUB</span>
+<section class="chat-shell">
+  <aside class="conversation-panel">
+    <div class="panel-title">Mes conversations</div>
+
+    <div
+      *ngFor="let convo of conversations"
+      class="conversation-card"
+      [class.active]="selectedConversationId === convo.conversationId"
+      (click)="selectConversation(convo.conversationId)"
+    >
+      <div class="conversation-top">
+        <div class="conversation-avatar">
+          {{ convo.conversationId }}
+        </div>
+
+        <div class="conversation-info">
+          <div class="conversation-name">
+            Conversation {{ convo.conversationId }}
+          </div>
+          <div class="conversation-meta">
+            {{ convo.type }}
+          </div>
+        </div>
+
+        <div class="online-badge"></div>
+
+        <div class="unread-badge" *ngIf="unreadCount[convo.conversationId]">
+          {{ unreadCount[convo.conversationId] }}
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="messages-panel">
+    <div class="messages-header">
+      <div>
+        <h2>
+          {{
+            selectedConversationId
+              ? ('Conversation ' + selectedConversationId)
+              : 'Sélectionnez une conversation'
+          }}
+        </h2>
+        <p>Messagerie instantanée entre utilisateurs</p>
+      </div>
+
+      <div class="header-status" *ngIf="selectedConversationId">
+        <span class="status-dot"></span>
+        En ligne
+      </div>
     </div>
 
-    <nav class="nav-links">
-      <a routerLink="/landing">Home</a>
-      <a routerLink="/alerts">Alerts</a>
-      <a routerLink="/opportunities">Opportunities</a>
-    </nav>
+    <div class="messages-wrapper">
+      <div class="messages-body" #scrollContainer>
+        <ng-container *ngIf="messages.length > 0; else emptyState">
+          <div
+            *ngFor="let msg of messages"
+            class="message-row"
+            [class.mine-row]="isMine(msg)"
+          >
+            <div class="message-avatar">
+              {{ getInitials(msg.senderEmail) }}
+            </div>
 
-    <div class="nav-actions">
-      <button class="home-btn" (click)="goToLanding()">Accueil</button>
+            <div class="message-bubble" [class.mine]="isMine(msg)">
+              <div class="message-top">
+                <span class="message-author">
+                  {{ getDisplayName(msg) }}
+                </span>
+                <span class="message-time">
+                  {{ formatTime(msg.sentAt) }}
+                </span>
+              </div>
+
+              <div class="message-text">
+                {{ msg.body }}
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+<ng-template #emptyState>
+  <div class="empty-state">
+    <div class="empty-icon">💬</div>
+    <h3>Aucune conversation</h3>
+    <p>Vous n'avez pas encore de discussion avec un administrateur.</p>
+
+    <button class="contact-admin-btn" (click)="showRequestForm = true">
+      Contacter un administrateur
+    </button>
+
+    <!-- FORMULAIRE -->
+    <div *ngIf="showRequestForm" class="request-form">
+      <input
+        type="text"
+        [(ngModel)]="subject"
+        placeholder="Sujet"
+      />
+
+      <textarea
+        [(ngModel)]="description"
+        placeholder="Décrivez votre besoin"
+      ></textarea>
+
+      <button (click)="sendRequest()">Envoyer</button>
     </div>
-  </header>
+  </div>
+</ng-template>
+      </div>
 
-  <section class="chat-hero">
-    <div class="hero-badge">DisasterAid • Real-Time Chat</div>
-    <h1>Community Chat, <span>Unified.</span></h1>
-    <p>Discutez avec les autres utilisateurs dans une interface moderne et en temps réel.</p>
-  </section>
-
-  <section class="chat-shell">
-    <aside class="conversation-panel">
-      <div class="panel-title">Mes conversations</div>
-
-      <div
-        *ngFor="let convo of conversations"
-        class="conversation-card"
-        [class.active]="selectedConversationId === convo.conversationId"
-        (click)="selectConversation(convo.conversationId)"
+      <button
+        class="scroll-bottom-btn"
+        *ngIf="showScrollButton"
+        (click)="scrollToBottomManual()"
+        title="Aller au dernier message"
       >
-        <div class="conversation-top">
-          <div class="conversation-avatar">
-            {{ convo.conversationId }}
-          </div>
-
-          <div class="conversation-info">
-            <div class="conversation-name">
-              Conversation {{ convo.conversationId }}
-            </div>
-            <div class="conversation-meta">
-              {{ convo.type }}
-            </div>
-          </div>
-
-          <div class="online-badge"></div>
-
-          <div class="unread-badge" *ngIf="unreadCount[convo.conversationId]">
-            {{ unreadCount[convo.conversationId] }}
-          </div>
-        </div>
-      </div>
-    </aside>
-
-    <div class="messages-panel">
-      <div class="messages-header">
-        <div>
-          <h2>
-            {{
-              selectedConversationId
-                ? ('Conversation ' + selectedConversationId)
-                : 'Sélectionnez une conversation'
-            }}
-          </h2>
-          <p>Messagerie instantanée entre utilisateurs</p>
-        </div>
-
-        <div class="header-status" *ngIf="selectedConversationId">
-          <span class="status-dot"></span>
-          En ligne
-        </div>
-      </div>
-
-      <div class="messages-wrapper">
-        <div class="messages-body" #scrollContainer>
-          <ng-container *ngIf="messages.length > 0; else emptyState">
-            <div
-              *ngFor="let msg of messages"
-              class="message-row"
-              [class.mine-row]="isMine(msg)"
-            >
-              <div class="message-avatar">
-                {{ getInitials(msg.senderEmail) }}
-              </div>
-
-              <div class="message-bubble" [class.mine]="isMine(msg)">
-                <div class="message-top">
-                  <span class="message-author">
-                    {{ getDisplayName(msg) }}
-                  </span>
-                  <span class="message-time">
-                    {{ formatTime(msg.sentAt) }}
-                  </span>
-                </div>
-
-                <div class="message-text">
-                  {{ msg.body }}
-                </div>
-              </div>
-            </div>
-          </ng-container>
-
-          <ng-template #emptyState>
-            <div class="empty-state">
-              <div class="empty-icon">💬</div>
-              <h3>Aucun message</h3>
-              <p>Sélectionnez une conversation et commencez à discuter.</p>
-            </div>
-          </ng-template>
-        </div>
-
-        <button
-          class="scroll-bottom-btn"
-          *ngIf="showScrollButton"
-          (click)="scrollToBottomManual()"
-          title="Aller au dernier message"
-        >
-          ↓
-        </button>
-      </div>
-
-      <div *ngIf="isTyping" class="typing-indicator">
-        {{ typingUser }} est en train d’écrire...
-      </div>
-
-      <div class="message-input-bar">
-        <input
-          type="text"
-          [(ngModel)]="newMessage"
-          placeholder="Écrire un message..."
-          [disabled]="!selectedConversationId"
-          (input)="onTyping()"
-          (keyup.enter)="sendMessage()"
-        />
-
-        <button
-          class="send-btn"
-          (click)="sendMessage()"
-          [disabled]="!selectedConversationId || !newMessage.trim()"
-        >
-          Envoyer
-        </button>
-      </div>
+        ↓
+      </button>
     </div>
-  </section>
-</div>
+
+    <div *ngIf="isTyping" class="typing-indicator">
+      {{ typingUser }} est en train d’écrire...
+    </div>
+
+    <div class="message-input-bar">
+      <input
+        type="text"
+        [(ngModel)]="newMessage"
+        placeholder="Écrire un message..."
+        [disabled]="!selectedConversationId"
+        (input)="onTyping()"
+        (keyup.enter)="sendMessage()"
+      />
+
+      <button
+        class="send-btn"
+        (click)="sendMessage()"
+        [disabled]="!selectedConversationId || !newMessage.trim()"
+      >
+        Envoyer
+      </button>
+    </div>
+  </div>
+</section>

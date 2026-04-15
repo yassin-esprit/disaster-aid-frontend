@@ -38,12 +38,28 @@
       (click)="setTab('messages')">
       Messages
     </button>
+
+    <button
+      *ngIf="isAdmin()"
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'requests'"
+      (click)="setTab('requests')">
+      Discussion Requests
+    </button>
   </div>
 
   <div class="tab-panel">
     <app-notifications *ngIf="activeTab === 'notifications'"></app-notifications>
     <app-preferences *ngIf="activeTab === 'preferences'"></app-preferences>
     <app-conversations *ngIf="activeTab === 'conversations'"></app-conversations>
-    <app-messages *ngIf="activeTab === 'messages'"></app-messages>
+    <app-messages
+      *ngIf="activeTab === 'messages'"
+      [preselectedConversationId]="selectedConversationId">
+    </app-messages>
+    <app-manage-discussion-requests
+      *ngIf="activeTab === 'requests'"
+      (requestAccepted)="onRequestAccepted($event)">
+    </app-manage-discussion-requests>
   </div>
 </div>

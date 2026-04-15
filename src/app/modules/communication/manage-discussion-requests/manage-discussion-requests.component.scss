@@ -1,0 +1,43 @@
+.requests-page {
+  padding: 24px;
+  color: white;
+}
+
+.request-card {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+
+.meta {
+  display: flex;
+  gap: 18px;
+  margin: 10px 0;
+  opacity: 0.8;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
+.actions button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.accept {
+  background: #4ade80;
+}
+
+.reject {
+  background: #f87171;
+}
+
+.error {
+  color: #f87171;
+}

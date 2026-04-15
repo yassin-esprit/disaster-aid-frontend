@@ -32,4 +32,7 @@ export class MessageService {
   deleteMessage(id: number): Observable<void> {
     return this.httpService.delete<void>(`/communication/messages/delete/${id}`);
   }
+  getMessagesByConversation(conversationId: number): Observable<Message[]> {
+    return this.httpService.get<Message[]>(`/communication/messages/conversation/${conversationId}`);
+  }
 }

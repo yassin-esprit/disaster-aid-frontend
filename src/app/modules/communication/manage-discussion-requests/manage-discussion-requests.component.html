@@ -1,0 +1,24 @@
+<div class="requests-page">
+  <h2>Demandes de discussion</h2>
+
+  <div *ngIf="loading">Chargement...</div>
+  <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+
+  <div *ngIf="!loading && requests.length === 0">
+    Aucune demande en attente.
+  </div>
+
+  <div class="request-card" *ngFor="let req of requests">
+    <h3>{{ req.subject }}</h3>
+    <p>{{ req.description }}</p>
+    <div class="meta">
+      <span>Citoyen ID : {{ req.citizenId }}</span>
+      <span>Statut : {{ req.status }}</span>
+    </div>
+
+    <div class="actions">
+      <button class="accept" (click)="acceptRequest(req.requestId)">Accepter</button>
+      <button class="reject" (click)="rejectRequest(req.requestId)">Refuser</button>
+    </div>
+  </div>
+</div>

@@ -1,7 +1,21 @@
-import { Component, OnInit } from '@angular/core';
+import {
+  Component,
+  Input,
+  OnChanges,
+  OnDestroy,
+  OnInit,
+  SimpleChanges,
+  ElementRef,
+  ViewChild,
+  AfterViewChecked,
+  AfterViewInit
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
+
 import { MessageService } from '../../../core/services/message.service';
+import { ChatService } from '../../../core/services/chat.service';
 import { Message, MessageRequest } from '../models/message.model';
 
 @Component({
@@ -11,148 +25,254 @@ import { Message, MessageRequest } from '../models/message.model';
   templateUrl: './messages.component.html',
   styleUrl: './messages.component.scss'
 })
-export class MessagesComponent implements OnInit {
+export class MessagesComponent
+  implements OnInit, OnChanges, OnDestroy, AfterViewInit, AfterViewChecked {
+
+  @Input() preselectedConversationId: number | null = null;
+
+  @ViewChild('messagesContainer')
+  messagesContainer?: ElementRef<HTMLDivElement>;
+
   messages: Message[] = [];
-  filteredMessages: Message[] = [];
-
   loading = false;
-  saving = false;
-  editMode = false;
-  showModal = false;
-  selectedId: number | null = null;
-  searchTerm = '';
+  sending = false;
+  errorMessage = '';
+  successMessage = '';
 
-  form: MessageRequest = {
-    conversationId: 0,
-    senderId: 0,
-    body: '',
-    attachments: [],
-    sentAt: null,
-    editedAt: null,
-    isDeleted: false
-  };
+  conversationId: number | null = null;
+  newMessage = '';
+  currentUserId = Number(localStorage.getItem('userId'));
 
-  attachmentsText = '';
+  isTyping = false;
+  typingUser = '';
 
-  constructor(private messageService: MessageService) {}
+  showScrollButton = false;
+  newMessageBadge = false;
+
+  private messageSubscription?: Subscription;
+  private typingSubscription?: Subscription;
+  private typingTimeout: any;
+  private shouldScrollToBottom = false;
+  private forceScrollToBottom = false;
+
+  constructor(
+    private messageService: MessageService,
+    private chatService: ChatService
+  ) {}
 
   ngOnInit(): void {
-    this.loadMessages();
+    if (this.preselectedConversationId) {
+      this.conversationId = this.preselectedConversationId;
+      this.loadConversation(true);
+    }
   }
 
-  loadMessages(): void {
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['preselectedConversationId']?.currentValue) {
+      this.conversationId = changes['preselectedConversationId'].currentValue;
+      this.loadConversation(true);
+    }
+  }
+
+  ngAfterViewInit(): void {
+    setTimeout(() => {
+      const el = this.messagesContainer?.nativeElement;
+      if (!el) return;
+
+      el.addEventListener('scroll', () => {
+        const atBottom = this.isAtBottom();
+        this.showScrollButton = !atBottom;
+
+        if (atBottom) {
+          this.newMessageBadge = false;
+        }
+      });
+    }, 200);
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.shouldScrollToBottom || this.forceScrollToBottom) {
+      this.scrollToBottom();
+      this.shouldScrollToBottom = false;
+      this.forceScrollToBottom = false;
+    }
+  }
+
+  loadConversation(forceScroll = false): void {
+    this.loadMessagesByConversation(forceScroll);
+    this.connectRealtime();
+  }
+
+  loadMessagesByConversation(forceScroll = false): void {
+    if (!this.conversationId) {
+      this.errorMessage = 'Veuillez choisir une conversation.';
+      return;
+    }
+
     this.loading = true;
-    this.messageService.getAllMessages().subscribe({
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.messageService.getMessagesByConversation(this.conversationId).subscribe({
       next: (res) => {
-        this.messages = res;
-        this.filteredMessages = res;
+        this.messages = res || [];
         this.loading = false;
+        this.newMessageBadge = false;
+        this.forceScrollToBottom = forceScroll || true;
       },
       error: (err) => {
         console.error('Load messages error', err);
+        this.errorMessage = 'Erreur lors du chargement des messages.';
         this.loading = false;
       }
     });
   }
 
-  filterMessages(): void {
-    const term = this.searchTerm.toLowerCase().trim();
+  connectRealtime(): void {
+    if (!this.conversationId) return;
 
-    if (!term) {
-      this.filteredMessages = this.messages;
-      return;
-    }
+    this.messageSubscription?.unsubscribe();
+    this.typingSubscription?.unsubscribe();
+    clearTimeout(this.typingTimeout);
 
-    this.filteredMessages = this.messages.filter(item =>
-      item.senderEmail?.toLowerCase().includes(term) ||
-      item.body?.toLowerCase().includes(term) ||
-      String(item.conversationId).includes(term)
-    );
+    this.chatService.disconnect();
+    this.chatService.connectToConversation(this.conversationId);
+
+    this.messageSubscription = this.chatService.onMessageReceived().subscribe({
+      next: (msg) => {
+        if (msg.conversationId !== this.conversationId) return;
+
+        const exists = this.messages.some(m => m.messageId === msg.messageId);
+        if (exists) return;
+
+        const atBottomBeforeInsert = this.isAtBottom();
+
+        this.messages = [...this.messages, msg];
+
+        if (atBottomBeforeInsert || this.isMine(msg)) {
+          this.shouldScrollToBottom = true;
+          this.newMessageBadge = false;
+        } else {
+          this.newMessageBadge = true;
+          this.showScrollButton = true;
+        }
+      },
+      error: (err) => {
+        console.error('Realtime message error', err);
+      }
+    });
+
+    this.typingSubscription = this.chatService.onTyping(this.conversationId).subscribe({
+      next: (data: any) => {
+        if (data.userId !== this.currentUserId) {
+          this.typingUser = data.email || 'Un utilisateur';
+          this.isTyping = true;
+
+          clearTimeout(this.typingTimeout);
+          this.typingTimeout = setTimeout(() => {
+            this.isTyping = false;
+            this.typingUser = '';
+          }, 2000);
+        }
+      },
+      error: (err) => {
+        console.error('Realtime typing error', err);
+      }
+    });
   }
 
-  openCreateModal(): void {
-    this.editMode = false;
-    this.showModal = true;
-    this.selectedId = null;
-    this.resetForm();
+  onTyping(): void {
+    if (!this.conversationId) return;
+    this.chatService.sendTyping(this.conversationId);
   }
 
-  openEditModal(item: Message): void {
-    this.editMode = true;
-    this.showModal = true;
-    this.selectedId = item.messageId;
+  sendMessage(): void {
+    if (!this.conversationId || !this.newMessage.trim()) return;
 
-    this.form = {
-      conversationId: item.conversationId,
-      senderId: item.senderId,
-      body: item.body,
-      attachments: [...(item.attachments || [])],
-      sentAt: item.sentAt,
-      editedAt: item.editedAt,
-      isDeleted: item.isDeleted
-    };
+    this.sending = true;
+    this.errorMessage = '';
+    this.successMessage = '';
 
-    this.attachmentsText = (item.attachments || []).join(', ');
-  }
-
-  closeModal(): void {
-    this.showModal = false;
-    this.resetForm();
-  }
-
-  resetForm(): void {
-    this.form = {
-      conversationId: 0,
-      senderId: 0,
-      body: '',
+    const payload: MessageRequest = {
+      conversationId: this.conversationId,
+      senderId: this.currentUserId,
+      body: this.newMessage.trim(),
       attachments: [],
       sentAt: null,
       editedAt: null,
       isDeleted: false
     };
-    this.attachmentsText = '';
-    this.editMode = false;
-    this.selectedId = null;
-  }
 
-  parseAttachments(): string[] {
-    return this.attachmentsText
-      .split(',')
-      .map(x => x.trim())
-      .filter(x => x !== '');
-  }
-
-  submit(): void {
-    this.saving = true;
-
-    const payload: MessageRequest = {
-      ...this.form,
-      attachments: this.parseAttachments()
-    };
-
-    const request$ = this.editMode && this.selectedId
-      ? this.messageService.updateMessage(this.selectedId, payload)
-      : this.messageService.createMessage(payload);
-
-    request$.subscribe({
+    this.messageService.createMessage(payload).subscribe({
       next: () => {
-        this.saving = false;
-        this.closeModal();
-        this.loadMessages();
+        this.newMessage = '';
+        this.successMessage = 'Message envoyé.';
+        this.sending = false;
+        this.shouldScrollToBottom = true;
+        this.isTyping = false;
+        this.typingUser = '';
       },
       error: (err) => {
-        console.error('Save message error', err);
-        this.saving = false;
+        console.error('Send message error', err);
+        this.errorMessage = 'Erreur lors de l’envoi du message.';
+        this.sending = false;
       }
     });
   }
 
-  remove(id: number): void {
-    if (!confirm('Delete this message?')) return;
+handleEnter(event: Event): void {
+  const keyboardEvent = event as KeyboardEvent;
 
-    this.messageService.deleteMessage(id).subscribe({
-      next: () => this.loadMessages(),
-      error: (err) => console.error('Delete message error', err)
-    });
+  if (keyboardEvent.shiftKey) return;
+
+  keyboardEvent.preventDefault();
+  this.sendMessage();
+}
+
+  scrollToBottomManual(): void {
+    this.scrollToBottom();
+    this.newMessageBadge = false;
+  }
+
+  isMine(message: Message): boolean {
+    return message.senderId === this.currentUserId;
+  }
+
+  getDisplayName(message: Message): string {
+    return this.isMine(message)
+      ? 'Vous'
+      : (message.senderEmail || ('User ' + message.senderId));
+  }
+
+  formatTime(date?: string | null): string {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  private scrollToBottom(): void {
+    try {
+      const el = this.messagesContainer?.nativeElement;
+      if (!el) return;
+
+      el.scrollTop = el.scrollHeight;
+      this.showScrollButton = false;
+    } catch (error) {
+      console.error('Scroll error', error);
+    }
+  }
+
+  private isAtBottom(): boolean {
+    const el = this.messagesContainer?.nativeElement;
+    if (!el) return true;
+
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+  }
+
+  ngOnDestroy(): void {
+    this.messageSubscription?.unsubscribe();
+    this.typingSubscription?.unsubscribe();
+    clearTimeout(this.typingTimeout);
+    this.chatService.disconnect();
   }
 }

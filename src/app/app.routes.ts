@@ -6,69 +6,89 @@ import { AuthenticatedLayoutComponent } from './layouts/authenticated-layout/aut
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
+
+  // ===== PUBLIC ROUTES =====
   { path: '', redirectTo: 'landing', pathMatch: 'full' },
   { path: 'landing', component: LandingComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
 
+  // ===== SOCIAL LOGIN CALLBACK =====
+  {
+    path: 'auth/social-success',
+    loadComponent: () =>
+      import('./modules/identity/social-auth-success/social-auth-success.component')
+        .then(m => m.SocialAuthSuccessComponent),
+  },
+
+  // ===== CHAT (AUTH REQUIRED) =====
   {
     path: 'communication/chat',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./modules/communication/chat/chat.component').then(
-        (m) => m.ChatComponent
-      ),
+      import('./modules/communication/chat/chat.component')
+        .then(m => m.ChatComponent),
   },
 
+  // ===== AUTHENTICATED LAYOUT =====
   {
     path: '',
     component: AuthenticatedLayoutComponent,
     canActivate: [authGuard],
     children: [
+
       {
         path: 'dashboard',
         loadComponent: () =>
-          import('./pages/dashboard/dashboard.component').then(
-            (m) => m.DashboardComponent
-          ),
+          import('./pages/dashboard/dashboard.component')
+            .then(m => m.DashboardComponent),
       },
+
       {
         path: 'alerts',
         loadComponent: () =>
-          import('./pages/alerts-map/alerts-map.component').then(
-            (m) => m.AlertsMapComponent
-          ),
+          import('./pages/alerts-map/alerts-map.component')
+            .then(m => m.AlertsMapComponent),
       },
+
       {
         path: 'incidents',
         loadComponent: () =>
-          import('./pages/incident-form/incident-form.component').then(
-            (m) => m.IncidentFormComponent
-          ),
+          import('./pages/incident-form/incident-form.component')
+            .then(m => m.IncidentFormComponent),
       },
+
       {
         path: 'opportunities',
         loadComponent: () =>
-          import('./pages/opportunities/opportunities.component').then(
-            (m) => m.OpportunitiesComponent
-          ),
+          import('./pages/opportunities/opportunities.component')
+            .then(m => m.OpportunitiesComponent),
       },
+
       {
         path: 'profile',
         loadComponent: () =>
-          import('./pages/profile/profile.component').then(
-            (m) => m.ProfileComponent
-          ),
+          import('./pages/profile/profile.component')
+            .then(m => m.ProfileComponent),
       },
+
       {
         path: 'users-management',
         loadComponent: () =>
-          import('./pages/users-management/users-management.component').then(
-            (m) => m.UsersManagementComponent
-          ),
-      }
+          import('./pages/users-management/users-management.component')
+            .then(m => m.UsersManagementComponent),
+      },
+
+      {
+        path: 'communication',
+        loadComponent: () =>
+          import('./modules/communication/communication/communication.component')
+            .then(m => m.CommunicationComponent),
+      },
+
     ],
   },
 
+  // ===== FALLBACK =====
   { path: '**', redirectTo: 'landing' },
 ];

@@ -502,4 +502,31 @@
       </p>
     </div>
   </footer>
+  <div
+  class="chat-overlay"
+  *ngIf="isAuthenticated && isChatOpen"
+  (click)="closeChat()"
+></div>
+
+<button
+  *ngIf="isAuthenticated"
+  type="button"
+  class="chat-fab"
+  (click)="toggleChat()"
+  aria-label="Ouvrir le chat"
+>
+  <span class="material-symbols-outlined">chat</span>
+</button>
+
+<div class="chat-drawer" [class.open]="isAuthenticated && isChatOpen">
+  <div class="chat-drawer-header">
+    <h3>Discussions</h3>
+    <button type="button" class="chat-close-btn" (click)="closeChat()">✕</button>
+  </div>
+  
+
+  <div class="chat-drawer-content">
+    <app-chat></app-chat>
+  </div>
+</div>
 </div>
