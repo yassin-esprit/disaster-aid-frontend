@@ -16,6 +16,8 @@ import { IncidentService } from '../../../core/services/incident.service';
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './incident-form.component.html',
 })
+
+
 export class IncidentFormComponent implements OnInit {
   form!: FormGroup;
   isLoading = false;
@@ -118,5 +120,16 @@ export class IncidentFormComponent implements OnInit {
           err?.error?.message || 'Submission failed. Please try again.';
       },
     });
+  }
+  get liveCredibility(): number {
+    const v = this.form.value;
+    let score = 0;
+    if (v.description?.length > 100) score += 0.15;
+    else if (v.description?.length > 50) score += 0.10;
+    if (v.location?.trim()) score += 0.15;
+    if (v.severity === 'HIGH' || v.severity === 'CRITICAL') score += 0.10;
+    if (v.disasterType) score += 0.10;
+    // Evidence not uploaded yet, reporter ID not set — these will boost after save
+    return Math.min(Math.round(score * 100), 100);
   }
 }
