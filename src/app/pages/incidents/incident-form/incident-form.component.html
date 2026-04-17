@@ -325,6 +325,43 @@
       </div>
     </div>
 
+
+    <!-- After the completeness bar, add: -->
+    <div class="mt-4 flex items-center justify-between">
+      <div class="flex flex-col">
+    <span class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">
+      Predicted Credibility
+    </span>
+        <span class="text-lg font-black"
+              [ngClass]="{
+            'text-secondary':  liveCredibility >= 50,
+            'text-amber-400':  liveCredibility >= 30 && liveCredibility < 50,
+            'text-error':      liveCredibility < 30
+          }">
+      {{ liveCredibility }}%
+    </span>
+        <span class="text-[10px] text-on-surface-variant">
+      {{ liveCredibility >= 70 ? 'Good — add evidence to push higher'
+          : liveCredibility >= 40 ? 'Fair — add more detail'
+            : 'Low — fill all fields' }}
+    </span>
+      </div>
+      <!-- Mini ring -->
+      <div class="relative w-14 h-14">
+        <svg class="w-14 h-14 -rotate-90" viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="15.9" fill="none"
+                  stroke="rgba(255,255,255,0.08)" stroke-width="3"/>
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke-width="3"
+                  [attr.stroke]="liveCredibility >= 50 ? '#699cff' : liveCredibility >= 30 ? '#fbbf24' : '#ff6e84'"
+                  stroke-linecap="round"
+                  [attr.stroke-dasharray]="liveCredibility + ' 100'"
+                  stroke-dashoffset="0"/>
+        </svg>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <span class="text-[10px] font-black text-on-surface">{{ liveCredibility }}%</span>
+        </div>
+      </div>
+    </div>
     <!-- Help card -->
     <div
       class="mt-6 glass-2 p-6 rounded-xl border border-white/5 flex items-center justify-between"

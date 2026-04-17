@@ -9,6 +9,7 @@ import {
 } from '@angular/forms';
 import { AuthenticatedLayoutComponent } from '../../../layouts/authenticated-layout/authenticated-layout.component';
 import {
+  CoordinationStats,
   CoordinationService,
   HelpRequest,
   TaskAssignment,
@@ -22,7 +23,6 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
     CommonModule,
     RouterModule,
     ReactiveFormsModule,
-    AuthenticatedLayoutComponent,
     StatusBadgeComponent,
   ],
   templateUrl: './help-request-list.component.html',
@@ -31,6 +31,7 @@ export class HelpRequestListComponent implements OnInit {
   requests: HelpRequest[] = [];
   filtered: HelpRequest[] = [];
   isLoading = true;
+  stats: CoordinationStats | null = null;
   errorMessage = '';
   activeFilter = 'ALL';
   expandedId: number | null = null;
@@ -70,6 +71,7 @@ export class HelpRequestListComponent implements OnInit {
       notes: [''],
     });
     this.load();
+    this.svc.getStats().subscribe({ next: s => this.stats = s });
   }
 
   load(): void {

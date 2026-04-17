@@ -33,6 +33,16 @@ interface ApiResponse<T> {
   message: string;
   data: T;
 }
+export interface StatusHistory {
+  id: number;
+  fromStatus: string | null;
+  toStatus: string;
+  changedBy: number | null;
+  note: string | null;
+  changedAt: string;
+}
+
+
 
 @Injectable({ providedIn: 'root' })
 export class IncidentService {
@@ -40,6 +50,15 @@ export class IncidentService {
   private evidenceBase = `${environment.apiUrl}/evidences`;
 
   constructor(private http: HttpClient) {}
+
+
+
+
+getHistory(id: number): Observable<StatusHistory[]> {
+  return this.http.get<ApiResponse<StatusHistory[]>>(`${this.base}/${id}/history`)
+    .pipe(map(r => r.data));
+}
+
 
   getAll(): Observable<IncidentReport[]> {
     return this.http
@@ -89,5 +108,16 @@ export class IncidentService {
         ApiResponse<ReportEvidence[]>
       >(`${this.evidenceBase}/report/${reportId}`)
       .pipe(map((r) => r.data));
+  }
+
+  upvote(id: number): Observable<IncidentReport> {
+    return this.http.patch<ApiResponse<IncidentReport>>(`${this.base}/${id}/upvote`, {})
+      .pipe(map(r => r.data));
+  }
+
+  updateStatus(id: number, status: string): Observable<IncidentReport> {
+    return this.http.patch<ApiResponse<IncidentReport>>(
+      `${this.base}/${id}/status?status=${status}`, {}
+    ).pipe(map(r => r.data));
   }
 }

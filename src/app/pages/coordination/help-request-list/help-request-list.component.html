@@ -14,6 +14,64 @@
   </div>
 </div>
 
+<!-- Stats bar -->
+<div *ngIf="stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+  <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
+    <div class="absolute -top-3 left-4 w-7 h-7 bg-secondary rounded-lg flex items-center justify-center shadow-lg shadow-secondary/20">
+      <span class="material-symbols-outlined text-on-secondary text-sm fill-icon">help</span>
+    </div>
+    <div class="mt-2">
+      <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Open</p>
+      <h3 class="text-2xl font-black text-on-surface">{{ stats.openRequests }}</h3>
+    </div>
+  </div>
+  <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
+    <div class="absolute -top-3 left-4 w-7 h-7 bg-tertiary-dim/80 rounded-lg flex items-center justify-center shadow-lg">
+      <span class="material-symbols-outlined text-on-tertiary text-sm fill-icon">check_circle</span>
+    </div>
+    <div class="mt-2">
+      <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Resolved Today</p>
+      <h3 class="text-2xl font-black text-on-surface">{{ stats.resolvedToday }}</h3>
+    </div>
+  </div>
+  <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
+    <div class="absolute -top-3 left-4 w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center shadow-lg">
+      <span class="material-symbols-outlined text-white text-sm fill-icon">assignment_ind</span>
+    </div>
+    <div class="mt-2">
+      <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Active Assign.</p>
+      <h3 class="text-2xl font-black text-on-surface">{{ stats.activeAssignments }}</h3>
+    </div>
+  </div>
+  <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
+    <div class="absolute -top-3 left-4 w-7 h-7 bg-blue-700 rounded-lg flex items-center justify-center shadow-lg">
+      <span class="material-symbols-outlined text-white text-sm fill-icon">timer</span>
+    </div>
+    <div class="mt-2">
+      <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Avg Response</p>
+      <h3 class="text-2xl font-black text-on-surface">{{ stats.avgResponseTimeMin }}m</h3>
+    </div>
+  </div>
+  <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
+    <div class="absolute -top-3 left-4 w-7 h-7 bg-error rounded-lg flex items-center justify-center shadow-lg">
+      <span class="material-symbols-outlined text-white text-sm fill-icon">report_problem</span>
+    </div>
+    <div class="mt-2">
+      <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Pending Inc.</p>
+      <h3 class="text-2xl font-black text-on-surface">{{ stats.pendingIncidents }}</h3>
+    </div>
+  </div>
+  <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
+    <div class="absolute -top-3 left-4 w-7 h-7 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
+      <span class="material-symbols-outlined text-on-primary text-sm fill-icon">verified</span>
+    </div>
+    <div class="mt-2">
+      <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Avg Cred.</p>
+      <h3 class="text-2xl font-black text-on-surface">{{ (stats.avgCredibilityScore * 100).toFixed(0) }}%</h3>
+    </div>
+  </div>
+</div>
+
 <!-- Filters -->
 <div class="flex flex-wrap gap-2 mb-8">
   <button
@@ -137,58 +195,39 @@
     </div>
 
     <!-- Expanded assignments -->
-    <div
-      *ngIf="expandedId === r.id"
-      class="border-t border-white/5 p-6 bg-surface-container/30"
-    >
-      <h4
-        class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4"
-      >
-        Task Assignments
-      </h4>
-      <div
-        *ngIf="!assignmentsMap[r.id!]?.length"
-        class="text-sm text-on-surface-variant"
-      >
-        No assignments yet.
+    <!-- Replace the assignment row inner content -->
+    <div *ngFor="let a of assignmentsMap[r.id!]"
+         class="flex items-center justify-between p-3 glass-2 rounded-lg">
+      <div class="flex items-center gap-3">
+        <span class="text-xs font-mono text-on-surface-variant">#{{ a.id }}</span>
+        <span class="text-sm font-bold text-on-surface">Responder {{ a.responderId }}</span>
+        <!-- ML Score badge -->
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border"
+              [ngClass]="(a.mlScoreAtAssignment || 0) >= 0.7
+            ? 'bg-secondary/10 text-secondary border-secondary/20'
+            : (a.mlScoreAtAssignment || 0) >= 0.4
+            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+            : 'bg-error/10 text-error border-error/20'">
+      ML {{ ((a.mlScoreAtAssignment || 0) * 100).toFixed(0) }}%
+    </span>
+        <!-- Response time -->
+        <span *ngIf="a.responseTimeMin" class="text-[10px] text-on-surface-variant">
+      <span class="material-symbols-outlined text-sm align-middle">timer</span>
+          {{ a.responseTimeMin }}m response
+    </span>
       </div>
-      <div class="space-y-3">
-        <div
-          *ngFor="let a of assignmentsMap[r.id!]"
-          class="flex items-center justify-between p-3 glass-2 rounded-lg"
-        >
-          <div>
-            <span class="text-xs font-mono text-on-surface-variant"
-              >#{{ a.id }}</span
-            >
-            <span class="text-sm font-bold text-on-surface ml-2"
-              >Responder {{ a.responderId }}</span
-            >
-            <span *ngIf="a.notes" class="text-xs text-on-surface-variant ml-2"
-              >— {{ a.notes }}</span
-            >
-          </div>
-          <div class="flex items-center gap-2">
-            <app-status-badge [status]="a.status || ''"></app-status-badge>
-            <button
-              *ngIf="a.status === 'ASSIGNED'"
-              (click)="updateStatus(a.id!, 'ACCEPTED')"
-              class="text-xs px-2 py-1 bg-secondary/10 text-secondary rounded border border-secondary/20 hover:bg-secondary/20"
-            >
-              Accept
-            </button>
-            <button
-              *ngIf="a.status === 'ACCEPTED'"
-              (click)="updateStatus(a.id!, 'COMPLETED')"
-              class="text-xs px-2 py-1 bg-tertiary-dim/10 text-tertiary-dim rounded border border-tertiary-dim/20 hover:bg-tertiary-dim/20"
-            >
-              Complete
-            </button>
-          </div>
-        </div>
+      <div class="flex items-center gap-2">
+        <app-status-badge [status]="a.status || ''"></app-status-badge>
+        <button *ngIf="a.status === 'ASSIGNED'" (click)="updateStatus(a.id!, 'ACCEPTED')"
+                class="text-xs px-2 py-1 bg-secondary/10 text-secondary rounded border border-secondary/20 hover:bg-secondary/20">
+          Accept
+        </button>
+        <button *ngIf="a.status === 'ACCEPTED'" (click)="updateStatus(a.id!, 'COMPLETED')"
+                class="text-xs px-2 py-1 bg-tertiary-dim/10 text-tertiary-dim rounded border border-tertiary-dim/20 hover:bg-tertiary-dim/20">
+          Complete
+        </button>
       </div>
     </div>
-  </div>
 </div>
 
 <!-- Assign modal -->
@@ -277,4 +316,5 @@
       </button>
     </div>
   </div>
+</div>
 </div>

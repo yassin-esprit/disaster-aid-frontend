@@ -4,6 +4,15 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
+export interface CoordinationStats {
+  openRequests: number;
+  resolvedToday: number;
+  activeAssignments: number;
+  avgResponseTimeMin: number;
+  pendingIncidents: number;
+  avgCredibilityScore: number;
+}
+
 export interface HelpRequest {
   id?: number;
   reporterId?: number;
@@ -25,6 +34,9 @@ export interface TaskAssignment {
   status?: string;
   mlScoreAtAssignment?: number;
   notes?: string;
+  completionNote?: string;
+  rating?: number;
+  responseTimeMin?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -145,5 +157,10 @@ export class CoordinationService {
     return this.http
       .delete<ApiResponse<void>>(`${this.offerBase}/${id}`)
       .pipe(map(() => void 0));
+  }
+
+  getStats(): Observable<CoordinationStats> {
+    return this.http.get<ApiResponse<CoordinationStats>>(`${environment.apiUrl}/coordination/stats`)
+      .pipe(map(r => r.data));
   }
 }
