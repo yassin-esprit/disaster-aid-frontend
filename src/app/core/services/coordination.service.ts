@@ -80,6 +80,14 @@ export class CoordinationService {
   constructor(private http: HttpClient) {}
 
 
+
+  completeAssignment(id: number, note: string, rating: number): Observable<TaskAssignment> {
+    return this.http.patch<ApiResponse<TaskAssignment>>(
+      `${environment.apiUrl}/assignments/${id}/complete`,
+      { completionNote: note, rating }
+    ).pipe(map(r => r.data));
+  }
+
   getMatches(helpRequestId: number): Observable<VolunteerMatch[]> {
     return this.http.get<ApiResponse<VolunteerMatch[]>>(
       `${environment.apiUrl}/volunteer-offers/matches?helpRequestId=${helpRequestId}`
