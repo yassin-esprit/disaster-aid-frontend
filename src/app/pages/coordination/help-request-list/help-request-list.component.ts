@@ -5,7 +5,7 @@ import {
   ReactiveFormsModule,
   FormBuilder,
   FormGroup,
-  Validators,
+  Validators, FormsModule,
 } from '@angular/forms';
 
 import { CoordinationService, HelpRequest, TaskAssignment,
@@ -23,6 +23,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
     RouterModule,
     ReactiveFormsModule,
     StatusBadgeComponent,
+    FormsModule,
   ],
   templateUrl: './help-request-list.component.html',
 })
@@ -32,6 +33,42 @@ export class HelpRequestListComponent implements OnInit {
   matchesMap: Record<number, VolunteerMatch[]> = {};
   loadingMatches: Record<number, boolean> = {};
 
+
+  completingAssignmentId: number | null = null;
+  completingForRequestId: number | null = null;
+  completionNote = '';
+  completionRating = 5;
+
+  openComplete(assignmentId: number, requestId: number): void {
+    this.completingAssignmentId = assignmentId;
+    this.completingForRequestId = requestId;
+    this.completionNote = '';
+    this.completionRating = 5;
+  }
+
+  closeComplete(): void {
+    this.completingAssignmentId = null;
+    this.completingForRequestId = null;
+  }
+
+  submitCompletion(): void {
+    if (!this.completingAssignmentId || !this.completingForRequestId) return;
+    this.svc.completeAssignment(
+      this.completingAssignmentId,
+      this.completionNote,
+      this.completionRating
+    ).subscribe({
+      next: () => {
+        const reqId = this.completingForRequestId!;
+        this.svc.getAssignmentsByRequest(reqId)
+          .subscribe(a => this.assignmentsMap[reqId] = a);
+        this.closeComplete();
+      },
+      error: () => this.errorMessage = 'Completion failed.'
+    });
+  }
+
+  getStars(count: number): number[] { return Array.from({ length: count }, (_, i) => i + 1); }
 
   requests: HelpRequest[] = [];
   filtered: HelpRequest[] = [];

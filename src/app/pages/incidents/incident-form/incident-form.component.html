@@ -389,3 +389,50 @@
     </div>
   </aside>
 </div>
+<!-- Duplicate warning modal -->
+<div *ngIf="showDuplicateWarning"
+     class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div class="glass-1 rounded-2xl p-8 max-w-md w-full border border-amber-500/30 shadow-[0_0_40px_rgba(245,158,11,0.2)]">
+
+    <div class="flex items-start gap-4 mb-6">
+      <div class="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined text-amber-400 text-2xl">warning</span>
+      </div>
+      <div>
+        <h3 class="text-xl font-black text-on-surface">Similar Report Found</h3>
+        <p class="text-on-surface-variant text-sm mt-1">
+          A report with the same disaster type was submitted in the last 2 hours.
+        </p>
+      </div>
+    </div>
+
+    <!-- Existing report preview -->
+    <div *ngIf="duplicateReport"
+         class="p-4 rounded-xl mb-6 border border-white/10"
+         style="background:rgba(245,158,11,0.05)">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-xs font-bold font-mono text-on-surface-variant">#{{ duplicateReport.id }}</span>
+        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase">
+          {{ duplicateReport.status }}
+        </span>
+      </div>
+      <p class="text-sm font-bold text-on-surface">{{ duplicateReport.disasterType }}</p>
+      <p class="text-xs text-on-surface-variant mt-1">{{ duplicateReport.location }}</p>
+      <p class="text-xs text-on-surface-variant mt-1 line-clamp-2">{{ duplicateReport.description }}</p>
+      <p class="text-xs text-on-surface-variant mt-2">
+        Submitted {{ duplicateReport.createdAt | date:'shortTime' }}
+      </p>
+    </div>
+
+    <div class="flex gap-3">
+      <button (click)="cancelDuplicate()"
+              class="flex-1 py-3 glass-2 rounded-xl font-bold text-on-surface hover:bg-white/10 transition-all">
+        View Existing
+      </button>
+      <button (click)="submitAnyway()"
+              class="flex-1 py-3 rounded-xl font-bold transition-all active:scale-95 bg-amber-500 text-white">
+        Submit Anyway
+      </button>
+    </div>
+  </div>
+</div>

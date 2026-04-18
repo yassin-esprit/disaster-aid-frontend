@@ -59,6 +59,13 @@ getHistory(id: number): Observable<StatusHistory[]> {
     .pipe(map(r => r.data));
 }
 
+  checkDuplicate(dto: Partial<IncidentReport>): Observable<{ message: string; data: IncidentReport | null }> {
+    return this.http.post<ApiResponse<IncidentReport | null>>(
+      `${this.base}/check-duplicate`, dto
+    ).pipe(map(r => ({ message: r.message, data: r.data })));
+  }
+
+
 
   getAll(): Observable<IncidentReport[]> {
     return this.http

@@ -8,7 +8,7 @@ import {
 } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthenticatedLayoutComponent } from '../../../layouts/authenticated-layout/authenticated-layout.component';
-import { IncidentService } from '../../../core/services/incident.service';
+import {IncidentReport, IncidentService} from '../../../core/services/incident.service';
 
 @Component({
   selector: 'app-incident-form',
@@ -19,6 +19,12 @@ import { IncidentService } from '../../../core/services/incident.service';
 
 
 export class IncidentFormComponent implements OnInit {
+
+  duplicateReport: IncidentReport | null = null;
+  showDuplicateWarning = false;
+  pendingSubmit = false;
+
+
   form!: FormGroup;
   isLoading = false;
   successMessage = '';
@@ -101,26 +107,59 @@ export class IncidentFormComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
+    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+
+    if (this.pendingSubmit) {
+      this.doSubmit();
       return;
     }
+
+    // Check for duplicates first
+    this.incidentService.checkDuplicate({
+      disasterType: this.form.value.disasterType
+    }).subscribe({
+      next: result => {
+        if (result.message === 'DUPLICATE_FOUND' && result.data) {
+          this.duplicateReport = result.data;
+          this.showDuplicateWarning = true;
+        } else {
+          this.doSubmit();
+        }
+      },
+      error: () => this.doSubmit() // if check fails, proceed anyway
+    });
+  }
+
+  doSubmit(): void {
+    this.showDuplicateWarning = false;
+    this.pendingSubmit = false;
     this.isLoading = true;
     this.errorMessage = '';
-
     this.incidentService.create(this.form.value).subscribe({
       next: () => {
         this.isLoading = false;
         this.successMessage = 'Incident report submitted successfully.';
         setTimeout(() => this.router.navigate(['/incidents']), 1500);
       },
-      error: (err) => {
+      error: err => {
         this.isLoading = false;
-        this.errorMessage =
-          err?.error?.message || 'Submission failed. Please try again.';
-      },
+        this.errorMessage = err?.error?.message || 'Submission failed.';
+      }
     });
   }
+
+  submitAnyway(): void {
+    this.pendingSubmit = true;
+    this.doSubmit();
+  }
+
+  cancelDuplicate(): void {
+    this.showDuplicateWarning = false;
+    this.duplicateReport = null;
+  }
+
+
+
   get liveCredibility(): number {
     const v = this.form.value;
     let score = 0;
