@@ -231,62 +231,114 @@
 </div>
 
 <!-- Assign modal -->
-<div
-  *ngIf="assigningTo !== null"
-  class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
->
-  <div
-    class="glass-1 rounded-2xl p-8 max-w-sm w-full border border-secondary/20 shadow-[0_0_40px_rgba(105,156,255,0.2)]"
-  >
-    <h3 class="text-xl font-black mb-6 text-on-surface">Assign Responder</h3>
-    <form
-      [formGroup]="assignForm"
-      (ngSubmit)="submitAssignment()"
-      class="space-y-4"
-    >
-      <div>
-        <label
-          class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2"
-          >Responder ID</label
-        >
-        <input
-          type="number"
-          formControlName="responderId"
-          placeholder="Enter responder user ID"
-          class="w-full h-12 px-4 glass-2 rounded-xl text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-secondary outline-none"
-        />
+
+  <div *ngIf="assigningTo !== null"
+       class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="glass-1 rounded-2xl w-full max-w-lg border border-secondary/20 shadow-[0_0_40px_rgba(105,156,255,0.2)] overflow-hidden">
+
+      <div class="p-6 border-b border-white/5">
+        <h3 class="text-xl font-black text-on-surface">Assign Responder</h3>
+        <p class="text-xs text-on-surface-variant mt-1">Request #{{ assigningTo }}</p>
       </div>
-      <div>
-        <label
-          class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2"
-          >Notes (optional)</label
-        >
-        <textarea
-          formControlName="notes"
-          rows="2"
-          placeholder="Any special instructions..."
-          class="w-full px-4 py-3 glass-2 rounded-xl text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-secondary outline-none resize-none"
-        >
+
+      <!-- Suggested volunteers -->
+      <div class="p-6 border-b border-white/5">
+        <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm">auto_awesome</span>
+          AI-Matched Volunteers
+        </p>
+
+        <!-- Loading -->
+        <div *ngIf="loadingMatches[assigningTo]" class="flex items-center gap-2 text-on-surface-variant text-xs py-2">
+          <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          Finding matches...
+        </div>
+
+        <!-- No matches -->
+        <p *ngIf="!loadingMatches[assigningTo] && matchesMap[assigningTo]?.length === 0"
+           class="text-xs text-on-surface-variant py-2">
+          No active volunteer offers found.
+        </p>
+
+        <!-- Match cards -->
+        <div *ngIf="!loadingMatches[assigningTo] && matchesMap[assigningTo]?.length">
+             class="space-y-2 max-h-48 overflow-y-auto pr-1">
+          <div *ngFor="let m of matchesMap[assigningTo]"
+               class="flex items-center justify-between p-3 glass-2 rounded-xl border border-white/5 hover:border-secondary/30 transition-all">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-black text-primary">
+                V{{ m.volunteerId }}
+              </div>
+              <div>
+                <p class="text-xs font-bold text-on-surface">Volunteer #{{ m.volunteerId }}</p>
+                <p class="text-[10px] text-on-surface-variant">{{ m.skills || 'No skills listed' }}</p>
+                <p class="text-[10px] text-on-surface-variant">{{ m.location }}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <!-- Match score ring -->
+              <div class="relative w-10 h-10">
+                <svg class="w-10 h-10 -rotate-90" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15.9" fill="none"
+                          stroke="rgba(255,255,255,0.08)" stroke-width="3"/>
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke-width="3"
+                          [attr.stroke]="m.matchScore >= 0.7 ? '#699cff' : m.matchScore >= 0.4 ? '#fbbf24' : '#ff6e84'"
+                          stroke-linecap="round"
+                          [attr.stroke-dasharray]="(m.matchScore * 100).toFixed(0) + ' 100'"
+                          stroke-dashoffset="0"/>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center">
+                <span class="text-[9px] font-black text-on-surface">
+                  {{ (m.matchScore * 100).toFixed(0) }}%
+                </span>
+                </div>
+              </div>
+              <button (click)="assignFromMatch(assigningTo!, m.volunteerId)"
+                      class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
+                      style="background:rgba(105,156,255,0.15);color:#699cff;border:1px solid rgba(105,156,255,0.3)">
+                Assign
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manual assignment form -->
+      <form [formGroup]="assignForm" (ngSubmit)="submitAssignment()" class="p-6 space-y-4">
+        <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Or assign manually</p>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+            Responder ID
+          </label>
+          <input type="number" formControlName="responderId" placeholder="Enter responder user ID"
+                 class="w-full h-12 px-4 glass-2 rounded-xl text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-secondary outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+            Notes (optional)
+          </label>
+          <textarea formControlName="notes" rows="2" placeholder="Any special instructions..."
+                    class="w-full px-4 py-3 glass-2 rounded-xl text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-secondary outline-none resize-none">
         </textarea>
-      </div>
-      <div class="flex gap-3 pt-2">
-        <button
-          type="button"
-          (click)="closeAssign()"
-          class="flex-1 py-3 glass-2 rounded-xl font-bold text-on-surface hover:bg-white/10 transition-all"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          class="flex-1 py-3 bg-secondary text-on-secondary rounded-xl font-bold hover:bg-secondary/80 transition-all"
-        >
-          Assign
-        </button>
-      </div>
-    </form>
+        </div>
+        <div class="flex gap-3">
+          <button type="button" (click)="closeAssign()"
+                  class="flex-1 py-3 glass-2 rounded-xl font-bold text-on-surface hover:bg-white/10 transition-all">
+            Cancel
+          </button>
+          <button type="submit"
+                  class="flex-1 py-3 rounded-xl font-bold transition-all active:scale-95"
+                  style="background:#699cff;color:#001e4a">
+            Assign
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
-</div>
+
 
 <!-- Delete confirm -->
 <div

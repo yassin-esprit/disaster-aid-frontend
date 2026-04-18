@@ -4,6 +4,19 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
+
+export interface VolunteerMatch {
+  id: number;
+  volunteerId: number;
+  skills: string;
+  location: string;
+  availableFrom: string;
+  availableTo: string;
+  maxRadiusKm: number;
+  status: string;
+  matchScore: number;
+}
+
 export interface CoordinationStats {
   openRequests: number;
   resolvedToday: number;
@@ -65,6 +78,14 @@ export class CoordinationService {
   private offerBase = `${environment.apiUrl}/volunteer-offers`;
 
   constructor(private http: HttpClient) {}
+
+
+  getMatches(helpRequestId: number): Observable<VolunteerMatch[]> {
+    return this.http.get<ApiResponse<VolunteerMatch[]>>(
+      `${environment.apiUrl}/volunteer-offers/matches?helpRequestId=${helpRequestId}`
+    ).pipe(map(r => r.data));
+  }
+
 
   // Help Requests
   getAllRequests(): Observable<HelpRequest[]> {
