@@ -7,13 +7,12 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
-import { AuthenticatedLayoutComponent } from '../../../layouts/authenticated-layout/authenticated-layout.component';
-import {
-  CoordinationStats,
-  CoordinationService,
-  HelpRequest,
-  TaskAssignment,
-} from '../../../core/services/coordination.service';
+
+import { CoordinationService, HelpRequest, TaskAssignment,
+  CoordinationStats, VolunteerMatch } from '../../../core/services/coordination.service';
+
+
+
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 
 @Component({
@@ -28,6 +27,12 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
   templateUrl: './help-request-list.component.html',
 })
 export class HelpRequestListComponent implements OnInit {
+
+
+  matchesMap: Record<number, VolunteerMatch[]> = {};
+  loadingMatches: Record<number, boolean> = {};
+
+
   requests: HelpRequest[] = [];
   filtered: HelpRequest[] = [];
   isLoading = true;
@@ -108,9 +113,15 @@ export class HelpRequestListComponent implements OnInit {
     }
   }
 
+
   openAssign(id: number): void {
     this.assigningTo = id;
     this.assignForm.reset();
+    this.loadingMatches[id] = true;
+    this.svc.getMatches(id).subscribe({
+      next: m => { this.matchesMap[id] = m; this.loadingMatches[id] = false; },
+      error: () => { this.matchesMap[id] = []; this.loadingMatches[id] = false; }
+    });
   }
   closeAssign(): void {
     this.assigningTo = null;
@@ -173,5 +184,18 @@ export class HelpRequestListComponent implements OnInit {
   }
   urgencyDots(u: number): number[] {
     return Array.from({ length: 5 }, (_, i) => i);
+  }
+
+
+  assignFromMatch(helpRequestId: number, volunteerId: number): void {
+    this.svc.createAssignment(helpRequestId, { responderId: volunteerId }).subscribe({
+      next: () => {
+        this.assignmentsMap[helpRequestId] = [];
+        this.svc.getAssignmentsByRequest(helpRequestId)
+          .subscribe(a => this.assignmentsMap[helpRequestId] = a);
+        this.closeAssign();
+      },
+      error: () => this.errorMessage = 'Assignment failed.'
+    });
   }
 }
