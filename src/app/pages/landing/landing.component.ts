@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import {Router, RouterModule} from '@angular/router';
 
 @Component({
   selector: 'app-landing',
@@ -76,12 +76,8 @@ export class LandingComponent {
       img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAQuX3z9XrVsVdOKc0IkSHgta_KejRROITRjWF_rJd15R1f84i6KNcqaDj1jgXw5rQRnT34U38ctrdSnAURa0abMkVvXNCMHc0ScG93pBh_vvHYCRCSGdfTGUNqbCNc2IycvExEUkOnp6r_GsMmGffxqEv0GjH5U1hOn3DjI-5Fxo75pTYnMv3FI-dCO9QSJi9ih7WyMZnu-gHvuzxcFcBq0ahHFUyLmnMbIAc3N84MDZZv9jgNcNKxcr_OYfaImuzNgE-I41PAAKEH',
     },
   ];
+  constructor(private router: Router) {}
 
-  onRespondToAlerts(): void {
-    console.log('Navigate to alerts');
-  }
-
-  onBrowseOpportunities(): void {
-    console.log('Navigate to opportunities');
-  }
+  onRespondToAlerts(): void { this.router.navigate(['/report']); }
+  onBrowseOpportunities(): void { this.router.navigate(['/missions']); }
 }

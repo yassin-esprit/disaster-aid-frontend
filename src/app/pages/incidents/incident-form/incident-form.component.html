@@ -5,16 +5,14 @@
       <div
         class="absolute -top-1 left-0 w-20 h-1 bg-error shadow-[0_0_15px_#ff6e84]"
       ></div>
-      <h1
-        class="text-4xl font-black tracking-tighter text-on-surface mb-1 pt-3"
-      >
-        Incident Report
+      <h1 class="text-4xl font-black tracking-tighter text-on-surface mb-1 pt-3">
+        {{ isEditMode ? 'Edit Report' : 'Incident Report' }}
       </h1>
       <p class="text-on-surface-variant text-sm uppercase tracking-wide">
-        Secure Submission Protocol
-        <span class="mx-2 opacity-30">|</span>
-        Priority: <span class="text-error font-bold">Emergency Response</span>
+        {{ isEditMode ? 'Update existing report' : 'Secure Submission Protocol' }}
       </p>
+
+
     </div>
 
     <div
@@ -181,24 +179,85 @@
         </div>
 
         <!-- Evidence upload placeholder -->
-        <div class="space-y-2">
-          <label
-            class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1"
-            >Evidence &amp; Verification</label
-          >
-          <div
-            class="group flex flex-col items-center justify-center border-2 border-dashed border-outline-variant rounded-xl p-10 glass-2 hover:border-error/50 transition-all cursor-pointer"
-          >
-            <span
-              class="material-symbols-outlined text-4xl text-outline group-hover:text-error transition-all"
-              >cloud_upload</span
-            >
-            <p class="mt-3 font-bold text-sm">Drop visual evidence or browse</p>
-            <p class="text-xs text-on-surface-variant mt-1">
-              PNG, JPG, MOV (Max 50MB)
-            </p>
+
+        <!-- Evidence upload zone -->
+        <div class="space-y-3">
+          <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">
+            Evidence &amp; Verification
+          </label>
+
+          <!-- Drop zone -->
+          <div class="group relative rounded-xl border-2 border-dashed transition-all cursor-pointer"
+               [ngClass]="isDragOver ? 'border-error bg-error/10' : 'border-outline-variant hover:border-error/50'"
+               (dragover)="onDragOver($event)"
+               (dragleave)="onDragLeave()"
+               (drop)="onDrop($event)"
+               (click)="fileInput.click()">
+            <div class="flex flex-col items-center justify-center py-10 pointer-events-none">
+      <span class="material-symbols-outlined text-4xl mb-3 transition-colors"
+            [ngClass]="isDragOver ? 'text-error' : 'text-outline group-hover:text-error'">
+        cloud_upload
+      </span>
+              <p class="font-bold text-sm">
+                {{ isDragOver ? 'Drop files here' : 'Drop files or click to browse' }}
+              </p>
+              <p class="text-xs text-on-surface-variant mt-1">PNG, JPG, MP4, MOV · Max 50MB each</p>
+            </div>
+            <input #fileInput type="file" class="hidden" multiple
+                   accept="image/*,video/mp4,video/quicktime"
+                   (change)="onFileSelect($event)" />
+          </div>
+
+          <!-- File previews -->
+          <div *ngIf="uploadedFiles.length > 0" class="grid grid-cols-3 sm:grid-cols-4 gap-3">
+            <div *ngFor="let item of uploadedFiles; let i = index"
+                 class="relative group rounded-xl overflow-hidden aspect-square"
+                 style="background:rgba(0,0,0,0.3)">
+
+              <!-- Image preview -->
+              <img *ngIf="item.file.type.startsWith('image')"
+                   [src]="item.preview"
+                   class="w-full h-full object-cover" />
+
+              <!-- Video preview -->
+              <div *ngIf="item.file.type.startsWith('video')"
+                   class="w-full h-full flex flex-col items-center justify-center text-on-surface-variant">
+                <span class="material-symbols-outlined text-2xl">videocam</span>
+                <span class="text-[9px] mt-1 truncate px-1 w-full text-center">{{ item.file.name }}</span>
+              </div>
+
+              <!-- Uploading overlay -->
+              <div *ngIf="item.uploading"
+                   class="absolute inset-0 bg-black/60 flex items-center justify-center">
+                <svg class="animate-spin h-6 w-6 text-white" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+              </div>
+
+              <!-- Done overlay -->
+              <div *ngIf="item.done"
+                   class="absolute inset-0 bg-secondary/20 flex items-center justify-center">
+                <span class="material-symbols-outlined text-secondary text-2xl">check_circle</span>
+              </div>
+
+              <!-- Remove button -->
+              <button *ngIf="!item.uploading"
+                      (click)="removeFile(i)"
+                      class="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-error">
+                <span class="material-symbols-outlined text-sm">close</span>
+              </button>
+
+              <!-- File size -->
+              <div class="absolute bottom-0 left-0 right-0 px-2 py-1 text-[9px] text-white font-bold"
+                   style="background:rgba(0,0,0,0.6)">
+                {{ (item.file.size / 1024 / 1024).toFixed(1) }}MB
+              </div>
+            </div>
           </div>
         </div>
+
+
 
         <!-- Submit -->
         <button
@@ -208,7 +267,8 @@
         >
           <span *ngIf="!isLoading" class="flex items-center gap-3">
             <span class="material-symbols-outlined fill-icon">send</span>
-            Submit Incident Report
+            {{ isEditMode ? 'Update Report' : 'Submit Incident Report' }}
+
           </span>
           <span *ngIf="isLoading" class="flex items-center gap-2">
             <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">

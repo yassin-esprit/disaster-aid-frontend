@@ -1,254 +1,258 @@
-<div
-  class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8"
->
-  <div>
-    <div
-      class="w-16 h-1 bg-secondary mb-3 shadow-[0_0_10px_rgba(105,156,255,0.5)]"
-    ></div>
-    <h1 class="text-3xl font-black tracking-tighter text-on-surface">
-      Help Requests
-    </h1>
-    <p class="text-on-surface-variant text-sm mt-1">
-      {{ filtered.length }} request(s)
-    </p>
-  </div>
-</div>
+<div>
+  <!-- Main content container -->
+  <div class="space-y-8">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <div class="w-16 h-1 bg-secondary mb-3 shadow-[0_0_10px_rgba(105,156,255,0.5)]"></div>
+        <h1 class="text-3xl font-black tracking-tighter text-on-surface">Help Requests</h1>
+        <p class="text-on-surface-variant text-sm mt-1">{{ filtered.length }} request(s)</p>
+      </div>
+    </div>
 
-<!-- Stats bar -->
-<div *ngIf="stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-  <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
-    <div class="absolute -top-3 left-4 w-7 h-7 bg-secondary rounded-lg flex items-center justify-center shadow-lg shadow-secondary/20">
-      <span class="material-symbols-outlined text-on-secondary text-sm fill-icon">help</span>
-    </div>
-    <div class="mt-2">
-      <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Open</p>
-      <h3 class="text-2xl font-black text-on-surface">{{ stats.openRequests }}</h3>
-    </div>
-  </div>
-  <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
-    <div class="absolute -top-3 left-4 w-7 h-7 bg-tertiary-dim/80 rounded-lg flex items-center justify-center shadow-lg">
-      <span class="material-symbols-outlined text-on-tertiary text-sm fill-icon">check_circle</span>
-    </div>
-    <div class="mt-2">
-      <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Resolved Today</p>
-      <h3 class="text-2xl font-black text-on-surface">{{ stats.resolvedToday }}</h3>
-    </div>
-  </div>
-  <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
-    <div class="absolute -top-3 left-4 w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center shadow-lg">
-      <span class="material-symbols-outlined text-white text-sm fill-icon">assignment_ind</span>
-    </div>
-    <div class="mt-2">
-      <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Active Assign.</p>
-      <h3 class="text-2xl font-black text-on-surface">{{ stats.activeAssignments }}</h3>
-    </div>
-  </div>
-  <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
-    <div class="absolute -top-3 left-4 w-7 h-7 bg-blue-700 rounded-lg flex items-center justify-center shadow-lg">
-      <span class="material-symbols-outlined text-white text-sm fill-icon">timer</span>
-    </div>
-    <div class="mt-2">
-      <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Avg Response</p>
-      <h3 class="text-2xl font-black text-on-surface">{{ stats.avgResponseTimeMin }}m</h3>
-    </div>
-  </div>
-  <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
-    <div class="absolute -top-3 left-4 w-7 h-7 bg-error rounded-lg flex items-center justify-center shadow-lg">
-      <span class="material-symbols-outlined text-white text-sm fill-icon">report_problem</span>
-    </div>
-    <div class="mt-2">
-      <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Pending Inc.</p>
-      <h3 class="text-2xl font-black text-on-surface">{{ stats.pendingIncidents }}</h3>
-    </div>
-  </div>
-  <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
-    <div class="absolute -top-3 left-4 w-7 h-7 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
-      <span class="material-symbols-outlined text-on-primary text-sm fill-icon">verified</span>
-    </div>
-    <div class="mt-2">
-      <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Avg Cred.</p>
-      <h3 class="text-2xl font-black text-on-surface">{{ (stats.avgCredibilityScore * 100).toFixed(0) }}%</h3>
-    </div>
-  </div>
-</div>
-
-<!-- Filters -->
-<div class="flex flex-wrap gap-2 mb-8">
-  <button
-    *ngFor="let f of filters"
-    (click)="applyFilter(f)"
-    class="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all"
-    [ngClass]="
-      activeFilter === f
-        ? 'bg-secondary text-on-secondary shadow-[0_0_15px_rgba(105,156,255,0.3)]'
-        : 'glass-2 text-on-surface-variant hover:text-white'
-    "
-  >
-    {{ f }}
-  </button>
-</div>
-
-<div
-  *ngIf="errorMessage"
-  class="mb-6 p-4 rounded-xl bg-error/10 border border-error/20 text-error text-sm flex items-center gap-2"
->
-  <span class="material-symbols-outlined">error</span> {{ errorMessage }}
-</div>
-
-<div *ngIf="isLoading" class="flex justify-center py-20">
-  <svg
-    class="animate-spin h-10 w-10 text-secondary"
-    viewBox="0 0 24 24"
-    fill="none"
-  >
-    <circle
-      class="opacity-25"
-      cx="12"
-      cy="12"
-      r="10"
-      stroke="currentColor"
-      stroke-width="4"
-    />
-    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-  </svg>
-</div>
-
-<div
-  *ngIf="!isLoading && filtered.length === 0 && !errorMessage"
-  class="glass-1 rounded-2xl p-16 text-center border border-white/5"
->
-  <span class="material-symbols-outlined text-6xl text-outline block mb-4"
-    >help_outline</span
-  >
-  <h3 class="text-xl font-bold text-on-surface">No help requests</h3>
-</div>
-
-<div *ngIf="!isLoading" class="space-y-4">
-  <div
-    *ngFor="let r of filtered"
-    class="glass-1 rounded-xl border border-white/5 overflow-hidden transition-all"
-  >
-    <!-- Row -->
-    <div
-      class="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-white/5 transition-colors"
-      (click)="toggleExpand(r.id!)"
-    >
-      <div class="flex items-start gap-4">
-        <div
-          class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary flex-shrink-0"
-        >
-          <span class="material-symbols-outlined fill-icon">{{
-            getTypeIcon(r.type)
-          }}</span>
+    <!-- Stats bar -->
+    <div *ngIf="stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
+        <div class="absolute -top-3 left-4 w-7 h-7 bg-secondary rounded-lg flex items-center justify-center shadow-lg shadow-secondary/20">
+          <span class="material-symbols-outlined text-on-secondary text-sm fill-icon">help</span>
         </div>
-        <div>
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-xs font-bold font-mono text-on-surface-variant"
-              >#{{ r.id }}</span
+        <div class="mt-2">
+          <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Open</p>
+          <h3 class="text-2xl font-black text-on-surface">{{ stats.openRequests }}</h3>
+        </div>
+      </div>
+      <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
+        <div class="absolute -top-3 left-4 w-7 h-7 bg-tertiary-dim/80 rounded-lg flex items-center justify-center shadow-lg">
+          <span class="material-symbols-outlined text-on-tertiary text-sm fill-icon">check_circle</span>
+        </div>
+        <div class="mt-2">
+          <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Resolved Today</p>
+          <h3 class="text-2xl font-black text-on-surface">{{ stats.resolvedToday }}</h3>
+        </div>
+      </div>
+      <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
+        <div class="absolute -top-3 left-4 w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center shadow-lg">
+          <span class="material-symbols-outlined text-white text-sm fill-icon">assignment_ind</span>
+        </div>
+        <div class="mt-2">
+          <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Active Assign.</p>
+          <h3 class="text-2xl font-black text-on-surface">{{ stats.activeAssignments }}</h3>
+        </div>
+      </div>
+      <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
+        <div class="absolute -top-3 left-4 w-7 h-7 bg-blue-700 rounded-lg flex items-center justify-center shadow-lg">
+          <span class="material-symbols-outlined text-white text-sm fill-icon">timer</span>
+        </div>
+        <div class="mt-2">
+          <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Avg Response</p>
+          <h3 class="text-2xl font-black text-on-surface">{{ stats.avgResponseTimeMin }}m</h3>
+        </div>
+      </div>
+      <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
+        <div class="absolute -top-3 left-4 w-7 h-7 bg-error rounded-lg flex items-center justify-center shadow-lg">
+          <span class="material-symbols-outlined text-white text-sm fill-icon">report_problem</span>
+        </div>
+        <div class="mt-2">
+          <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Pending Inc.</p>
+          <h3 class="text-2xl font-black text-on-surface">{{ stats.pendingIncidents }}</h3>
+        </div>
+      </div>
+      <div class="glass-1 rounded-xl p-4 border border-white/5 relative">
+        <div class="absolute -top-3 left-4 w-7 h-7 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
+          <span class="material-symbols-outlined text-on-primary text-sm fill-icon">verified</span>
+        </div>
+        <div class="mt-2">
+          <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Avg Cred.</p>
+          <h3 class="text-2xl font-black text-on-surface">{{ (stats.avgCredibilityScore * 100).toFixed(0) }}%</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex flex-wrap gap-2">
+      <button
+        *ngFor="let f of filters"
+        (click)="applyFilter(f)"
+        class="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all"
+        [ngClass]="
+          activeFilter === f
+            ? 'bg-secondary text-on-secondary shadow-[0_0_15px_rgba(105,156,255,0.3)]'
+            : 'glass-2 text-on-surface-variant hover:text-white'
+        "
+      >
+        {{ f }}
+      </button>
+    </div>
+
+    <!-- Error -->
+    <div
+      *ngIf="errorMessage"
+      class="p-4 rounded-xl bg-error/10 border border-error/20 text-error text-sm flex items-center gap-2"
+    >
+      <span class="material-symbols-outlined">error</span> {{ errorMessage }}
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="flex justify-center py-20">
+      <svg
+        class="animate-spin h-10 w-10 text-secondary"
+        viewBox="0 0 24 24"
+        fill="none"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        />
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+      </svg>
+    </div>
+
+    <!-- Empty state -->
+    <div
+      *ngIf="!isLoading && filtered.length === 0 && !errorMessage"
+      class="glass-1 rounded-2xl p-16 text-center border border-white/5"
+    >
+      <span class="material-symbols-outlined text-6xl text-outline block mb-4">help_outline</span>
+      <h3 class="text-xl font-bold text-on-surface">No help requests</h3>
+    </div>
+
+    <!-- Request list -->
+    <div *ngIf="!isLoading" class="space-y-4">
+      <div
+        *ngFor="let r of filtered"
+        class="glass-1 rounded-xl border border-white/5 overflow-hidden transition-all"
+      >
+        <!-- Row header -->
+        <div
+          class="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-white/5 transition-colors"
+          (click)="toggleExpand(r.id!)"
+        >
+          <div class="flex items-start gap-4">
+            <div
+              class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary flex-shrink-0"
             >
-            <app-status-badge
-              [status]="r.status || ''"
-              [status]="r.status || ''"
-            ></app-status-badge>
-            <span
-              class="text-xs font-bold px-2 py-0.5 rounded-full bg-white/5 border border-white/10"
-              >{{ r.type }}</span
-            >
+              <span class="material-symbols-outlined fill-icon">{{ getTypeIcon(r.type) }}</span>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-bold font-mono text-on-surface-variant">#{{ r.id }}</span>
+                <app-status-badge [status]="r.status || ''"></app-status-badge>
+                <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-white/5 border border-white/10">{{ r.type }}</span>
+              </div>
+              <h3 class="font-bold text-on-surface">{{ r.location }}</h3>
+              <p class="text-sm text-on-surface-variant line-clamp-1">{{ r.description }}</p>
+            </div>
           </div>
-          <h3 class="font-bold text-on-surface">{{ r.location }}</h3>
-          <p class="text-sm text-on-surface-variant line-clamp-1">
-            {{ r.description }}
+          <div class="flex items-center gap-3 flex-shrink-0">
+            <!-- Urgency dots -->
+            <div class="flex gap-1 items-center">
+              <span class="text-xs text-on-surface-variant mr-1">Urgency</span>
+              <span
+                *ngFor="let d of urgencyDots(r.urgency); let i = index"
+                class="w-2 h-2 rounded-full"
+                [ngClass]="i < r.urgency ? getUrgencyColor(r.urgency) : 'bg-white/10'"
+              ></span>
+            </div>
+            <button
+              (click)="openAssign(r.id!); $event.stopPropagation()"
+              class="px-3 py-1.5 bg-secondary/10 border border-secondary/20 text-secondary text-xs font-bold rounded-lg hover:bg-secondary/20 transition-all"
+            >
+              Assign
+            </button>
+            <button
+              (click)="confirmDelete(r.id!); $event.stopPropagation()"
+              class="p-2 glass-2 rounded-lg text-on-surface-variant hover:text-error transition-colors"
+            >
+              <span class="material-symbols-outlined text-sm">delete</span>
+            </button>
+            <span
+              class="material-symbols-outlined text-on-surface-variant transition-transform"
+              [ngClass]="expandedId === r.id ? 'rotate-180' : ''"
+            >expand_more</span>
+          </div>
+        </div>
+
+        <!-- Expanded assignments -->
+        <div *ngIf="expandedId === r.id" class="px-6 pb-6 space-y-3">
+          <div
+            *ngFor="let a of assignmentsMap[r.id!]"
+            class="p-3 glass-2 rounded-lg border border-white/5 space-y-2"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="text-xs font-mono text-on-surface-variant">#{{ a.id }}</span>
+                <span class="text-sm font-bold text-on-surface">Responder {{ a.responderId }}</span>
+                <span
+                  class="text-[10px] font-bold px-2 py-0.5 rounded-full border"
+                  [ngClass]="
+                    (a.mlScoreAtAssignment || 0) >= 0.7
+                      ? 'bg-secondary/10 text-secondary border-secondary/20'
+                      : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                  "
+                >
+                  ML {{ ((a.mlScoreAtAssignment || 0) * 100).toFixed(0) }}%
+                </span>
+                <span *ngIf="a.responseTimeMin" class="text-[10px] text-on-surface-variant flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">timer</span>{{ a.responseTimeMin }}m
+                </span>
+              </div>
+              <div class="flex items-center gap-2">
+                <app-status-badge [status]="a.status || ''"></app-status-badge>
+                <button
+                  *ngIf="a.status === 'ASSIGNED'"
+                  (click)="updateStatus(a.id!, 'ACCEPTED')"
+                  class="text-xs px-2 py-1 bg-secondary/10 text-secondary rounded border border-secondary/20 hover:bg-secondary/20"
+                >
+                  Accept
+                </button>
+                <button
+                  *ngIf="a.status === 'ACCEPTED'"
+                  (click)="openComplete(a.id!, r.id!)"
+                  class="text-xs px-2 py-1 bg-tertiary-dim/10 text-tertiary-dim rounded border border-tertiary-dim/20 hover:bg-tertiary-dim/20"
+                >
+                  Complete
+                </button>
+              </div>
+            </div>
+
+            <!-- Completion details -->
+            <div
+              *ngIf="a.status === 'COMPLETED' && (a.completionNote || a.rating)"
+              class="pt-2 border-t border-white/5"
+            >
+              <div *ngIf="a.rating" class="flex items-center gap-1 mb-1">
+                <span
+                  *ngFor="let s of getStars(5)"
+                  class="text-sm"
+                  [ngClass]="s <= (a.rating || 0) ? 'text-amber-400' : 'text-on-surface-variant/30'"
+                >★</span>
+                <span class="text-xs text-on-surface-variant ml-1">{{ a.rating }}/5</span>
+              </div>
+              <p *ngIf="a.completionNote" class="text-xs text-on-surface-variant italic">
+                "{{ a.completionNote }}"
+              </p>
+            </div>
+          </div>
+          <p *ngIf="!assignmentsMap[r.id!]?.length" class="text-xs text-on-surface-variant py-2">
+            No assignments yet.
           </p>
         </div>
       </div>
-      <div class="flex items-center gap-3 flex-shrink-0">
-        <!-- Urgency dots -->
-        <div class="flex gap-1 items-center">
-          <span class="text-xs text-on-surface-variant mr-1">Urgency</span>
-          <span
-            *ngFor="let d of urgencyDots(r.urgency); let i = index"
-            class="w-2 h-2 rounded-full"
-            [ngClass]="
-              i < r.urgency ? getUrgencyColor(r.urgency) : 'bg-white/10'
-            "
-          >
-          </span>
-        </div>
-        <button
-          (click)="openAssign(r.id!); $event.stopPropagation()"
-          class="px-3 py-1.5 bg-secondary/10 border border-secondary/20 text-secondary text-xs font-bold rounded-lg hover:bg-secondary/20 transition-all"
-        >
-          Assign
-        </button>
-        <button
-          (click)="confirmDelete(r.id!); $event.stopPropagation()"
-          class="p-2 glass-2 rounded-lg text-on-surface-variant hover:text-error transition-colors"
-        >
-          <span class="material-symbols-outlined text-sm">delete</span>
-        </button>
-        <span
-          class="material-symbols-outlined text-on-surface-variant transition-transform"
-          [ngClass]="expandedId === r.id ? 'rotate-180' : ''"
-          >expand_more</span
-        >
-      </div>
     </div>
+  </div>
 
-    <!-- Expanded assignments -->
-    <!-- Replace the assignment row inner content -->
-    <!-- Replace the existing assignment row -->
-    <div *ngFor="let a of assignmentsMap[r.id!]"
-         class="p-3 glass-2 rounded-lg border border-white/5 space-y-2">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <span class="text-xs font-mono text-on-surface-variant">#{{ a.id }}</span>
-          <span class="text-sm font-bold text-on-surface">Responder {{ a.responderId }}</span>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border"
-                [ngClass]="(a.mlScoreAtAssignment || 0) >= 0.7
-              ? 'bg-secondary/10 text-secondary border-secondary/20'
-              : 'bg-amber-500/10 text-amber-400 border-amber-500/20'">
-        ML {{ ((a.mlScoreAtAssignment || 0) * 100).toFixed(0) }}%
-      </span>
-          <span *ngIf="a.responseTimeMin" class="text-[10px] text-on-surface-variant flex items-center gap-1">
-        <span class="material-symbols-outlined text-sm">timer</span>{{ a.responseTimeMin }}m
-      </span>
-        </div>
-        <div class="flex items-center gap-2">
-          <app-status-badge [status]="a.status || ''"></app-status-badge>
-          <button *ngIf="a.status === 'ASSIGNED'"
-                  (click)="updateStatus(a.id!, 'ACCEPTED')"
-                  class="text-xs px-2 py-1 bg-secondary/10 text-secondary rounded border border-secondary/20 hover:bg-secondary/20">
-            Accept
-          </button>
-          <button *ngIf="a.status === 'ACCEPTED'"
-                  (click)="openComplete(a.id!, r.id!)"
-                  class="text-xs px-2 py-1 bg-tertiary-dim/10 text-tertiary-dim rounded border border-tertiary-dim/20 hover:bg-tertiary-dim/20">
-            Complete
-          </button>
-        </div>
-      </div>
-
-      <!-- Completion details (visible when COMPLETED) -->
-      <div *ngIf="a.status === 'COMPLETED' && (a.completionNote || a.rating)"
-           class="pt-2 border-t border-white/5">
-        <div *ngIf="a.rating" class="flex items-center gap-1 mb-1">
-      <span *ngFor="let s of getStars(5)"
-            class="text-sm"
-            [ngClass]="s <= (a.rating || 0) ? 'text-amber-400' : 'text-on-surface-variant/30'">★</span>
-          <span class="text-xs text-on-surface-variant ml-1">{{ a.rating }}/5</span>
-        </div>
-        <p *ngIf="a.completionNote" class="text-xs text-on-surface-variant italic">
-          "{{ a.completionNote }}"
-        </p>
-      </div>
-    </div>
-
-<!-- Assign modal -->
-
-  <div *ngIf="assigningTo !== null"
-       class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="glass-1 rounded-2xl w-full max-w-lg border border-secondary/20 shadow-[0_0_40px_rgba(105,156,255,0.2)] overflow-hidden">
-
+  <!-- ══ ASSIGN MODAL (root level) ══ -->
+  <div
+    *ngIf="assigningTo !== null"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+  >
+    <div
+      class="glass-1 rounded-2xl w-full max-w-lg border border-secondary/20 shadow-[0_0_40px_rgba(105,156,255,0.2)] overflow-hidden"
+    >
       <div class="p-6 border-b border-white/5">
         <h3 class="text-xl font-black text-on-surface">Assign Responder</h3>
         <p class="text-xs text-on-surface-variant mt-1">Request #{{ assigningTo }}</p>
@@ -271,16 +275,22 @@
         </div>
 
         <!-- No matches -->
-        <p *ngIf="!loadingMatches[assigningTo] && matchesMap[assigningTo]?.length === 0"
-           class="text-xs text-on-surface-variant py-2">
+        <p
+          *ngIf="!loadingMatches[assigningTo] && matchesMap[assigningTo]?.length === 0"
+          class="text-xs text-on-surface-variant py-2"
+        >
           No active volunteer offers found.
         </p>
 
         <!-- Match cards -->
-        <div *ngIf="!loadingMatches[assigningTo] && matchesMap[assigningTo]?.length">
-             class="space-y-2 max-h-48 overflow-y-auto pr-1">
-          <div *ngFor="let m of matchesMap[assigningTo]"
-               class="flex items-center justify-between p-3 glass-2 rounded-xl border border-white/5 hover:border-secondary/30 transition-all">
+        <div
+          *ngIf="!loadingMatches[assigningTo] && matchesMap[assigningTo]?.length"
+          class="space-y-2 max-h-48 overflow-y-auto pr-1"
+        >
+          <div
+            *ngFor="let m of matchesMap[assigningTo]"
+            class="flex items-center justify-between p-3 glass-2 rounded-xl border border-white/5 hover:border-secondary/30 transition-all"
+          >
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-black text-primary">
                 V{{ m.volunteerId }}
@@ -295,23 +305,26 @@
               <!-- Match score ring -->
               <div class="relative w-10 h-10">
                 <svg class="w-10 h-10 -rotate-90" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="15.9" fill="none"
-                          stroke="rgba(255,255,255,0.08)" stroke-width="3"/>
-                  <circle cx="18" cy="18" r="15.9" fill="none" stroke-width="3"
-                          [attr.stroke]="m.matchScore >= 0.7 ? '#699cff' : m.matchScore >= 0.4 ? '#fbbf24' : '#ff6e84'"
-                          stroke-linecap="round"
-                          [attr.stroke-dasharray]="(m.matchScore * 100).toFixed(0) + ' 100'"
-                          stroke-dashoffset="0"/>
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"/>
+                  <circle
+                    cx="18" cy="18" r="15.9" fill="none" stroke-width="3"
+                    [attr.stroke]="m.matchScore >= 0.7 ? '#699cff' : m.matchScore >= 0.4 ? '#fbbf24' : '#ff6e84'"
+                    stroke-linecap="round"
+                    [attr.stroke-dasharray]="(m.matchScore * 100).toFixed(0) + ' 100'"
+                    stroke-dashoffset="0"
+                  />
                 </svg>
                 <div class="absolute inset-0 flex items-center justify-center">
-                <span class="text-[9px] font-black text-on-surface">
-                  {{ (m.matchScore * 100).toFixed(0) }}%
-                </span>
+                  <span class="text-[9px] font-black text-on-surface">
+                    {{ (m.matchScore * 100).toFixed(0) }}%
+                  </span>
                 </div>
               </div>
-              <button (click)="assignFromMatch(assigningTo!, m.volunteerId)"
-                      class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
-                      style="background:rgba(105,156,255,0.15);color:#699cff;border:1px solid rgba(105,156,255,0.3)">
+              <button
+                (click)="assignFromMatch(assigningTo!, m.volunteerId)"
+                class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
+                style="background:rgba(105,156,255,0.15);color:#699cff;border:1px solid rgba(105,156,255,0.3)"
+              >
                 Assign
               </button>
             </div>
@@ -326,119 +339,135 @@
           <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
             Responder ID
           </label>
-          <input type="number" formControlName="responderId" placeholder="Enter responder user ID"
-                 class="w-full h-12 px-4 glass-2 rounded-xl text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-secondary outline-none" />
+          <input
+            type="number"
+            formControlName="responderId"
+            placeholder="Enter responder user ID"
+            class="w-full h-12 px-4 glass-2 rounded-xl text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-secondary outline-none"
+          />
         </div>
         <div>
           <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
             Notes (optional)
           </label>
-          <textarea formControlName="notes" rows="2" placeholder="Any special instructions..."
-                    class="w-full px-4 py-3 glass-2 rounded-xl text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-secondary outline-none resize-none">
-        </textarea>
+          <textarea
+            formControlName="notes"
+            rows="2"
+            placeholder="Any special instructions..."
+            class="w-full px-4 py-3 glass-2 rounded-xl text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-secondary outline-none resize-none"
+          ></textarea>
         </div>
         <div class="flex gap-3">
-          <button type="button" (click)="closeAssign()"
-                  class="flex-1 py-3 glass-2 rounded-xl font-bold text-on-surface hover:bg-white/10 transition-all">
+          <button
+            type="button"
+            (click)="closeAssign()"
+            class="flex-1 py-3 glass-2 rounded-xl font-bold text-on-surface hover:bg-white/10 transition-all"
+          >
             Cancel
           </button>
-          <button type="submit"
-                  class="flex-1 py-3 rounded-xl font-bold transition-all active:scale-95"
-                  style="background:#699cff;color:#001e4a">
+          <button
+            type="submit"
+            class="flex-1 py-3 rounded-xl font-bold transition-all active:scale-95"
+            style="background:#699cff;color:#001e4a"
+          >
             Assign
           </button>
         </div>
-
       </form>
     </div>
   </div>
-  </div>
 
-
-<!-- Delete confirm -->
-<div
-  *ngIf="deleteConfirmId !== null"
-  class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
->
-  <div class="glass-1 rounded-2xl p-8 max-w-sm w-full border border-error/20">
-    <span class="material-symbols-outlined text-error text-5xl block mb-4"
-      >warning</span
-    >
-    <h3 class="text-xl font-black text-on-surface mb-2">Delete Request?</h3>
-    <p class="text-on-surface-variant text-sm mb-6">
-      This will also remove all assignments.
-    </p>
-    <div class="flex gap-3">
-      <button
-        (click)="cancelDelete()"
-        class="flex-1 py-3 glass-2 rounded-xl font-bold"
-      >
-        Cancel
-      </button>
-      <button
-        (click)="doDelete()"
-        class="flex-1 py-3 bg-error text-on-error rounded-xl font-bold"
-      >
-        Delete
-      </button>
-    </div>
-  </div>
-</div>
-</div>
-
-<!-- Completion modal -->
-<div *ngIf="completingAssignmentId !== null"
-     class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-  <div class="glass-1 rounded-2xl p-8 max-w-sm w-full border border-tertiary-dim/20 shadow-[0_0_40px_rgba(125,239,192,0.15)]">
-
-    <div class="flex items-center gap-3 mb-6">
-      <div class="w-10 h-10 rounded-xl bg-tertiary-dim/20 flex items-center justify-center">
-        <span class="material-symbols-outlined text-tertiary-dim">task_alt</span>
-      </div>
-      <div>
-        <h3 class="text-lg font-black text-on-surface">Complete Assignment</h3>
-        <p class="text-xs text-on-surface-variant">Assignment #{{ completingAssignmentId }}</p>
-      </div>
-    </div>
-
-    <!-- Star rating -->
-    <div class="mb-4">
-      <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3">
-        Performance Rating
-      </label>
-      <div class="flex gap-2">
-        <button *ngFor="let s of getStars(5)"
-                type="button"
-                (click)="completionRating = s"
-                class="text-2xl transition-all hover:scale-110"
-                [ngClass]="s <= completionRating ? 'text-amber-400' : 'text-on-surface-variant/30'">
-          ★
+  <!-- ══ DELETE CONFIRM MODAL (root level) ══ -->
+  <div
+    *ngIf="deleteConfirmId !== null"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+  >
+    <div class="glass-1 rounded-2xl p-8 max-w-sm w-full border border-error/20">
+      <span class="material-symbols-outlined text-error text-5xl block mb-4">warning</span>
+      <h3 class="text-xl font-black text-on-surface mb-2">Delete Request?</h3>
+      <p class="text-on-surface-variant text-sm mb-6">
+        This will also remove all assignments.
+      </p>
+      <div class="flex gap-3">
+        <button
+          (click)="cancelDelete()"
+          class="flex-1 py-3 glass-2 rounded-xl font-bold"
+        >
+          Cancel
         </button>
-        <span class="text-sm text-on-surface-variant self-center ml-2">{{ completionRating }}/5</span>
+        <button
+          (click)="doDelete()"
+          class="flex-1 py-3 bg-error text-on-error rounded-xl font-bold"
+        >
+          Delete
+        </button>
       </div>
     </div>
+  </div>
 
-    <!-- Note -->
-    <div class="mb-6">
-      <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
-        Completion Note
-      </label>
-      <textarea [(ngModel)]="completionNote" rows="3"
-                placeholder="Describe what was done, outcome, any issues..."
-                class="w-full px-4 py-3 glass-2 rounded-xl text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-tertiary-dim outline-none resize-none text-sm">
-      </textarea>
-    </div>
+  <!-- ══ COMPLETION MODAL (root level) ══ -->
+  <div
+    *ngIf="completingAssignmentId !== null"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+  >
+    <div class="glass-1 rounded-2xl p-8 max-w-sm w-full border border-tertiary-dim/20 shadow-[0_0_40px_rgba(125,239,192,0.15)]">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-xl bg-tertiary-dim/20 flex items-center justify-center">
+          <span class="material-symbols-outlined text-tertiary-dim">task_alt</span>
+        </div>
+        <div>
+          <h3 class="text-lg font-black text-on-surface">Complete Assignment</h3>
+          <p class="text-xs text-on-surface-variant">Assignment #{{ completingAssignmentId }}</p>
+        </div>
+      </div>
 
-    <div class="flex gap-3">
-      <button (click)="closeComplete()"
-              class="flex-1 py-3 glass-2 rounded-xl font-bold text-on-surface hover:bg-white/10 transition-all">
-        Cancel
-      </button>
-      <button (click)="submitCompletion()"
-              class="flex-1 py-3 rounded-xl font-bold transition-all active:scale-95"
-              style="background:rgba(125,239,192,0.8);color:#004d36">
-        Mark Complete
-      </button>
+      <!-- Star rating -->
+      <div class="mb-4">
+        <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3">
+          Performance Rating
+        </label>
+        <div class="flex gap-2">
+          <button
+            *ngFor="let s of getStars(5)"
+            type="button"
+            (click)="completionRating = s"
+            class="text-2xl transition-all hover:scale-110"
+            [ngClass]="s <= completionRating ? 'text-amber-400' : 'text-on-surface-variant/30'"
+          >
+            ★
+          </button>
+          <span class="text-sm text-on-surface-variant self-center ml-2">{{ completionRating }}/5</span>
+        </div>
+      </div>
+
+      <!-- Note -->
+      <div class="mb-6">
+        <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+          Completion Note
+        </label>
+        <textarea
+          [(ngModel)]="completionNote"
+          rows="3"
+          placeholder="Describe what was done, outcome, any issues..."
+          class="w-full px-4 py-3 glass-2 rounded-xl text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-tertiary-dim outline-none resize-none text-sm"
+        ></textarea>
+      </div>
+
+      <div class="flex gap-3">
+        <button
+          (click)="closeComplete()"
+          class="flex-1 py-3 glass-2 rounded-xl font-bold text-on-surface hover:bg-white/10 transition-all"
+        >
+          Cancel
+        </button>
+        <button
+          (click)="submitCompletion()"
+          class="flex-1 py-3 rounded-xl font-bold transition-all active:scale-95"
+          style="background:rgba(125,239,192,0.8);color:#004d36"
+        >
+          Mark Complete
+        </button>
+      </div>
     </div>
   </div>
 </div>

@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, RouterLinkActive } from '@angular/router';
 import { NavItem } from '../../models/nav-item.model';
@@ -7,26 +7,35 @@ import { NavItem } from '../../models/nav-item.model';
   selector: 'app-sidebar',
   standalone: true,
   imports: [CommonModule, RouterModule, RouterLinkActive],
-  templateUrl: './sidebar.component.html',
+  templateUrl: './sidebar.component.html'
 })
-export class SidebarComponent {
-  @Input() accentColor: string = '#6C5CE7';
-  @Input() accentClass: string = 'text-[#6C5CE7]';
-  @Input() ctaLabel: string = 'New Initiative';
-  @Input() ctaRoute: string = '/';
+export class SidebarComponent implements OnChanges {
 
-  navItems: NavItem[] = [
-    { label: 'Admin', icon: 'admin_panel_settings', route: '/admin' },
-    { label: 'Overview', icon: 'dashboard', route: '/dashboard' },
-    { label: 'Incidents', icon: 'report_problem', route: '/incidents' },
-    {
-      label: 'Coordination',
-      icon: 'volunteer_activism',
-      route: '/coordination',
-    },
-    { label: 'Alerts', icon: 'emergency', route: '/alerts' },
-    { label: 'Opportunities', icon: 'explore', route: '/opportunities' },
-    { label: 'Profile', icon: 'person', route: '/profile' },
-    { label: 'Settings', icon: 'settings', route: '/settings' },
+  @Input() role: string = 'VOLUNTEER';
+
+  navItems: NavItem[] = [];
+
+  adminNav: NavItem[] = [
+    { label: 'Dashboard',    icon: 'dashboard',           route: '/dashboard'    },
+    { label: 'Incidents',    icon: 'report_problem',      route: '/incidents'    },
+    { label: 'Coordination', icon: 'volunteer_activism',  route: '/coordination' },
+    { label: 'Alerts',       icon: 'emergency',           route: '/alerts'       },
+    { label: 'Profile',      icon: 'person',              route: '/profile'      },
   ];
+
+  userNav: NavItem[] = [
+    { label: 'Home',         icon: 'home',                route: '/home'         },
+    { label: 'Report',       icon: 'report_problem',      route: '/report'       },
+    { label: 'Get Help',     icon: 'sos',                 route: '/help'         },
+    { label: 'Missions',     icon: 'explore',             route: '/missions'     },
+    { label: 'Profile',      icon: 'person',              route: '/profile'      },
+  ];
+
+  ngOnChanges(): void {
+    this.navItems = this.role === 'ADMIN' ? this.adminNav : this.userNav;
+  }
+
+  get ctaRoute(): string  { return this.role === 'ADMIN' ? '/incidents/new' : '/report'; }
+  get ctaLabel(): string  { return this.role === 'ADMIN' ? 'New Incident'   : 'Report Incident'; }
+  get accentColor(): string { return this.role === 'ADMIN' ? '#3B82F6' : '#aca3ff'; }
 }
