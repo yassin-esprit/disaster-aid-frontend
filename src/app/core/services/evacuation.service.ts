@@ -1,4 +1,3 @@
-// src/app/core/services/evacuation.service.ts
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { HttpService } from './http.service';
@@ -8,7 +7,6 @@ import { EvacuationRoute, RouteCheckpoint, ZoneShelterAssignment } from '../../s
 export class EvacuationService {
   constructor(private http: HttpService) {}
 
-  // Evacuation Routes
   getAllRoutes(): Observable<EvacuationRoute[]> {
     return this.http.get<EvacuationRoute[]>('evacuation-routes');
   }
@@ -33,6 +31,10 @@ export class EvacuationService {
     return this.http.put<EvacuationRoute>(`evacuation-routes/${id}`, route);
   }
 
+  recomputeRoute(id: number): Observable<EvacuationRoute> {
+    return this.http.patch<EvacuationRoute>(`evacuation-routes/${id}/recompute`, {});
+  }
+
   activateRoute(id: number): Observable<EvacuationRoute> {
     return this.http.patch<EvacuationRoute>(`evacuation-routes/${id}/activate`, {});
   }
@@ -45,7 +47,6 @@ export class EvacuationService {
     return this.http.delete<void>(`evacuation-routes/${id}`);
   }
 
-  // Route Checkpoints
   getAllCheckpoints(): Observable<RouteCheckpoint[]> {
     return this.http.get<RouteCheckpoint[]>('route-checkpoints');
   }
@@ -70,7 +71,6 @@ export class EvacuationService {
     return this.http.delete<void>(`route-checkpoints/${id}`);
   }
 
-  // Zone Shelter Assignments
   getAllAssignments(): Observable<ZoneShelterAssignment[]> {
     return this.http.get<ZoneShelterAssignment[]>('zone-shelter-assignments');
   }

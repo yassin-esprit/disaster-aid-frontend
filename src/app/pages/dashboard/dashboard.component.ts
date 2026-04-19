@@ -113,9 +113,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         sensors:    this.sensorService.getAllSensors(),
         alerts:     this.alertService.getAllAlerts(),
         routes:     this.evacuationService.getAllRoutes(),
-        anomalies:  this.sensorService.getAnomalies(),
       }))
-    ).subscribe(({ sensors, alerts, routes, anomalies }) => {
+    ).subscribe(({ sensors, alerts, routes }) => {
       this.totalSensors   = sensors.length;
       this.activeSensors  = sensors.filter(s => s.status === 'ACTIVE').length;
       this.offlineSensors = sensors.filter(s => s.status === 'OFFLINE').length;
@@ -124,7 +123,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.criticalAlerts = alerts.filter(a => a.severity === 'CRITICAL' && a.status === 'ACTIVE').length;
 
       this.activeRoutes   = routes.filter(r => r.status === 'ACTIVE').length;
-      this.anomaliesCount = anomalies.length;
 
       // Recent 4 alerts sorted newest first
       this.recentAlerts = [...alerts]

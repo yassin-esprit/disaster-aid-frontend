@@ -1,4 +1,3 @@
-// src/app/shared/components/sidebar/sidebar.component.ts
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, RouterLinkActive } from '@angular/router';
@@ -17,14 +16,15 @@ export class SidebarComponent {
   @Input() ctaRoute: string = '/incidents';
 
   navItems: NavItem[] = [
-    { label: 'Overview',       icon: 'dashboard',        route: '/dashboard' },
-    { label: 'Sensors',        icon: 'sensors',          route: '/sensors'   },
-    { label: 'Alerts',         icon: 'emergency',        route: '/alerts'    },
-    { label: 'Geofence Zones', icon: 'map',              route: '/geofence'  },
-    { label: 'Evacuation',     icon: 'directions',       route: '/evacuation'},
-    { label: 'Statistics',     icon: 'bar_chart',        route: '/statistics'},
-    { label: 'Incidents',      icon: 'report_problem',   route: '/incidents' },
-    { label: 'Opportunities',  icon: 'explore',          route: '/opportunities'},
-    { label: 'My Profile',     icon: 'person',           route: '/profile'   },
+    { label: 'Overview',        icon: 'dashboard',      route: '/dashboard'    },
+    { label: 'Sensors',         icon: 'sensors',        route: '/sensors'      },
+    { label: 'Alerts',          icon: 'emergency',      route: '/alerts'       },
+    { label: 'Geofence Zones',  icon: 'map',            route: '/geofence'     },
+    { label: 'Evacuation',      icon: 'directions',     route: '/evacuation'   },
+    { label: 'Spatial Queries', icon: 'travel_explore', route: '/spatial'      },
+    { label: 'Statistics',      icon: 'bar_chart',      route: '/statistics'   },
+    { label: 'Incidents',       icon: 'report_problem', route: '/incidents'    },
+    { label: 'Opportunities',   icon: 'explore',        route: '/opportunities'},
+    { label: 'My Profile',      icon: 'person',         route: '/profile'      },
   ];
 }
