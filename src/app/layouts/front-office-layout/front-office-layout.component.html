@@ -1,32 +1,73 @@
 <div class="min-h-screen text-on-surface">
-    <header class="front-nav fixed top-0 inset-x-0 z-50 h-16">
-        <div class="h-full max-w-screen-2xl mx-auto px-4 md:px-8 flex items-center justify-between">
-            <a routerLink="/dashboard" class="flex items-center gap-2">
-                <span class="text-lg md:text-xl font-black tracking-tight text-white">CPS</span>
-                <span class="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 bg-primary/20 border border-primary/30 rounded-full text-primary">Hub</span
-				>
+	<header class="fixed top-0 w-full h-16 z-50 bg-white/10 backdrop-blur-md shadow-[0_0_40px_rgba(108,92,231,0.12)]">
+		<div class="flex justify-between items-center px-8 w-full max-w-screen-2xl mx-auto h-full relative">
+			<a routerLink="/" class="text-2xl font-black text-white tracking-tighter flex items-center gap-2">
+				CPS
+				<span class="text-xs font-mono text-primary px-2 py-0.5 bg-primary/10 rounded-full tracking-normal">HUB</span>
 			</a>
 
-			<nav class="hidden md:flex items-center gap-6 text-sm font-semibold">
+			<div class="hidden md:flex items-center space-x-8 font-medium text-sm tracking-tight">
 				<a
-					*ngFor="let link of links"
-					[routerLink]="link.route"
-					routerLinkActive="text-primary border-b border-primary"
-					[routerLinkActiveOptions]="{ exact: link.route === '/dashboard' }"
+					routerLink="/"
+					routerLinkActive="text-violet-400 border-b-2 border-violet-500"
+					[routerLinkActiveOptions]="{ exact: true }"
 					class="text-slate-300 hover:text-white transition-colors pb-1"
-					>{{ link.label }}</a
-				>
-			</nav>
+				>Home</a>
+				<a
+					routerLink="/resource"
+					routerLinkActive="text-white"
+					class="text-slate-300 hover:text-white transition-colors"
+				>Resources</a>
+				<a
+					routerLink="/shelter"
+					routerLinkActive="text-white"
+					class="text-slate-300 hover:text-white transition-colors"
+				>Shelter</a>
+				<a
+					routerLink="/reviews"
+					routerLinkActive="text-white border-b-2 border-white/70"
+					class="text-slate-300 hover:text-white transition-colors pb-1"
+				>Reviews</a>
+				<a
+					routerLink="/reports"
+					routerLinkActive="text-white border-b-2 border-white/70"
+					class="text-slate-300 hover:text-white transition-colors pb-1"
+				>Reports</a>
+				<a
+					routerLink="/nearby-shelters"
+					routerLinkActive="text-white border-b-2 border-white/70"
+					class="text-slate-300 hover:text-white transition-colors pb-1"
+				>Nearby Shelters</a>
+				<a
+					routerLink="/evacuation-routes"
+					routerLinkActive="text-white"
+					class="text-slate-300 hover:text-white transition-colors"
+				>Evacuation Routes</a>
+			</div>
 
-			<a
-				routerLink="/backoffice/resources"
-				class="px-3 py-1.5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[11px] font-bold uppercase tracking-widest"
-				>Gestion</a
-			>
+			<div class="flex items-center gap-4">
+				<button
+					class="material-symbols-outlined text-slate-300 hover:text-white transition-all hover:bg-white/5 p-2 rounded-full"
+					type="button"
+					aria-label="Notifications"
+				>
+					notifications
+				</button>
+				<div class="h-6 w-[1px] bg-white/10 mx-2"></div>
+				<a routerLink="/login" class="text-slate-300 text-sm font-medium hover:text-white transition-colors">Sign In</a>
+				<a
+					routerLink="/login"
+					class="bg-primary text-on-primary px-5 py-2 rounded-full text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+				>
+					Get Started
+				</a>
+			</div>
+
+			<div class="bg-gradient-to-r from-violet-500/20 to-transparent h-[1px] bottom-0 absolute left-0 right-0"></div>
 		</div>
 	</header>
 
-	<main class="pt-20 pb-10">
+	<main class="pt-16 pb-10">
 		<div class="max-w-screen-2xl mx-auto px-4 md:px-8">
 			<ng-content></ng-content>
 		</div>

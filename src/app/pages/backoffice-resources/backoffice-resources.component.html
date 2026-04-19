@@ -67,7 +67,10 @@
             <div class="p-5 border-b border-white/10 flex items-center justify-between">
                 <h3 class="text-lg font-black">Resources</h3>
                 <div class="flex items-center gap-2">
-                    <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" placeholder="Recherche..." class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm w-48" />
+                    <button type="button" (click)="exportResourcesExcel()" class="px-4 py-2 rounded-lg bg-primary/20 text-primary border border-primary/30 text-xs font-bold uppercase tracking-widest">
+            Export Excel
+          </button>
+                    <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" placeholder="Research..." class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm w-48" />
                     <select [ngModel]="pageSize" (ngModelChange)="onPageSizeChange($event)" class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm">
             <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} / page</option>
           </select>
@@ -83,7 +86,6 @@
                 <table class="w-full min-w-[900px]">
                     <thead class="bg-white/5 text-left text-xs uppercase tracking-widest text-on-surface-variant">
                         <tr>
-                            <th class="px-4 py-3">ID</th>
                             <th class="px-4 py-3">Nom</th>
                             <th class="px-4 py-3">Type</th>
                             <th class="px-4 py-3">Qty</th>
@@ -94,7 +96,6 @@
                     </thead>
                     <tbody>
                         <tr *ngFor="let item of paginatedResources" class="border-t border-white/5 hover:bg-white/5">
-                            <td class="px-4 py-3">{{ item.resourceId }}</td>
                             <td class="px-4 py-3 font-semibold">{{ item.name }}</td>
                             <td class="px-4 py-3">{{ item.type }}</td>
                             <td class="px-4 py-3">{{ item.quantity }}</td>
@@ -112,7 +113,7 @@
                             </td>
                         </tr>
                         <tr *ngIf="filteredResources.length === 0">
-                            <td class="px-4 py-6 text-on-surface-variant" colspan="7">Aucune resource disponible.</td>
+                          <td class="px-4 py-6 text-on-surface-variant" colspan="6">Aucune resource disponible.</td>
                         </tr>
                     </tbody>
                 </table>

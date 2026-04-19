@@ -3,14 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { switchMap } from 'rxjs';
-import { FrontOfficeLayoutComponent } from '../../layouts/front-office-layout/front-office-layout.component';
+import { AuthenticatedLayoutComponent } from '../../layouts/authenticated-layout/authenticated-layout.component';
 import { ReviewsTrustService } from '../../core/services/reviews-trust/reviews-trust.service';
 import { ReviewEntity } from '../../shared/models/reviews/reviews-trust.model';
 
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, FrontOfficeLayoutComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, AuthenticatedLayoutComponent],
   templateUrl: './reports.component.html',
   styleUrl: './reports.component.scss',
 })
@@ -22,6 +22,7 @@ export class ReportsComponent {
   isSubmitting = false;
   successMessage = '';
   errorMessage = '';
+  selectedReviewId: number | null = null;
 
   readonly form = this.fb.nonNullable.group({
     reporterId: [1, [Validators.required, Validators.min(1)]],
@@ -42,12 +43,14 @@ export class ReportsComponent {
       next: (items) => {
         this.reviews = items;
         if (items.length > 0) {
-          this.form.patchValue({ reviewId: items[0].reviewId });
+          this.selectReview(items[0]);
+        } else {
+          this.selectedReviewId = null;
         }
         this.isLoading = false;
       },
       error: () => {
-        this.errorMessage = 'Impossible de charger les avis a signaler.';
+        this.errorMessage = 'Unable to load reviews for moderation.';
         this.isLoading = false;
       },
     });
@@ -82,17 +85,25 @@ export class ReportsComponent {
       .subscribe({
         next: () => {
           this.successMessage =
-            'Signalement envoye. La revue est marquee pour moderation.';
+            'Report submitted. The selected review has been flagged for moderation.';
           this.isSubmitting = false;
           this.form.patchValue({ reason: '', description: '' });
           this.loadReviews();
         },
         error: () => {
           this.errorMessage =
-            'Impossible de soumettre le signalement pour le moment.';
+            'Unable to submit this report right now.';
           this.isSubmitting = false;
         },
       });
+  }
+
+  selectReview(review: ReviewEntity): void {
+    this.selectedReviewId = review.reviewId;
+    this.form.patchValue({
+      reporterId: review.authorId,
+      reviewId: review.reviewId,
+    });
   }
 
   shortBody(review: ReviewEntity): string {

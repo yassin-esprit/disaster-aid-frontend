@@ -1,14 +1,14 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { AuthenticatedLayoutComponent } from '../../layouts/authenticated-layout/authenticated-layout.component';
+import { FrontOfficeLayoutComponent } from '../../layouts/front-office-layout/front-office-layout.component';
 import { ResourceShelterService } from '../../core/services/resource-shelter/resource-shelter.service';
 import { ShelterEntity } from '../../shared/models/resource-shelter/resource-shelter.model';
 
 @Component({
   selector: 'app-nearby-shelters',
   standalone: true,
-  imports: [CommonModule, RouterModule, AuthenticatedLayoutComponent],
+  imports: [CommonModule, RouterModule, FrontOfficeLayoutComponent],
   templateUrl: './nearby-shelters.component.html',
 })
 export class NearbySheltersComponent {

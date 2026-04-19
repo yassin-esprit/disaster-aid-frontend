@@ -1,4 +1,4 @@
-<app-front-office-layout>
+<app-authenticated-layout pageTitle="Resource" breadcrumb="َAgency / Resource">
     <section class="space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div *ngFor="let stat of dashboardStats" class="glass-1 rounded-xl border border-white/10 p-5">
@@ -78,10 +78,10 @@
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-2">
                                     <button type="button" (click)="startEdit(item)" class="px-3 py-1.5 rounded-md bg-primary/20 text-primary text-[11px] font-bold uppercase">
-                    Modifier
+                    EDIT
                   </button>
                                     <button type="button" (click)="remove(item)" class="px-3 py-1.5 rounded-md bg-error/20 text-error text-[11px] font-bold uppercase">
-                    Supprimer
+                    Delete
                   </button>
                                 </div>
                             </td>
@@ -94,6 +94,7 @@
             </div>
         </div>
 
+        <!--
         <div class="glass-1 rounded-2xl border border-white/10 p-6">
             <h3 class="text-lg font-black mb-4">Allocation Ressource (Mission)</h3>
 
@@ -124,6 +125,6 @@
                     <p *ngIf="allocationMessage" class="text-sm font-semibold text-secondary">{{ allocationMessage }}</p>
                 </div>
             </form>
-        </div>
+        </div>   -->
     </section>
-</app-front-office-layout>
+</app-authenticated-layout>

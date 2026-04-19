@@ -2,10 +2,14 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { switchMap } from 'rxjs';
+import { map, switchMap } from 'rxjs';
 import { FrontOfficeLayoutComponent } from '../../layouts/front-office-layout/front-office-layout.component';
 import { ReviewsTrustService } from '../../core/services/reviews-trust/reviews-trust.service';
-import { EntityType, ReviewTarget } from '../../shared/models/reviews/reviews-trust.model';
+import {
+  EntityType,
+  ReviewEntity,
+  ReviewTarget,
+} from '../../shared/models/reviews/reviews-trust.model';
 
 @Component({
   selector: 'app-add-review',
@@ -17,20 +21,29 @@ import { EntityType, ReviewTarget } from '../../shared/models/reviews/reviews-tr
 export class AddReviewComponent {
   private readonly fb = inject(FormBuilder);
 
+  readonly stars = [1, 2, 3, 4, 5];
+  hoverRating = 0;
   isSubmitting = false;
   successMessage = '';
   errorMessage = '';
 
   readonly form = this.fb.nonNullable.group({
-    authorId: [1, [Validators.required, Validators.min(1)]],
-    targetId: [1, [Validators.required, Validators.min(1)]],
     targetType: ['ORGANISATION' as ReviewTarget, Validators.required],
     rating: [5, [Validators.required, Validators.min(1), Validators.max(5)]],
     body: ['', [Validators.required, Validators.minLength(5)]],
-    opportunityId: [''],
   });
 
   constructor(private readonly reviewsTrustService: ReviewsTrustService) {}
+
+  setRating(value: number): void {
+    this.form.controls.rating.setValue(value);
+    this.form.controls.rating.markAsTouched();
+  }
+
+  displayStarValue(star: number): boolean {
+    const preview = this.hoverRating > 0 ? this.hoverRating : this.form.controls.rating.value;
+    return star <= preview;
+  }
 
   submit(): void {
     if (this.form.invalid) {
@@ -44,52 +57,78 @@ export class AddReviewComponent {
 
     const raw = this.form.getRawValue();
     const entityType: EntityType = raw.targetType;
-    const opportunityId = this.parseOptionalNumber(raw.opportunityId);
 
-    this.reviewsTrustService
-      .createReview({
-        authorId: Number(raw.authorId),
-        targetId: Number(raw.targetId),
-        targetType: raw.targetType,
-        rating: Number(raw.rating),
-        body: raw.body.trim(),
-        opportunityId,
-      })
+    this.resolveReviewContext(raw.targetType)
       .pipe(
-        switchMap(() =>
-          this.reviewsTrustService.recalculateTrustScore(
-            Number(raw.targetId),
-            entityType,
-          ),
+        switchMap((context) =>
+          this.reviewsTrustService.createReview({
+            authorId: context.authorId,
+            targetId: context.targetId,
+            targetType: raw.targetType,
+            rating: Number(raw.rating),
+            body: raw.body.trim(),
+            opportunityId: null,
+          }),
+        ),
+        switchMap((created) =>
+          this.reviewsTrustService.recalculateTrustScore(created.targetId, entityType),
         ),
       )
       .subscribe({
         next: () => {
           this.successMessage =
-            'Avis soumis avec succes. Le trust score a ete mis a jour.';
+            'Review submitted successfully. Trust score was updated.';
           this.isSubmitting = false;
+          this.hoverRating = 0;
           this.form.reset({
-            authorId: Number(raw.authorId),
-            targetId: Number(raw.targetId),
             targetType: raw.targetType,
             rating: 5,
             body: '',
-            opportunityId: '',
           });
         },
         error: () => {
           this.errorMessage =
-            'Erreur lors de la soumission de l avis. Verifiez les IDs et reessayez.';
+            'Unable to submit the review right now. Please try again.';
           this.isSubmitting = false;
         },
       });
   }
 
-  private parseOptionalNumber(value: string): number | null {
-    const normalized = value.trim();
-    if (!normalized) {
-      return null;
+  private resolveReviewContext(targetType: ReviewTarget) {
+    return this.reviewsTrustService.getAllReviews().pipe(
+      map((items) => {
+        const sameType = items.find((item) => item.targetType === targetType);
+        const fallback = items[0];
+
+        return {
+          authorId: this.resolveAuthorId(sameType ?? fallback),
+          targetId: this.resolveTargetId(targetType, sameType ?? fallback),
+        };
+      }),
+    );
+  }
+
+  private resolveAuthorId(item?: ReviewEntity): number {
+    if (item && typeof item.authorId === 'number' && item.authorId > 0) {
+      return item.authorId;
     }
-    return Number(normalized);
+    return 1;
+  }
+
+  private resolveTargetId(targetType: ReviewTarget, item?: ReviewEntity): number {
+    if (
+      item &&
+      item.targetType === targetType &&
+      typeof item.targetId === 'number' &&
+      item.targetId > 0
+    ) {
+      return item.targetId;
+    }
+
+    if (item && typeof item.targetId === 'number' && item.targetId > 0) {
+      return item.targetId;
+    }
+
+    return 1;
   }
 }

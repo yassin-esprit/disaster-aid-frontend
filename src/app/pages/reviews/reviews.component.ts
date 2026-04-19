@@ -18,10 +18,14 @@ import {
   styleUrl: './reviews.component.scss',
 })
 export class ReviewsComponent {
+  private readonly reactionsStorageKey = 'reviews-user-reactions';
+  readonly stars = [1, 2, 3, 4, 5];
+  readonly reactionEmojis = ['👍', '❤️', '👏', '💡', '😂'];
   reviews: ReviewEntity[] = [];
   isLoading = false;
   message = '';
   errorMessage = '';
+  selectedReactions: Record<number, string> = {};
 
   targetType: ReviewTarget = 'ORGANISATION';
   targetId = 1;
@@ -30,6 +34,7 @@ export class ReviewsComponent {
   trustErrorMessage = '';
 
   constructor(private readonly reviewsTrustService: ReviewsTrustService) {
+    this.loadStoredReactions();
     this.loadAllReviews();
   }
 
@@ -58,7 +63,7 @@ export class ReviewsComponent {
         this.isLoading = false;
       },
       error: () => {
-        this.errorMessage = 'Impossible de charger les avis.';
+        this.errorMessage = 'Unable to load reviews.';
         this.isLoading = false;
       },
     });
@@ -75,35 +80,67 @@ export class ReviewsComponent {
         next: (items) => {
           this.reviews = items;
           this.isLoading = false;
-          this.message = 'Avis filtres par cible.';
+          this.message = 'Reviews filtered by target.';
           this.loadTrustScore();
         },
         error: () => {
-          this.errorMessage = 'Impossible de filtrer les avis par cible.';
+          this.errorMessage = 'Unable to filter reviews by target.';
           this.isLoading = false;
           this.trustScore = null;
         },
       });
   }
 
-  markHelpful(review: ReviewEntity): void {
-    this.reviewsTrustService.markHelpful(review.reviewId).subscribe({
-      next: (updated) => {
-        this.reviews = this.reviews.map((item) => {
-          if (item.reviewId === updated.reviewId) {
-            return updated;
-          }
-          return item;
-        });
-      },
-      error: () => {
-        this.errorMessage = 'Impossible de marquer cet avis comme utile.';
-      },
-    });
+  reactWithEmoji(review: ReviewEntity, emoji: string): void {
+    const reviewId = review.reviewId;
+    const previous = this.selectedReactions[reviewId];
+
+    if (previous === emoji) {
+      return;
+    }
+
+    this.selectedReactions[reviewId] = emoji;
+    this.saveStoredReactions();
   }
 
-  stars(rating: number): string {
-    return '★'.repeat(rating) + '☆'.repeat(5 - rating);
+  toggleLike(review: ReviewEntity): void {
+    const reviewId = review.reviewId;
+    if (this.selectedReactions[reviewId]) {
+      delete this.selectedReactions[reviewId];
+      this.saveStoredReactions();
+      return;
+    }
+
+    this.selectedReactions[reviewId] = '👍';
+    this.saveStoredReactions();
+  }
+
+  displayedLikes(review: ReviewEntity): number {
+    const hasReaction = !!this.selectedReactions[review.reviewId];
+    return review.helpfulVotes + (hasReaction ? 1 : 0);
+  }
+
+  selectedReactionEmoji(reviewId: number): string {
+    const selected = this.selectedReactions[reviewId];
+    if (selected) {
+      return selected;
+    }
+    return '👍';
+  }
+
+  isReactionSelected(reviewId: number, emoji: string): boolean {
+    return this.selectedReactions[reviewId] === emoji;
+  }
+
+  isReviewStarActive(review: ReviewEntity, star: number): boolean {
+    return star <= review.rating;
+  }
+
+  targetTypeLabel(targetType: ReviewTarget): 'RESOURCE' | 'SHELTER' {
+    if (targetType === 'ORGANISATION') {
+      return 'RESOURCE';
+    }
+    return 'SHELTER';
   }
 
   private loadTrustScore(): void {
@@ -117,8 +154,41 @@ export class ReviewsComponent {
         error: () => {
           this.trustScore = null;
           this.trustErrorMessage =
-            'Aucun trust score calcule pour cette cible actuellement.';
+            'No trust score is currently available for this target.';
         },
       });
+  }
+
+  private loadStoredReactions(): void {
+    try {
+      const raw = localStorage.getItem(this.reactionsStorageKey);
+      if (!raw) {
+        this.selectedReactions = {};
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as Record<string, string>;
+      const normalized: Record<number, string> = {};
+      for (const [key, value] of Object.entries(parsed)) {
+        const reviewId = Number(key);
+        if (!Number.isNaN(reviewId) && this.reactionEmojis.includes(value)) {
+          normalized[reviewId] = value;
+        }
+      }
+      this.selectedReactions = normalized;
+    } catch {
+      this.selectedReactions = {};
+    }
+  }
+
+  private saveStoredReactions(): void {
+    try {
+      localStorage.setItem(
+        this.reactionsStorageKey,
+        JSON.stringify(this.selectedReactions),
+      );
+    } catch {
+      // Ignore storage failures and keep reactions in memory.
+    }
   }
 }

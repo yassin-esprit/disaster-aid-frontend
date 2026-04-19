@@ -5,6 +5,8 @@ import { environment } from '../../../../environments/environment';
 import {
   ResourceEntity,
   ResourcePayload,
+  ShelterOccupantEntity,
+  ShelterOccupantPayload,
   ResourceShelterUser,
   ShelterEntity,
   ShelterPayload,
@@ -51,6 +53,28 @@ export class ResourceShelterService {
 
   deleteShelter(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/shelters/${id}`);
+  }
+
+  checkInShelter(payload: ShelterOccupantPayload): Observable<ShelterOccupantEntity> {
+    return this.http.post<ShelterOccupantEntity>(
+      `${this.baseUrl}/shelter-occupants/check-in`,
+      payload,
+    );
+  }
+
+  checkOutShelter(recordId: number): Observable<ShelterOccupantEntity> {
+    return this.http.post<ShelterOccupantEntity>(
+      `${this.baseUrl}/shelter-occupants/${recordId}/check-out`,
+      {},
+    );
+  }
+
+  getShelterOccupantsByShelter(
+    shelterId: number,
+  ): Observable<ShelterOccupantEntity[]> {
+    return this.http.get<ShelterOccupantEntity[]>(
+      `${this.baseUrl}/shelter-occupants/by-shelter/${shelterId}`,
+    );
   }
 
   getAllUsers(): Observable<ResourceShelterUser[]> {

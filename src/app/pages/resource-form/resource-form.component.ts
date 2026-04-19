@@ -8,7 +8,7 @@ import {
 } from '@angular/forms';
 import { Observable, map, switchMap } from 'rxjs';
 import { RouterModule } from '@angular/router';
-import { FrontOfficeLayoutComponent } from '../../layouts/front-office-layout/front-office-layout.component';
+import { AuthenticatedLayoutComponent } from '../../layouts/authenticated-layout/authenticated-layout.component';
 import { ResourceShelterService } from '../../core/services/resource-shelter/resource-shelter.service';
 import {
   ResourceEntity,
@@ -24,7 +24,7 @@ import {
     ReactiveFormsModule,
     FormsModule,
     RouterModule,
-    FrontOfficeLayoutComponent,
+    AuthenticatedLayoutComponent,
   ],
   templateUrl: './resource-form.component.html',
   styleUrl: './resource-form.component.scss',

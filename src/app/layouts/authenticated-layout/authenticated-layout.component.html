@@ -4,6 +4,7 @@
 
   <!-- Top header -->
   <app-header
+    *ngIf="showHeader"
     [pageTitle]="pageTitle"
     [breadcrumb]="breadcrumb"
     userName="Amina"
@@ -12,7 +13,11 @@
   </app-header>
 
   <!-- Main content — offset for sidebar and header -->
-  <main class="md:ml-[240px] pt-16 pb-20 md:pb-0 min-h-screen">
+  <main
+    class="md:ml-[240px] pb-20 md:pb-0 min-h-screen"
+    [class.pt-16]="showHeader"
+    [class.pt-0]="!showHeader"
+  >
     <div class="p-6 md:p-8">
       <ng-content></ng-content>
     </div>

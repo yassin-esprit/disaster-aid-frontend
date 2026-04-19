@@ -70,3 +70,19 @@ export interface ResourceShelterUser {
   userId: number;
   name: string;
 }
+
+export interface ShelterOccupantPayload {
+  shelterId: number;
+  userId: number;
+  needsFlag?: string[];
+}
+
+export interface ShelterOccupantEntity {
+  recordId: number;
+  checkInAt: string;
+  checkOutAt?: string | null;
+  user?: {
+    userId?: number;
+    id?: number;
+  };
+}

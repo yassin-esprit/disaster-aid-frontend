@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Observable, map, switchMap } from 'rxjs';
 import { RouterModule } from '@angular/router';
-import { FrontOfficeLayoutComponent } from '../../layouts/front-office-layout/front-office-layout.component';
+import { AuthenticatedLayoutComponent } from '../../layouts/authenticated-layout/authenticated-layout.component';
 import { ResourceShelterService } from '../../core/services/resource-shelter/resource-shelter.service';
 import {
   ShelterEntity,
@@ -18,7 +18,7 @@ import {
     CommonModule,
     ReactiveFormsModule,
     RouterModule,
-    FrontOfficeLayoutComponent,
+    AuthenticatedLayoutComponent,
   ],
   templateUrl: './shelter-form.component.html',
   styleUrl: './shelter-form.component.scss',
@@ -28,6 +28,7 @@ export class ShelterFormComponent {
 
   shelters: ShelterEntity[] = [];
   occupancyDelta: Record<number, number> = {};
+  editingId: number | null = null;
   isLoading = false;
   isSubmitting = false;
   successMessage = '';
@@ -35,14 +36,14 @@ export class ShelterFormComponent {
 
   readonly statuses: ShelterStatus[] = ['OPEN', 'FULL', 'CLOSED', 'PREPARING'];
 
-  readonly shelterTypes = ['TEMPORARY', 'MEDICAL', 'FAMILY', 'EVACUATION'];
+  readonly shelterTypes = ['LOCAL', 'MEDICAL'];
 
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     locationUrl: ['', [Validators.required, Validators.pattern('https?://.+')]],
-    address: ['', [Validators.required, Validators.minLength(4)]],
+    address: [''],
     capacity: [10, [Validators.required, Validators.min(1)]],
-    shelterType: ['TEMPORARY', Validators.required],
+    shelterType: ['LOCAL', Validators.required],
   });
 
   constructor(private readonly resourceShelterService: ResourceShelterService) {
@@ -79,25 +80,31 @@ export class ShelterFormComponent {
         const payload: ShelterPayload = {
           name: raw.name.trim(),
           locationUrl: raw.locationUrl.trim(),
-          address: raw.address.trim(),
+          address: raw.address.trim() || 'N/A',
           capacity: Number(raw.capacity),
           managerId: resolvedManagerId,
           amenities: [`TYPE:${raw.shelterType}`],
           status: 'OPEN',
         };
 
-        this.resourceShelterService.createShelter(payload).subscribe({
+        if (this.editingId === null) {
+          this.resourceShelterService.createShelter(payload).subscribe({
+            next: () => {
+              this.successMessage = 'Shelter ajoute avec succes.';
+              this.afterMutation();
+            },
+            error: (err) => {
+              this.errorMessage = this.getErrorMessage(err);
+              this.isSubmitting = false;
+            },
+          });
+          return;
+        }
+
+        this.resourceShelterService.updateShelter(this.editingId, payload).subscribe({
           next: () => {
-            this.successMessage = 'Shelter ajoute avec succes.';
-            this.isSubmitting = false;
-            this.form.reset({
-              name: '',
-              locationUrl: '',
-              address: '',
-              capacity: 10,
-              shelterType: 'TEMPORARY',
-            });
-            this.loadShelters();
+            this.successMessage = 'Shelter modifie avec succes.';
+            this.afterMutation();
           },
           error: (err) => {
             this.errorMessage = this.getErrorMessage(err);
@@ -108,6 +115,47 @@ export class ShelterFormComponent {
       error: (err) => {
         this.errorMessage = this.getErrorMessage(err);
         this.isSubmitting = false;
+      },
+    });
+  }
+
+  startEdit(item: ShelterEntity): void {
+    this.editingId = item.shelterId;
+    this.form.patchValue({
+      name: item.name,
+      locationUrl: item.locationUrl,
+      address: item.address ?? '',
+      capacity: item.capacity,
+      shelterType: this.resolveTypeForForm(item),
+    });
+    this.successMessage = '';
+    this.errorMessage = '';
+  }
+
+  cancelEdit(): void {
+    this.editingId = null;
+    this.form.reset({
+      name: '',
+      locationUrl: '',
+      address: '',
+      capacity: 10,
+      shelterType: 'LOCAL',
+    });
+  }
+
+  remove(item: ShelterEntity): void {
+    const ok = window.confirm(`Supprimer le shelter #${item.shelterId} ?`);
+    if (!ok) {
+      return;
+    }
+
+    this.resourceShelterService.deleteShelter(item.shelterId).subscribe({
+      next: () => {
+        this.successMessage = 'Shelter supprime avec succes.';
+        this.loadShelters();
+      },
+      error: (err) => {
+        this.errorMessage = this.getErrorMessage(err);
       },
     });
   }
@@ -150,6 +198,30 @@ export class ShelterFormComponent {
       return 'FULL';
     }
     return 'AVAILABLE';
+  }
+
+  shelterType(item: ShelterEntity): string {
+    const typeAmenity = item.amenities?.find((entry) =>
+      (entry.amenity ?? '').startsWith('TYPE:'),
+    );
+    if (!typeAmenity) {
+      return 'N/A';
+    }
+    return (typeAmenity.amenity ?? '').replace('TYPE:', '') || 'N/A';
+  }
+
+  private resolveTypeForForm(item: ShelterEntity): string {
+    const type = this.shelterType(item);
+    if (this.shelterTypes.includes(type)) {
+      return type;
+    }
+    return 'LOCAL';
+  }
+
+  private afterMutation(): void {
+    this.isSubmitting = false;
+    this.cancelEdit();
+    this.loadShelters();
   }
 
   private deltaFor(item: ShelterEntity): number {

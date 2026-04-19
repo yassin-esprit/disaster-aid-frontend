@@ -1,0 +1,83 @@
+.review-form .field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.45rem;
+}
+
+.review-form .field span {
+	font-size: 0.72rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: rgb(159 171 204);
+}
+
+.review-form .field input,
+.review-form .field select,
+.review-form .field textarea {
+	width: 100%;
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 0.75rem;
+	padding: 0.72rem 0.85rem;
+	color: rgb(221 229 255);
+	outline: none;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.review-form .field textarea {
+	resize: vertical;
+	min-height: 7rem;
+}
+
+.review-form .field input:focus,
+.review-form .field select:focus,
+.review-form .field textarea:focus {
+	border-color: rgba(105, 156, 255, 0.8);
+	box-shadow: 0 0 0 2px rgba(105, 156, 255, 0.2);
+}
+
+.review-form .hint {
+	font-size: 0.72rem;
+	color: rgb(251 113 133);
+	line-height: 1.2;
+}
+
+.review-form .star-rating {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.45rem 0.55rem;
+	border-radius: 0.75rem;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: rgba(255, 255, 255, 0.04);
+	width: fit-content;
+}
+
+.review-form .star-btn {
+	font-size: 1.8rem;
+	line-height: 1;
+	color: rgba(255, 255, 255, 0.25);
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	padding: 0.1rem;
+	transition: transform 0.12s ease, color 0.15s ease;
+}
+
+.review-form .star-btn:hover {
+	transform: scale(1.08);
+}
+
+.review-form .star-btn.star-active {
+	color: #fbbf24;
+	text-shadow: 0 0 12px rgba(251, 191, 36, 0.35);
+}
+
+.review-form .rating-value {
+	font-size: 0.78rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: rgb(191 204 236);
+}

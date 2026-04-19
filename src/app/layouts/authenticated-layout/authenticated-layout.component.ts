@@ -20,4 +20,5 @@ import { MobileNavComponent } from '../../shared/components/mobile-nav/mobile-na
 export class AuthenticatedLayoutComponent {
   @Input() pageTitle: string = 'Dashboard';
   @Input() breadcrumb: string = '';
+  @Input() showHeader: boolean = true;
 }

@@ -1,0 +1,51 @@
+.report-form .field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.45rem;
+}
+
+.report-form .field span {
+	font-size: 0.72rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: rgb(159 171 204);
+}
+
+.report-form .field input,
+.report-form .field textarea {
+	width: 100%;
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 0.75rem;
+	padding: 0.72rem 0.85rem;
+	color: rgb(221 229 255);
+	outline: none;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.report-form .field textarea {
+	resize: vertical;
+	min-height: 6.5rem;
+}
+
+.report-form .field input:focus,
+.report-form .field textarea:focus {
+	border-color: rgba(105, 156, 255, 0.8);
+	box-shadow: 0 0 0 2px rgba(105, 156, 255, 0.2);
+}
+
+.report-form .hint {
+	font-size: 0.72rem;
+	color: rgb(251 113 133);
+	line-height: 1.2;
+}
+
+.review-item {
+	transition: background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.review-item-active {
+	background: rgba(255, 255, 255, 0.08);
+	box-shadow: inset 3px 0 0 rgba(108, 92, 231, 0.85);
+}
