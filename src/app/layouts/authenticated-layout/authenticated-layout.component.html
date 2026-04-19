@@ -1,8 +1,5 @@
 <div class="min-h-screen text-on-surface">
-  <!-- Sidebar -->
   <app-sidebar></app-sidebar>
-
-  <!-- Top header -->
   <app-header
     [pageTitle]="pageTitle"
     [breadcrumb]="breadcrumb"
@@ -10,14 +7,10 @@
     userRole="Volunteer"
   >
   </app-header>
-
-  <!-- Main content — offset for sidebar and header -->
   <main class="md:ml-[240px] pt-16 pb-20 md:pb-0 min-h-screen">
     <div class="p-6 md:p-8">
-      <ng-content></ng-content>
+      <router-outlet></router-outlet>
     </div>
   </main>
-
-  <!-- Mobile bottom nav -->
   <app-mobile-nav></app-mobile-nav>
 </div>

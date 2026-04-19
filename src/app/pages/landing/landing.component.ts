@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import {Router, RouterModule} from '@angular/router';
 import { ChatComponent } from '../../modules/communication/chat/chat.component';
 import { FrontofficeProfileComponent } from '../frontoffice-profile/frontoffice-profile.component';
 
@@ -120,17 +120,12 @@ export class LandingComponent implements OnInit {
     this.isChatOpen = false;
   }
 
-  onRespondToAlerts(): void {
-    console.log('Navigate to alerts');
-  }
-
-  onBrowseOpportunities(): void {
-    console.log('Navigate to opportunities');
-  }
 
   logout(): void {
     localStorage.clear();
     this.isAuthenticated = false;
     this.router.navigateByUrl('/landing');
   }
+  onRespondToAlerts(): void { this.router.navigate(['/report']); }
+  onBrowseOpportunities(): void { this.router.navigate(['/missions']); }
 }

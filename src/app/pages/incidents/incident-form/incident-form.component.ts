@@ -6,7 +6,7 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import {ActivatedRoute, Router, RouterModule} from '@angular/router';
 import { AuthenticatedLayoutComponent } from '../../../layouts/authenticated-layout/authenticated-layout.component';
 import {IncidentReport, IncidentService} from '../../../core/services/incident.service';
 
@@ -30,6 +30,12 @@ export class IncidentFormComponent implements OnInit {
   successMessage = '';
   errorMessage = '';
   selectedSeverity = 'LOW';
+  isEditMode = false;
+  editId: number | null = null;
+  uploadedFiles: Array<{ file: File; preview: string; uploading: boolean; done: boolean; evidenceId?: number }> = [];
+  isDragOver = false;
+  savedReportId: number | null = null;
+
 
   disasterTypes = [
     { value: 'FLOOD', label: 'Flood', icon: 'water' },
@@ -73,7 +79,31 @@ export class IncidentFormComponent implements OnInit {
     private fb: FormBuilder,
     private incidentService: IncidentService,
     private router: Router,
-  ) {}
+  private route: ActivatedRoute,
+
+) {}
+
+ //ena njareb
+  loadExisting(id: number): void {
+    this.isLoading = true;
+    this.incidentService.getById(id).subscribe({
+      next: report => {
+        this.form.patchValue({
+          disasterType: report.disasterType,
+          severity:     report.severity,
+          location:     report.location,
+          description:  report.description,
+        });
+        this.selectedSeverity = report.severity || 'LOW';
+        this.isLoading = false;
+      },
+      error: () => {
+        this.errorMessage = 'Could not load report for editing.';
+        this.isLoading = false;
+      }
+    });
+  }
+
 
   ngOnInit(): void {
     this.form = this.fb.group({
@@ -84,6 +114,13 @@ export class IncidentFormComponent implements OnInit {
     });
 
     this.form.valueChanges.subscribe((v) => (this.previewData = v));
+
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.isEditMode = true;
+      this.editId = parseInt(id, 10);
+      this.loadExisting(this.editId);
+    }
   }
 
   selectSeverity(value: string): void {
@@ -106,29 +143,7 @@ export class IncidentFormComponent implements OnInit {
     return Math.round((filled / fields.length) * 100);
   }
 
-  onSubmit(): void {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
 
-    if (this.pendingSubmit) {
-      this.doSubmit();
-      return;
-    }
-
-    // Check for duplicates first
-    this.incidentService.checkDuplicate({
-      disasterType: this.form.value.disasterType
-    }).subscribe({
-      next: result => {
-        if (result.message === 'DUPLICATE_FOUND' && result.data) {
-          this.duplicateReport = result.data;
-          this.showDuplicateWarning = true;
-        } else {
-          this.doSubmit();
-        }
-      },
-      error: () => this.doSubmit() // if check fails, proceed anyway
-    });
-  }
 
   doSubmit(): void {
     this.showDuplicateWarning = false;
@@ -170,5 +185,70 @@ export class IncidentFormComponent implements OnInit {
     if (v.disasterType) score += 0.10;
     // Evidence not uploaded yet, reporter ID not set — these will boost after save
     return Math.min(Math.round(score * 100), 100);
+  }
+
+  onDragOver(event: DragEvent): void { event.preventDefault(); this.isDragOver = true; }
+  onDragLeave(): void { this.isDragOver = false; }
+  onDrop(event: DragEvent): void {
+    event.preventDefault(); this.isDragOver = false;
+    Array.from(event.dataTransfer?.files || []).forEach(f => this.addFile(f));
+  }
+  onFileSelect(event: Event): void {
+    Array.from((event.target as HTMLInputElement).files || []).forEach(f => this.addFile(f));
+  }
+  addFile(file: File): void {
+    const reader = new FileReader();
+    reader.onload = e => this.uploadedFiles.push({
+      file, preview: e.target?.result as string, uploading: false, done: false
+    });
+    reader.readAsDataURL(file);
+  }
+  removeFile(i: number): void { this.uploadedFiles.splice(i, 1); }
+
+
+
+
+
+
+
+
+
+
+
+
+
+  onSubmit(): void {
+    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    const action = this.isEditMode && this.editId
+      ? this.incidentService.update(this.editId, this.form.value)
+      : this.incidentService.create(this.form.value);
+
+    action.subscribe({
+      next: report => {
+        this.savedReportId = report.id!;
+        const pending = this.uploadedFiles.filter(f => !f.done);
+        if (!pending.length || this.isEditMode) {
+          this.isLoading = false;
+          this.successMessage = this.isEditMode ? 'Report updated.' : 'Report submitted.';
+          setTimeout(() => this.router.navigate(['/incidents']), 1500);
+          return;
+        }
+        let done = 0;
+        pending.forEach(item => {
+          item.uploading = true;
+          this.incidentService.uploadEvidence(report.id!, item.file).subscribe({
+            next: () => { item.uploading = false; item.done = true; done++; if (done === pending.length) { this.isLoading = false; this.successMessage = 'Report submitted with evidence.'; setTimeout(() => this.router.navigate(['/incidents']), 1500); } },
+            error: () => { item.uploading = false; done++; if (done === pending.length) { this.isLoading = false; setTimeout(() => this.router.navigate(['/incidents']), 1500); } }
+          });
+        });
+      },
+      error: err => {
+        this.isLoading = false;
+        this.errorMessage = err?.error?.message || 'Submission failed.';
+      }
+    });
   }
 }

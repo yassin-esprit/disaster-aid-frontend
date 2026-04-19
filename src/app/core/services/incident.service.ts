@@ -19,6 +19,7 @@ export interface IncidentReport {
   updatedAt?: string;
 }
 
+
 export interface ReportEvidence {
   id?: number;
   incidentReportId?: number;
@@ -109,13 +110,7 @@ getHistory(id: number): Observable<StatusHistory[]> {
       .pipe(map(() => void 0));
   }
 
-  getEvidenceByReport(reportId: number): Observable<ReportEvidence[]> {
-    return this.http
-      .get<
-        ApiResponse<ReportEvidence[]>
-      >(`${this.evidenceBase}/report/${reportId}`)
-      .pipe(map((r) => r.data));
-  }
+
 
   upvote(id: number): Observable<IncidentReport> {
     return this.http.patch<ApiResponse<IncidentReport>>(`${this.base}/${id}/upvote`, {})
@@ -126,5 +121,26 @@ getHistory(id: number): Observable<StatusHistory[]> {
     return this.http.patch<ApiResponse<IncidentReport>>(
       `${this.base}/${id}/status?status=${status}`, {}
     ).pipe(map(r => r.data));
+  }
+
+
+  uploadEvidence(reportId: number, file: File): Observable<ReportEvidence> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<ApiResponse<ReportEvidence>>(
+      `${this.evidenceBase}/report/${reportId}/upload`, formData
+    ).pipe(map(r => r.data));
+  }
+
+  getEvidenceByReport(reportId: number): Observable<ReportEvidence[]> {
+    return this.http.get<ApiResponse<ReportEvidence[]>>(
+      `${this.evidenceBase}/report/${reportId}`
+    ).pipe(map(r => r.data));
+  }
+
+  deleteEvidence(id: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(
+      `${this.evidenceBase}/${id}`
+    ).pipe(map(() => void 0));
   }
 }

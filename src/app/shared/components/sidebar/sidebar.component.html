@@ -1,25 +1,22 @@
-<!-- Desktop sidebar -->
-<aside
-  class="fixed left-0 top-0 h-full w-[240px] z-[60] bg-slate-900/60 backdrop-blur-2xl border-r border-white/5 flex flex-col py-6 gap-2 shadow-[10px_0_30px_rgba(0,0,0,0.5)] hidden md:flex"
->
+<aside class="fixed left-0 top-0 h-full w-[240px] z-[60] bg-slate-900/60 backdrop-blur-2xl border-r border-white/5 flex flex-col py-6 gap-2 shadow-[10px_0_30px_rgba(0,0,0,0.5)] hidden md:flex">
+
   <!-- Brand -->
   <div class="px-6 mb-8">
     <div class="flex items-center gap-3">
-      <div
-        class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30"
-      >
-        <span class="material-symbols-outlined text-primary fill-icon"
-          >shield</span
-        >
+      <div class="w-10 h-10 rounded-lg flex items-center justify-center border"
+           [style]="'background:' + accentColor + '30;border-color:' + accentColor + '50'">
+        <span class="material-symbols-outlined fill-icon"
+              [style]="'color:' + accentColor">
+          {{ role === 'ADMIN' ? 'admin_panel_settings' : 'shield' }}
+        </span>
       </div>
       <div>
-        <h2 class="text-xl font-bold text-slate-100 tracking-tight">
-          Disaster Aid
+        <h2 class="text-base font-bold text-slate-100 tracking-tight">
+          {{ role === 'ADMIN' ? 'Admin Panel' : 'Disaster Aid' }}
         </h2>
-        <p
-          class="text-[10px] uppercase tracking-widest text-primary/70 font-bold"
-        >
-          CPS Hub
+        <p class="text-[10px] uppercase tracking-widest font-bold"
+           [style]="'color:' + accentColor + '99'">
+          {{ role === 'ADMIN' ? 'Command Center' : 'CPS Hub' }}
         </p>
       </div>
     </div>
@@ -27,22 +24,28 @@
 
   <!-- Nav items -->
   <nav class="flex-1 flex flex-col gap-1">
-    <a
-      *ngFor="let item of navItems"
-      [routerLink]="item.route"
-      routerLinkActive="bg-white/10 text-white shadow-[inset_4px_0_0_var(--accent)]"
-      [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
-      class="text-slate-400 hover:text-slate-200 py-3 px-4 ml-2 mr-4 flex items-center gap-3 transition-all hover:bg-white/5 rounded-lg"
-      [style.--accent]="accentColor"
-    >
-      <span class="material-symbols-outlined">{{ item.icon }}</span>
-      <span class="text-[13px] font-medium tracking-wide uppercase">{{
-        item.label
-      }}</span>
+    <a *ngFor="let item of navItems"
+       [routerLink]="item.route"
+       routerLinkActive="bg-white/10 text-white"
+       [routerLinkActiveOptions]="{exact: false}"
+       class="text-slate-400 hover:text-slate-200 py-3 px-4 ml-2 mr-4 flex items-center gap-3 transition-all hover:bg-white/5 rounded-lg text-[13px] font-medium tracking-wide uppercase relative"
+       #rla="routerLinkActive">
+      <span class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full transition-all"
+            [style]="rla.isActive ? 'background:' + accentColor : 'background:transparent'"></span>
+      <span class="material-symbols-outlined"
+            [style]="rla.isActive ? 'color:' + accentColor : ''">{{ item.icon }}</span>
+      {{ item.label }}
     </a>
   </nav>
 
   <!-- CTA -->
+  <div class="px-4 mt-auto">
+    <a [routerLink]="ctaRoute"
+       class="block w-full py-3 rounded-lg font-bold text-xs uppercase tracking-widest text-center transition-all active:scale-95 text-white"
+       [style]="'background:' + accentColor + ';box-shadow:0 0 20px ' + accentColor + '40'">
+      {{ ctaLabel }}
+    </a>
+  </div>
 <div class="px-4 mt-auto">
   <button
     type="button"
