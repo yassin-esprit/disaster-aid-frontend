@@ -1,0 +1,272 @@
+<div class="hours-page">
+
+  <!-- ── Page Header ─────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div>
+      <h1>Hours &amp; Verification</h1>
+      <p>Manage volunteer timesheets, certificates and impact records</p>
+    </div>
+  </div>
+
+  <!-- ── Tab Bar ──────────────────────────────────────────────────────────── -->
+  <div class="tab-bar">
+    <button class="tab-btn" [class.active]="activeTab === 'timesheets'" (click)="switchTab('timesheets')">
+      <span class="material-symbols-outlined">schedule</span> Timesheets
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'certificates'" (click)="switchTab('certificates')">
+      <span class="material-symbols-outlined">workspace_premium</span> Certificates
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'impact'" (click)="switchTab('impact')">
+      <span class="material-symbols-outlined">insights</span> Impact Records
+    </button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       TAB 1 — TIMESHEETS
+  ═══════════════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'timesheets'" class="section-page">
+    <div class="section-header">
+      <div>
+        <h2>Timesheets</h2>
+        <p>Log and verify volunteer hours</p>
+      </div>
+      <div class="header-actions">
+        <div class="stats-card">
+          <span class="stats-label">Total</span>
+          <span class="stats-value">{{ timesheets.length }}</span>
+        </div>
+        <button class="add-btn" (click)="openCreateTs()">+ Add Timesheet</button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="toolbar">
+        <input type="text" [(ngModel)]="searchTerm" (input)="filterTimesheets()"
+          placeholder="Search by description, status, volunteer ID…" class="search-input" />
+      </div>
+      <div *ngIf="loading" class="loading-state">Loading timesheets…</div>
+      <div *ngIf="!loading" class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Volunteer</th><th>Org</th><th>Hours</th><th>Work Date</th><th>Description</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of filteredTimesheets">
+              <td>{{ item.timesheetId }}</td>
+              <td>#{{ item.volunteerId }}</td>
+              <td>#{{ item.orgId }}</td>
+              <td>{{ item.loggedHours }}h</td>
+              <td>{{ item.workDate }}</td>
+              <td class="desc-cell">{{ item.taskDescription }}</td>
+              <td><span class="badge" [ngClass]="statusClass(item.status)">{{ item.status }}</span></td>
+              <td class="actions-cell">
+                <button class="action-btn edit-btn" (click)="openEditTs(item)">Edit</button>
+                <button class="action-btn approve-btn" *ngIf="item.status === 'PENDING'" (click)="approveTs(item.timesheetId)">Approve</button>
+                <button class="action-btn reject-btn" *ngIf="item.status === 'PENDING'" (click)="openReject(item.timesheetId)">Reject</button>
+                <button class="action-btn delete-btn" (click)="deleteTs(item.timesheetId)">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div *ngIf="filteredTimesheets.length === 0" class="empty-state">No timesheets found.</div>
+      </div>
+    </div>
+
+    <!-- Timesheet Modal -->
+    <div class="modal-backdrop" *ngIf="showModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>{{ editMode ? 'Edit Timesheet' : 'New Timesheet' }}</h2>
+          <button class="close-btn" (click)="closeModal()">✕</button>
+        </div>
+        <div class="modal-form">
+          <div class="form-group"><label>Application ID</label><input type="number" [(ngModel)]="tsForm.applicationId" /></div>
+          <div class="form-group"><label>Volunteer ID</label><input type="number" [(ngModel)]="tsForm.volunteerId" /></div>
+          <div class="form-group"><label>Org ID</label><input type="number" [(ngModel)]="tsForm.orgId" /></div>
+          <div class="form-group"><label>Logged Hours</label><input type="number" step="0.5" [(ngModel)]="tsForm.loggedHours" /></div>
+          <div class="form-group"><label>Work Date</label><input type="date" [(ngModel)]="tsForm.workDate" /></div>
+          <div class="form-group"><label>Supervisor ID</label><input type="number" [(ngModel)]="tsForm.supervisorId" /></div>
+          <div class="form-group full"><label>Task Description</label><textarea rows="3" [(ngModel)]="tsForm.taskDescription"></textarea></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+          <button class="btn-primary" [disabled]="saving" (click)="submitTs()">{{ saving ? 'Saving…' : (editMode ? 'Update' : 'Create') }}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div class="modal-backdrop" *ngIf="showRejectModal">
+      <div class="modal-card small-modal">
+        <div class="modal-header">
+          <h2>Reject Timesheet</h2>
+          <button class="close-btn" (click)="showRejectModal = false">✕</button>
+        </div>
+        <div class="modal-form">
+          <div class="form-group full"><label>Rejection Reason</label><textarea rows="3" [(ngModel)]="rejectReason" placeholder="Explain why…"></textarea></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-secondary" (click)="showRejectModal = false">Cancel</button>
+          <button class="btn-primary" (click)="confirmReject()">Confirm Reject</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       TAB 2 — CERTIFICATES
+  ═══════════════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'certificates'" class="section-page">
+    <div class="section-header">
+      <div>
+        <h2>Certificates</h2>
+        <p>Issue and manage volunteer hour certificates</p>
+      </div>
+      <div class="header-actions">
+        <div class="stats-card">
+          <span class="stats-label">Total</span>
+          <span class="stats-value">{{ certificates.length }}</span>
+        </div>
+        <button class="add-btn" (click)="openCreateCert()">+ Issue Certificate</button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="toolbar">
+        <input type="text" [(ngModel)]="searchTerm" (input)="filterCerts()"
+          placeholder="Search by volunteer or org ID…" class="search-input" />
+      </div>
+      <div *ngIf="loading" class="loading-state">Loading certificates…</div>
+      <div *ngIf="!loading" class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Volunteer</th><th>Org</th><th>Hours</th><th>Period</th><th>Issued At</th><th>Expires</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of filteredCerts">
+              <td>{{ item.certificateId }}</td>
+              <td>#{{ item.volunteerId }}</td>
+              <td>#{{ item.orgId }}</td>
+              <td><span class="badge badge-green">{{ item.totalHours }}h</span></td>
+              <td>{{ item.periodFrom }} → {{ item.periodTo }}</td>
+              <td>{{ item.issuedAt | date:'mediumDate' }}</td>
+              <td>{{ item.expiresAt || '—' }}</td>
+              <td class="actions-cell">
+                <button class="action-btn edit-btn" (click)="openEditCert(item)">Edit</button>
+                <a *ngIf="item.pdfUrl" [href]="item.pdfUrl" target="_blank" class="action-btn approve-btn">PDF</a>
+                <button class="action-btn delete-btn" (click)="deleteCert(item.certificateId)">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div *ngIf="filteredCerts.length === 0" class="empty-state">No certificates found.</div>
+      </div>
+    </div>
+
+    <!-- Certificate Modal -->
+    <div class="modal-backdrop" *ngIf="showModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>{{ editMode ? 'Edit Certificate' : 'Issue Certificate' }}</h2>
+          <button class="close-btn" (click)="closeModal()">✕</button>
+        </div>
+        <div class="modal-form">
+          <div class="form-group"><label>Volunteer ID</label><input type="number" [(ngModel)]="certForm.volunteerId" /></div>
+          <div class="form-group"><label>Org ID</label><input type="number" [(ngModel)]="certForm.orgId" /></div>
+          <div class="form-group"><label>Total Hours</label><input type="number" step="0.5" [(ngModel)]="certForm.totalHours" /></div>
+          <div class="form-group"><label>Expires At</label><input type="date" [(ngModel)]="certForm.expiresAt" /></div>
+          <div class="form-group"><label>Period From</label><input type="date" [(ngModel)]="certForm.periodFrom" /></div>
+          <div class="form-group"><label>Period To</label><input type="date" [(ngModel)]="certForm.periodTo" /></div>
+          <div class="form-group full"><label>PDF URL</label><input type="text" [(ngModel)]="certForm.pdfUrl" placeholder="https://…" /></div>
+          <div class="form-group full"><label>Credential Hash</label><input type="text" [(ngModel)]="certForm.credentialHash" /></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+          <button class="btn-primary" [disabled]="saving" (click)="submitCert()">{{ saving ? 'Saving…' : (editMode ? 'Update' : 'Issue') }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       TAB 3 — IMPACT RECORDS
+  ═══════════════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'impact'" class="section-page">
+    <div class="section-header">
+      <div>
+        <h2>Impact Records</h2>
+        <p>Track volunteer real-world impact metrics</p>
+      </div>
+      <div class="header-actions">
+        <div class="stats-card">
+          <span class="stats-label">Records</span>
+          <span class="stats-value">{{ impactRecords.length }}</span>
+        </div>
+        <button class="add-btn" (click)="openCreateImpact()">+ Add Record</button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="toolbar">
+        <input type="text" [(ngModel)]="searchTerm" (input)="filterImpact()"
+          placeholder="Search by volunteer ID or confidence…" class="search-input" />
+      </div>
+      <div *ngIf="loading" class="loading-state">Loading impact records…</div>
+      <div *ngIf="!loading" class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Volunteer</th><th>Hours</th><th>CO₂ (kg)</th><th>Meals</th><th>People</th><th>Waste (kg)</th><th>Tutoring</th><th>Confidence</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of filteredImpact">
+              <td>{{ item.impactId }}</td>
+              <td>#{{ item.volunteerId }}</td>
+              <td><span class="badge badge-purple">{{ item.totalApprovedHours }}h</span></td>
+              <td>{{ item.co2OffsetKg }}</td>
+              <td>{{ item.mealsServed }}</td>
+              <td>{{ item.peopleHelped }}</td>
+              <td>{{ item.wasteRemovedKg }}</td>
+              <td>{{ item.hoursOfTutoring }}h</td>
+              <td><span class="badge" [ngClass]="confidenceClass(item.confidenceLevel)">{{ item.confidenceLevel }}</span></td>
+              <td class="actions-cell">
+                <button class="action-btn edit-btn" (click)="openEditImpact(item)">Edit</button>
+                <button class="action-btn delete-btn" (click)="deleteImpact(item.impactId)">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div *ngIf="filteredImpact.length === 0" class="empty-state">No impact records found.</div>
+      </div>
+    </div>
+
+    <!-- Impact Modal -->
+    <div class="modal-backdrop" *ngIf="showModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>{{ editMode ? 'Edit Impact Record' : 'New Impact Record' }}</h2>
+          <button class="close-btn" (click)="closeModal()">✕</button>
+        </div>
+        <div class="modal-form">
+          <div class="form-group"><label>Volunteer ID</label><input type="number" [(ngModel)]="impactForm.volunteerId" /></div>
+          <div class="form-group">
+            <label>Confidence Level</label>
+            <select [(ngModel)]="impactForm.confidenceLevel">
+              <option *ngFor="let lvl of confidenceLevels" [value]="lvl">{{ lvl }}</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Total Approved Hours</label><input type="number" step="0.5" [(ngModel)]="impactForm.totalApprovedHours" /></div>
+          <div class="form-group"><label>CO₂ Offset (kg)</label><input type="number" step="0.1" [(ngModel)]="impactForm.co2OffsetKg" /></div>
+          <div class="form-group"><label>Meals Served</label><input type="number" [(ngModel)]="impactForm.mealsServed" /></div>
+          <div class="form-group"><label>People Helped</label><input type="number" [(ngModel)]="impactForm.peopleHelped" /></div>
+          <div class="form-group"><label>Waste Removed (kg)</label><input type="number" step="0.1" [(ngModel)]="impactForm.wasteRemovedKg" /></div>
+          <div class="form-group"><label>Hours of Tutoring</label><input type="number" step="0.5" [(ngModel)]="impactForm.hoursOfTutoring" /></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+          <button class="btn-primary" [disabled]="saving" (click)="submitImpact()">{{ saving ? 'Saving…' : (editMode ? 'Update' : 'Create') }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

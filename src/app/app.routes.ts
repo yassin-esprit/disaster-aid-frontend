@@ -48,6 +48,20 @@ export const routes: Routes = [
             (m) => m.ProfileComponent,
           ),
       },
+
+      {
+        path: 'hours',
+        loadComponent: () =>
+          import('./modules/hours/hours/hours.component')
+            .then(m => m.HoursComponent),
+      },
+
+      {
+        path: 'gamification',
+        loadComponent: () =>
+          import('./modules/gamification/gamification/gamification.component')
+            .then(m => m.GamificationComponent),
+      },
     ],
   },
 
