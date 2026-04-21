@@ -1,0 +1,91 @@
+<div class="p-6 space-y-6">
+  <app-analytics-nav></app-analytics-nav>
+
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-black text-on-surface flex items-center gap-3">
+        <span class="material-symbols-outlined text-secondary">verified</span>
+        Data Quality Analysis
+      </h1>
+      <p class="text-sm text-on-surface-variant mt-1">Detect inconsistencies: missing locations, unclosed events, invalid data</p>
+    </div>
+    <button (click)="analyze()" [disabled]="loading"
+      class="px-4 py-2 rounded-lg bg-secondary/20 border border-secondary/30 text-secondary text-xs font-bold hover:bg-secondary/30 transition-all disabled:opacity-50 flex items-center gap-2">
+      <span class="material-symbols-outlined text-sm" [class.animate-spin]="loading">{{ loading ? 'progress_activity' : 'refresh' }}</span>
+      Re-Analyze
+    </button>
+  </div>
+
+  <div *ngIf="report" class="space-y-6">
+    <!-- Score + Summary -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div class="glass-2 rounded-2xl border border-white/10 p-6 col-span-2 md:col-span-1 flex flex-col items-center justify-center">
+        <p class="text-[9px] uppercase tracking-widest text-on-surface-variant font-bold mb-2">Quality Score</p>
+        <p class="text-5xl font-black {{ scoreColor }}">{{ report.qualityScore | number:'1.0-0' }}</p>
+        <p class="text-[10px] text-on-surface-variant mt-1">/ 100</p>
+      </div>
+      <div class="glass-2 rounded-2xl border border-white/10 p-4">
+        <p class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold mb-1">Total Alerts</p>
+        <p class="text-2xl font-black text-on-surface">{{ report.totalAlerts }}</p>
+      </div>
+      <div class="glass-2 rounded-2xl border border-error/20 p-4">
+        <p class="text-[9px] uppercase tracking-widest text-error/60 font-bold mb-1">Critical</p>
+        <p class="text-2xl font-black text-error">{{ criticalCount }}</p>
+      </div>
+      <div class="glass-2 rounded-2xl border border-amber-500/20 p-4">
+        <p class="text-[9px] uppercase tracking-widest text-amber-400/60 font-bold mb-1">Warnings</p>
+        <p class="text-2xl font-black text-amber-400">{{ warningCount }}</p>
+      </div>
+      <div class="glass-2 rounded-2xl border border-primary/20 p-4">
+        <p class="text-[9px] uppercase tracking-widest text-primary/60 font-bold mb-1">Info</p>
+        <p class="text-2xl font-black text-primary">{{ infoCount }}</p>
+      </div>
+    </div>
+
+    <!-- Issues List -->
+    <div class="glass-2 rounded-2xl border border-white/10 overflow-hidden">
+      <div class="p-4 border-b border-white/5">
+        <h3 class="text-xs font-black uppercase tracking-widest text-on-surface-variant flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm">bug_report</span>
+          Issues Found ({{ report.totalIssues }})
+        </h3>
+      </div>
+      <div class="divide-y divide-white/5">
+        <div *ngFor="let issue of report.issues" class="p-4 hover:bg-white/5 transition-colors flex items-start gap-4">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+            [style.background]="severityColors[issue.severity] + '20'">
+            <span class="material-symbols-outlined text-sm"
+              [style.color]="severityColors[issue.severity]">
+              {{ issue.severity === 'CRITICAL' ? 'error' : issue.severity === 'WARNING' ? 'warning' : 'info' }}
+            </span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider"
+                [style.background]="severityColors[issue.severity] + '20'"
+                [style.color]="severityColors[issue.severity]"
+                [style.border]="'1px solid ' + severityColors[issue.severity] + '30'"
+              >{{ issue.severity }}</span>
+              <span class="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-white/5 text-on-surface-variant border border-white/10">
+                {{ categoryLabels[issue.category] || issue.category }}
+              </span>
+            </div>
+            <p class="text-sm text-on-surface">{{ issue.message }}</p>
+            <p *ngIf="issue.alertTitle" class="text-[10px] text-on-surface-variant mt-1">
+              Alert: {{ issue.alertTitle }} (#{{ issue.alertId }})
+            </p>
+          </div>
+        </div>
+      </div>
+      <div *ngIf="report.totalIssues === 0" class="py-12 text-center">
+        <span class="material-symbols-outlined text-4xl text-green-400 block mb-2">check_circle</span>
+        <p class="text-sm text-green-400 font-bold">All data is clean!</p>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="py-16 text-center">
+    <span class="material-symbols-outlined text-4xl text-primary animate-spin block mb-3">progress_activity</span>
+    <p class="text-sm text-on-surface-variant">Analyzing data quality...</p>
+  </div>
+</div>

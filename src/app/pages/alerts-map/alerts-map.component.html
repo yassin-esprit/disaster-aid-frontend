@@ -29,10 +29,11 @@
 </button>
 
 <!-- Live badge -->
-<div class="absolute top-16 right-4 z-[1000] flex items-center gap-2 px-4 py-2 rounded-lg glass-3 border border-error/20">
-  <span class="w-2 h-2 rounded-full bg-error animate-pulse"></span>
-  <span class="text-xs font-bold text-error uppercase tracking-widest">Live</span>
-  <span class="text-xs text-on-surface-variant">30s refresh</span>
+<div class="absolute top-16 right-4 z-[1000] flex items-center gap-2 px-4 py-2 rounded-lg glass-3"
+  [class]="wsConnected ? 'border border-green-500/20' : 'border border-error/20'">
+  <span class="w-2 h-2 rounded-full animate-pulse" [class]="wsConnected ? 'bg-green-500' : 'bg-error'"></span>
+  <span class="text-xs font-bold uppercase tracking-widest" [class]="wsConnected ? 'text-green-400' : 'text-error'">Live</span>
+  <span class="text-xs text-on-surface-variant">{{ wsConnected ? 'WebSocket' : '30s polling' }}</span>
 </div>
 
 <!-- Error banner -->

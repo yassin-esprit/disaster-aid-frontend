@@ -1,0 +1,110 @@
+<div class="p-6 space-y-6">
+  <app-analytics-nav></app-analytics-nav>
+
+  <div>
+    <h1 class="text-2xl font-black text-on-surface flex items-center gap-3">
+      <span class="material-symbols-outlined text-secondary">compare_arrows</span>
+      Disaster Comparison
+    </h1>
+    <p class="text-sm text-on-surface-variant mt-1">Compare two disaster events side-by-side: response time, incidents, and efficiency</p>
+  </div>
+
+  <!-- Selector -->
+  <div class="glass-2 rounded-2xl border border-white/10 p-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+      <div>
+        <label class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold block mb-2">Disaster A</label>
+        <select [(ngModel)]="selectedA" class="w-full px-4 py-2.5 rounded-lg bg-surface-container border border-white/10 text-on-surface text-sm focus:border-primary/50 outline-none">
+          <option [ngValue]="null" disabled>Select alert...</option>
+          <option *ngFor="let a of alerts" [ngValue]="a.alertId">{{ a.title }} ({{ a.type }})</option>
+        </select>
+      </div>
+      <div class="flex justify-center">
+        <span class="material-symbols-outlined text-3xl text-on-surface-variant">compare_arrows</span>
+      </div>
+      <div>
+        <label class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold block mb-2">Disaster B</label>
+        <select [(ngModel)]="selectedB" class="w-full px-4 py-2.5 rounded-lg bg-surface-container border border-white/10 text-on-surface text-sm focus:border-primary/50 outline-none">
+          <option [ngValue]="null" disabled>Select alert...</option>
+          <option *ngFor="let a of alerts" [ngValue]="a.alertId">{{ a.title }} ({{ a.type }})</option>
+        </select>
+      </div>
+    </div>
+    <div class="mt-4 flex items-center gap-4">
+      <button
+        (click)="compare()"
+        [disabled]="selectedA == null || selectedB == null || loading"
+        class="px-6 py-2.5 rounded-lg bg-primary/20 border border-primary/30 text-primary text-sm font-bold hover:bg-primary/30 transition-all disabled:opacity-30 flex items-center gap-2"
+      >
+        <span class="material-symbols-outlined text-sm" [class.animate-spin]="loading">{{ loading ? 'progress_activity' : 'compare' }}</span>
+        Compare
+      </button>
+      <span *ngIf="error" class="text-error text-sm">{{ error }}</span>
+    </div>
+  </div>
+
+  <!-- Comparison Results -->
+  <div *ngIf="comparison" class="space-y-4">
+    <!-- Headers -->
+    <div class="grid grid-cols-3 gap-4">
+      <div class="glass-2 rounded-2xl border border-primary/20 p-4 text-center">
+        <p class="text-xs font-black uppercase tracking-widest text-primary mb-1">Disaster A</p>
+        <h3 class="text-lg font-bold text-on-surface">{{ comparison.alertA.alert.title }}</h3>
+        <p class="text-[10px] text-on-surface-variant">{{ comparison.alertA.alert.type }} &middot; {{ comparison.alertA.alert.region }}</p>
+      </div>
+      <div class="flex items-center justify-center">
+        <span class="material-symbols-outlined text-4xl text-on-surface-variant/30">compare_arrows</span>
+      </div>
+      <div class="glass-2 rounded-2xl border border-secondary/20 p-4 text-center">
+        <p class="text-xs font-black uppercase tracking-widest text-secondary mb-1">Disaster B</p>
+        <h3 class="text-lg font-bold text-on-surface">{{ comparison.alertB.alert.title }}</h3>
+        <p class="text-[10px] text-on-surface-variant">{{ comparison.alertB.alert.type }} &middot; {{ comparison.alertB.alert.region }}</p>
+      </div>
+    </div>
+
+    <!-- Metrics comparison -->
+    <div class="glass-2 rounded-2xl border border-white/10 overflow-hidden">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-white/5 text-[10px] uppercase tracking-widest text-on-surface-variant">
+            <th class="text-right p-4 font-bold w-1/3">Disaster A</th>
+            <th class="text-center p-4 font-bold w-1/3">Metric</th>
+            <th class="text-left p-4 font-bold w-1/3">Disaster B</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-white/5">
+            <td class="p-4 text-right font-bold" [class]="better(comparison.alertA, comparison.alertB, 'totalReports', false) === 'A' ? 'text-primary' : 'text-on-surface'">{{ getStatValue(comparison.alertA, 'totalReports') }}</td>
+            <td class="p-4 text-center text-on-surface-variant text-xs">Total Reports</td>
+            <td class="p-4 text-left font-bold" [class]="better(comparison.alertA, comparison.alertB, 'totalReports', false) === 'B' ? 'text-secondary' : 'text-on-surface'">{{ getStatValue(comparison.alertB, 'totalReports') }}</td>
+          </tr>
+          <tr class="border-b border-white/5">
+            <td class="p-4 text-right font-bold" [class]="better(comparison.alertA, comparison.alertB, 'totalHelpRequests', true) === 'A' ? 'text-primary' : 'text-on-surface'">{{ getStatValue(comparison.alertA, 'totalHelpRequests') }}</td>
+            <td class="p-4 text-center text-on-surface-variant text-xs">Help Requests</td>
+            <td class="p-4 text-left font-bold" [class]="better(comparison.alertA, comparison.alertB, 'totalHelpRequests', true) === 'B' ? 'text-secondary' : 'text-on-surface'">{{ getStatValue(comparison.alertB, 'totalHelpRequests') }}</td>
+          </tr>
+          <tr class="border-b border-white/5">
+            <td class="p-4 text-right font-bold" [class]="better(comparison.alertA, comparison.alertB, 'resolvedRequests', false) === 'A' ? 'text-primary' : 'text-on-surface'">{{ getStatValue(comparison.alertA, 'resolvedRequests') }}</td>
+            <td class="p-4 text-center text-on-surface-variant text-xs">Resolved Requests</td>
+            <td class="p-4 text-left font-bold" [class]="better(comparison.alertA, comparison.alertB, 'resolvedRequests', false) === 'B' ? 'text-secondary' : 'text-on-surface'">{{ getStatValue(comparison.alertB, 'resolvedRequests') }}</td>
+          </tr>
+          <tr class="border-b border-white/5">
+            <td class="p-4 text-right font-bold" [class]="better(comparison.alertA, comparison.alertB, 'activeResponders', false) === 'A' ? 'text-primary' : 'text-on-surface'">{{ getStatValue(comparison.alertA, 'activeResponders') }}</td>
+            <td class="p-4 text-center text-on-surface-variant text-xs">Active Responders</td>
+            <td class="p-4 text-left font-bold" [class]="better(comparison.alertA, comparison.alertB, 'activeResponders', false) === 'B' ? 'text-secondary' : 'text-on-surface'">{{ getStatValue(comparison.alertB, 'activeResponders') }}</td>
+          </tr>
+          <tr class="border-b border-white/5">
+            <td class="p-4 text-right font-bold" [class]="better(comparison.alertA, comparison.alertB, 'avgResponseTimeMin', true) === 'A' ? 'text-primary' : 'text-on-surface'">{{ getStatValue(comparison.alertA, 'avgResponseTimeMin') }}</td>
+            <td class="p-4 text-center text-on-surface-variant text-xs">Avg Response Time (min)</td>
+            <td class="p-4 text-left font-bold" [class]="better(comparison.alertA, comparison.alertB, 'avgResponseTimeMin', true) === 'B' ? 'text-secondary' : 'text-on-surface'">{{ getStatValue(comparison.alertB, 'avgResponseTimeMin') }}</td>
+          </tr>
+          <tr>
+            <td class="p-4 text-right font-bold text-on-surface">{{ comparison.alertA.alert.severity }}</td>
+            <td class="p-4 text-center text-on-surface-variant text-xs">Severity</td>
+            <td class="p-4 text-left font-bold text-on-surface">{{ comparison.alertB.alert.severity }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

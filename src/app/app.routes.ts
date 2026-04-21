@@ -52,6 +52,41 @@ export const routes: Routes = [
             (m) => m.EmergencyDashboardComponent
           ),
       },
+      {
+        path: 'sla',
+        loadComponent: () =>
+          import('./pages/sla-tracking/sla-tracking.component').then(
+            (m) => m.SlaTrackingComponent
+          ),
+      },
+      {
+        path: 'comparison',
+        loadComponent: () =>
+          import('./pages/disaster-comparison/disaster-comparison.component').then(
+            (m) => m.DisasterComparisonComponent
+          ),
+      },
+      {
+        path: 'rules',
+        loadComponent: () =>
+          import('./pages/rule-engine/rule-engine.component').then(
+            (m) => m.RuleEngineComponent
+          ),
+      },
+      {
+        path: 'data-quality',
+        loadComponent: () =>
+          import('./pages/data-quality/data-quality.component').then(
+            (m) => m.DataQualityComponent
+          ),
+      },
+      {
+        path: 'risk-zones',
+        loadComponent: () =>
+          import('./pages/risk-zones/risk-zones.component').then(
+            (m) => m.RiskZonesComponent
+          ),
+      },
     ],
   },
 

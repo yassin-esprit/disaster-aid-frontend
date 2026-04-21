@@ -1,7 +1,9 @@
 :host {
   display: block;
-  height: calc(100vh - 6rem);
+  width: 100%;
+  height: calc(100vh - 7rem);
   position: relative;
+  overflow: hidden;
 }
 
 :host ::ng-deep app-analytics-nav nav {
@@ -9,10 +11,13 @@
 }
 
 #disaster-map {
-  width: 100%;
-  height: 100%;
-  border-radius: 1rem;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 1;
+  border-radius: 1rem;
 }
 
 ::ng-deep .custom-alert-marker {

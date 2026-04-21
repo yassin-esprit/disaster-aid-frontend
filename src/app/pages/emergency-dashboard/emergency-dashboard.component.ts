@@ -130,6 +130,11 @@ export class EmergencyDashboardComponent implements OnInit, OnDestroy {
     );
   }
 
+  deleteAlert(alertId: number): void {
+    if (!confirm('Are you sure you want to delete this alert?')) return;
+    this.alertSvc.deleteAlert(alertId).subscribe(() => this.loadData());
+  }
+
   timeSince(dateStr: string): string {
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);

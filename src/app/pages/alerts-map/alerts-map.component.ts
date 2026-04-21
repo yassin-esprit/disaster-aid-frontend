@@ -12,7 +12,16 @@ import { forkJoin, of, interval, Subscription } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import * as L from 'leaflet';
 
+// Fix Leaflet default icon paths (broken by webpack)
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'assets/leaflet/marker-icon-2x.png',
+  iconUrl: 'assets/leaflet/marker-icon.png',
+  shadowUrl: 'assets/leaflet/marker-shadow.png',
+});
+
 import { AlertService } from '../../modules/analytics/services/alert.service';
+import { WebSocketService } from '../../core/services/websocket.service';
 import {
   Alert,
   AlertWithStats,
@@ -30,10 +39,14 @@ import {
 })
 export class AlertsMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private alertSvc = inject(AlertService);
+  private wsSvc = inject(WebSocketService);
   private map!: L.Map;
   private markersLayer = L.layerGroup();
   private zonesLayer = L.layerGroup();
   private pollSub?: Subscription;
+  private wsSub?: Subscription;
+  private wsDeleteSub?: Subscription;
+  wsConnected = false;
 
   loading = true;
   error: string | null = null;
@@ -63,17 +76,33 @@ export class AlertsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadData();
+
+    // Try WebSocket first, fall back to polling
+    this.wsSvc.connect();
+    this.wsSub = this.wsSvc.alertUpdates$.subscribe(() => {
+      this.wsConnected = true;
+      this.loadData(); // reload all data on any alert change
+    });
+    this.wsDeleteSub = this.wsSvc.alertDeleted$.subscribe(() => {
+      this.wsConnected = true;
+      this.loadData();
+    });
+
+    // Fallback polling (if WS is not connected)
     this.pollSub = interval(30000)
       .pipe(switchMap(() => this.fetchData()))
       .subscribe((res) => this.applyData(res));
   }
 
   ngAfterViewInit(): void {
-    this.initMap();
+    setTimeout(() => this.initMap(), 100);
   }
 
   ngOnDestroy(): void {
     this.pollSub?.unsubscribe();
+    this.wsSub?.unsubscribe();
+    this.wsDeleteSub?.unsubscribe();
+    this.wsSvc.disconnect();
     this.map?.remove();
   }
 
@@ -96,6 +125,9 @@ export class AlertsMapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.markersLayer.addTo(this.map);
     this.zonesLayer.addTo(this.map);
+
+    // Fix map size after layout renders
+    setTimeout(() => this.map.invalidateSize(), 200);
   }
 
   loadData(): void {

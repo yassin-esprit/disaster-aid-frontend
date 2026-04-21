@@ -1,0 +1,123 @@
+<div class="p-6 space-y-6">
+  <app-analytics-nav></app-analytics-nav>
+
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-black text-on-surface flex items-center gap-3">
+        <span class="material-symbols-outlined text-amber-400">timer</span>
+        SLA Performance Tracking
+      </h1>
+      <p class="text-sm text-on-surface-variant mt-1">Monitor incident response times: incident &rarr; acknowledgement &rarr; resolution</p>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4" *ngIf="summary">
+    <div class="p-4 rounded-2xl glass-2 border border-amber-500/20">
+      <p class="text-[9px] uppercase tracking-widest text-amber-400/60 font-bold mb-1">Avg Acknowledge</p>
+      <p class="text-2xl font-black text-amber-400">{{ summary.avgAcknowledgeMin | number:'1.0-1' }}<span class="text-xs font-bold text-on-surface-variant ml-1">min</span></p>
+    </div>
+    <div class="p-4 rounded-2xl glass-2 border border-primary/20">
+      <p class="text-[9px] uppercase tracking-widest text-primary/60 font-bold mb-1">Avg Resolve</p>
+      <p class="text-2xl font-black text-primary">{{ summary.avgResolveMin | number:'1.0-1' }}<span class="text-xs font-bold text-on-surface-variant ml-1">min</span></p>
+    </div>
+    <div class="p-4 rounded-2xl glass-2 border border-secondary/20">
+      <p class="text-[9px] uppercase tracking-widest text-secondary/60 font-bold mb-1">Avg Total</p>
+      <p class="text-2xl font-black text-secondary">{{ summary.avgTotalMin | number:'1.0-1' }}<span class="text-xs font-bold text-on-surface-variant ml-1">min</span></p>
+    </div>
+    <div class="p-4 rounded-2xl glass-2 border border-white/10">
+      <p class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold mb-1">Total Incidents</p>
+      <p class="text-2xl font-black text-on-surface">{{ summary.totalIncidents }}</p>
+    </div>
+    <div class="p-4 rounded-2xl glass-2 border border-green-500/20">
+      <p class="text-[9px] uppercase tracking-widest text-green-400/60 font-bold mb-1">Within SLA</p>
+      <p class="text-2xl font-black text-green-400">{{ summary.withinSla }}</p>
+    </div>
+    <div class="p-4 rounded-2xl glass-2 border border-amber-500/20">
+      <p class="text-[9px] uppercase tracking-widest text-amber-400/60 font-bold mb-1">At Risk</p>
+      <p class="text-2xl font-black text-amber-400">{{ summary.atRisk }}</p>
+    </div>
+    <div class="p-4 rounded-2xl glass-2 border border-error/20">
+      <p class="text-[9px] uppercase tracking-widest text-error/60 font-bold mb-1">Breached</p>
+      <p class="text-2xl font-black text-error">{{ summary.breached }}</p>
+    </div>
+  </div>
+
+  <!-- Compliance bar -->
+  <div class="glass-2 rounded-2xl border border-white/10 p-6" *ngIf="summary">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-xs font-black uppercase tracking-widest text-on-surface-variant">SLA Compliance Rate</h3>
+      <span class="text-2xl font-black" [class]="complianceRate >= 80 ? 'text-green-400' : complianceRate >= 50 ? 'text-amber-400' : 'text-error'">{{ complianceRate }}%</span>
+    </div>
+    <div class="h-3 rounded-full bg-surface-container overflow-hidden flex">
+      <div class="h-full bg-green-500 transition-all" [style.width.%]="(summary.withinSla / summary.totalIncidents) * 100"></div>
+      <div class="h-full bg-amber-500 transition-all" [style.width.%]="(summary.atRisk / summary.totalIncidents) * 100"></div>
+      <div class="h-full bg-error transition-all" [style.width.%]="(summary.breached / summary.totalIncidents) * 100"></div>
+    </div>
+    <div class="flex gap-6 mt-2 text-[10px]">
+      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span> Within SLA</span>
+      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> At Risk</span>
+      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-error"></span> Breached</span>
+    </div>
+  </div>
+
+  <!-- Metrics Table -->
+  <div class="glass-2 rounded-2xl border border-white/10 overflow-hidden">
+    <div class="p-4 border-b border-white/5">
+      <h3 class="text-xs font-black uppercase tracking-widest text-on-surface-variant flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm">table_chart</span>
+        SLA Metrics ({{ metrics.length }})
+      </h3>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-white/5 text-[10px] uppercase tracking-widest text-on-surface-variant">
+            <th class="text-left p-3 font-bold">Alert</th>
+            <th class="text-center p-3 font-bold">Status</th>
+            <th class="text-center p-3 font-bold">Incident</th>
+            <th class="text-center p-3 font-bold">Acknowledged</th>
+            <th class="text-center p-3 font-bold">Resolved</th>
+            <th class="text-center p-3 font-bold">Time to Ack</th>
+            <th class="text-center p-3 font-bold">Time to Resolve</th>
+            <th class="text-center p-3 font-bold">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of metrics" class="border-b border-white/5 hover:bg-white/5 transition-colors">
+            <td class="p-3 font-bold text-on-surface">Alert #{{ m.alertId }}</td>
+            <td class="p-3 text-center">
+              <span
+                class="text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider inline-block"
+                [style.background]="statusColors[m.slaStatus] + '20'"
+                [style.color]="statusColors[m.slaStatus]"
+                [style.border]="'1px solid ' + statusColors[m.slaStatus] + '30'"
+              >{{ m.slaStatus.replace('_', ' ') }}</span>
+            </td>
+            <td class="p-3 text-center text-on-surface-variant text-xs">{{ timeSince(m.incidentAt) }}</td>
+            <td class="p-3 text-center text-on-surface-variant text-xs">{{ m.acknowledgedAt ? timeSince(m.acknowledgedAt) : '---' }}</td>
+            <td class="p-3 text-center text-on-surface-variant text-xs">{{ m.resolvedAt ? timeSince(m.resolvedAt) : '---' }}</td>
+            <td class="p-3 text-center font-bold" [style.color]="statusColors[m.slaStatus]">
+              {{ m.timeToAcknowledgeMin != null ? (m.timeToAcknowledgeMin | number:'1.0-1') + ' min' : '---' }}
+            </td>
+            <td class="p-3 text-center font-bold text-on-surface">
+              {{ m.timeToResolveMin != null ? (m.timeToResolveMin | number:'1.0-1') + ' min' : '---' }}
+            </td>
+            <td class="p-3 text-center font-bold text-on-surface">
+              {{ m.totalResolutionMin != null ? (m.totalResolutionMin | number:'1.0-1') + ' min' : '---' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div *ngIf="metrics.length === 0 && !loading" class="py-12 text-center">
+      <span class="material-symbols-outlined text-4xl text-on-surface-variant/30 block mb-2">timer_off</span>
+      <p class="text-sm text-on-surface-variant">No SLA metrics recorded yet</p>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="py-16 text-center">
+    <span class="material-symbols-outlined text-4xl text-primary animate-spin block mb-3">progress_activity</span>
+    <p class="text-sm text-on-surface-variant">Loading SLA data...</p>
+  </div>
+</div>
