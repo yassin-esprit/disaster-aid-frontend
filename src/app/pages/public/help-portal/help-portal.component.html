@@ -1,0 +1,189 @@
+<div class="min-h-screen">
+
+  <!-- ══ SUBMITTED ══ -->
+  <div *ngIf="step === 'submitted'" class="min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-sm w-full text-center">
+      <!-- Pulsing ring -->
+      <div class="relative w-28 h-28 mx-auto mb-8">
+        <div class="absolute inset-0 rounded-full bg-tertiary-dim/20 animate-ping opacity-40"></div>
+        <div class="absolute inset-2 rounded-full bg-tertiary-dim/20 animate-ping opacity-30" style="animation-delay:0.3s"></div>
+        <div class="relative w-28 h-28 rounded-full border-2 border-tertiary-dim/50 flex items-center justify-center"
+             style="background:rgba(125,239,192,0.1)">
+          <span class="material-symbols-outlined text-tertiary-dim text-5xl fill-icon">volunteer_activism</span>
+        </div>
+      </div>
+
+      <h1 class="text-4xl font-black tracking-tighter text-white mb-3">Help is on the way</h1>
+      <p class="text-on-surface-variant text-lg mb-2">
+        Request <span class="font-mono text-tertiary-dim">#{{ submittedId }}</span> submitted.
+      </p>
+      <p class="text-on-surface-variant text-sm mb-8">
+        Our team is matching responders to your location. Stay safe and keep your phone on.
+      </p>
+
+      <!-- Emergency number -->
+      <div class="p-4 rounded-2xl border border-error/30 mb-6 flex items-center gap-4"
+           style="background:rgba(255,110,132,0.08)">
+        <div class="w-10 h-10 rounded-xl bg-error/20 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined text-error fill-icon">call</span>
+        </div>
+        <div class="text-left">
+          <p class="text-xs text-on-surface-variant">Emergency hotline</p>
+          <p class="text-lg font-black text-white">197</p>
+          <p class="text-[10px] text-on-surface-variant">Civil protection — Tunisia</p>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button (click)="step = 'select'"
+                class="flex-1 py-3 glass-2 rounded-xl font-bold text-on-surface hover:bg-white/10 transition-all">
+          New Request
+        </button>
+        <a routerLink="/coordination"
+           class="flex-1 py-3 rounded-xl font-bold text-center transition-all active:scale-95"
+           style="background:rgba(125,239,192,0.8);color:#004d36">
+          Track Request
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ NEED SELECTOR ══ -->
+  <div *ngIf="step === 'select'" class="max-w-xl mx-auto px-4 py-8">
+
+    <!-- Header -->
+    <div class="text-center mb-10">
+      <div class="w-16 h-16 rounded-2xl bg-error/20 border border-error/30 flex items-center justify-center mx-auto mb-4">
+        <span class="material-symbols-outlined text-error text-4xl fill-icon">sos</span>
+      </div>
+      <h1 class="text-4xl font-black tracking-tighter text-white mb-3">What do you need?</h1>
+      <p class="text-on-surface-variant">
+        Select the type of help you need and we'll connect you with the right team.
+      </p>
+    </div>
+
+    <!-- Need cards -->
+    <div class="grid grid-cols-2 gap-4 mb-8">
+      <button *ngFor="let n of needs"
+              (click)="selectNeed(n)"
+              class="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all active:scale-95 hover:scale-[1.02]"
+              [ngClass]="[n.cardBg, n.glow]">
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center"
+             [ngClass]="n.bg + '/20 border border-' + n.bg + '/30'">
+          <span class="material-symbols-outlined text-3xl fill-icon" [ngClass]="n.color">{{ n.icon }}</span>
+        </div>
+        <div class="text-center">
+          <p class="text-sm font-black text-white">{{ n.label }}</p>
+          <p class="text-[10px] text-on-surface-variant leading-tight mt-1">{{ n.desc }}</p>
+        </div>
+        <div class="flex gap-0.5 mt-1">
+          <div *ngFor="let d of [0,1,2,3,4]"
+               class="w-1.5 h-1.5 rounded-full"
+               [ngClass]="d < n.urgency ? n.color.replace('text-','bg-') : 'bg-white/10'">
+          </div>
+        </div>
+      </button>
+    </div>
+
+    <p class="text-center text-xs text-on-surface-variant">
+      For life-threatening emergencies call
+      <span class="font-black text-white"> 197 </span>
+      (Civil Protection) immediately
+    </p>
+  </div>
+
+  <!-- ══ FORM ══ -->
+  <div *ngIf="step === 'form'" class="max-w-xl mx-auto px-4 py-8">
+
+    <!-- Selected need banner -->
+    <div *ngIf="selectedNeed"
+         class="flex items-center gap-4 p-4 rounded-2xl border-2 mb-8"
+         [ngClass]="selectedNeed.cardBg">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center"
+           [ngClass]="selectedNeed.bg + '/20'">
+        <span class="material-symbols-outlined text-2xl fill-icon" [ngClass]="selectedNeed.color">{{ selectedNeed.icon }}</span>
+      </div>
+      <div class="flex-1">
+        <p class="font-black text-white">{{ selectedNeed.label }}</p>
+        <p class="text-xs text-on-surface-variant">{{ selectedNeed.desc }}</p>
+      </div>
+      <button (click)="step = 'select'" class="text-xs text-on-surface-variant hover:text-white underline">
+        Change
+      </button>
+    </div>
+
+    <div *ngIf="errorMessage" class="mb-6 p-4 rounded-xl bg-error/10 border border-error/20 text-error text-sm flex items-center gap-2">
+      <span class="material-symbols-outlined text-sm">error</span>{{ errorMessage }}
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
+
+      <!-- Location -->
+      <div class="space-y-2">
+        <label class="block text-sm font-black text-white">📍 Where are you?</label>
+        <div class="relative">
+          <input formControlName="location" type="text"
+                 placeholder="Your current location or address..."
+                 class="w-full h-14 px-4 pr-24 glass-2 rounded-2xl text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-secondary outline-none"
+                 [ngClass]="inv('location') ? 'ring-2 ring-error/50' : ''" />
+          <button type="button" (click)="useGPS()"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[11px] font-black text-secondary bg-secondary/10 px-3 py-1.5 rounded-full hover:bg-secondary/20 transition-all">
+            <span class="material-symbols-outlined text-sm">my_location</span> GPS
+          </button>
+        </div>
+        <p *ngIf="inv('location')" class="text-xs text-error ml-1">Please provide your location.</p>
+      </div>
+
+      <!-- Description -->
+      <div class="space-y-2">
+        <label class="block text-sm font-black text-white">🗣️ Tell us more</label>
+        <textarea formControlName="description" rows="4"
+                  placeholder="How many people need help? Any specific details that will help us respond faster..."
+                  class="w-full px-4 py-4 glass-2 rounded-2xl text-on-surface placeholder:text-outline/40 focus:ring-2 focus:ring-secondary outline-none resize-none"
+                  [ngClass]="inv('description') ? 'ring-2 ring-error/50' : ''">
+        </textarea>
+        <p *ngIf="inv('description')" class="text-xs text-error ml-1">Please describe the situation.</p>
+      </div>
+
+      <!-- Urgency slider -->
+      <div class="space-y-3">
+        <div class="flex justify-between items-center">
+          <label class="text-sm font-black text-white">⚡ How urgent?</label>
+          <span class="text-sm font-black"
+                [ngClass]="{
+                  'text-secondary':  form.get('urgency')?.value <= 2,
+                  'text-amber-400':  form.get('urgency')?.value === 3,
+                  'text-orange-400': form.get('urgency')?.value === 4,
+                  'text-error':      form.get('urgency')?.value === 5
+                }">
+            {{ ['','Not urgent','Low','Moderate','Urgent','CRITICAL'][form.get('urgency')?.value] }}
+          </span>
+        </div>
+        <input type="range" formControlName="urgency" min="1" max="5"
+               class="w-full h-2 rounded-full appearance-none cursor-pointer accent-secondary" />
+        <div class="flex justify-between text-[10px] text-on-surface-variant">
+          <span>Can wait</span><span>Life threatening</span>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" [disabled]="isLoading"
+              class="w-full py-5 font-black text-lg rounded-2xl transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
+              [ngClass]="selectedNeed ? selectedNeed.glow : ''"
+              [style]="selectedNeed ? 'background:' + (selectedNeed.urgency >= 4 ? '#ff6e84' : '#699cff') + ';color:' + (selectedNeed.urgency >= 4 ? '#490013' : '#001e4a') : ''">
+        <span *ngIf="!isLoading">
+          <span class="material-symbols-outlined align-middle mr-1 fill-icon">sos</span>
+          Send Help Request
+        </span>
+        <span *ngIf="isLoading" class="flex items-center gap-2">
+          <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          Sending...
+        </span>
+      </button>
+
+    </form>
+  </div>
+</div>

@@ -19,7 +19,6 @@ export interface IncidentReport {
   updatedAt?: string;
 }
 
-
 export interface ReportEvidence {
   id?: number;
   incidentReportId?: number;
@@ -29,11 +28,6 @@ export interface ReportEvidence {
   capturedAt?: string;
 }
 
-interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
 export interface StatusHistory {
   id: number;
   fromStatus: string | null;
@@ -43,7 +37,11 @@ export interface StatusHistory {
   changedAt: string;
 }
 
-
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
 
 @Injectable({ providedIn: 'root' })
 export class IncidentService {
@@ -51,22 +49,6 @@ export class IncidentService {
   private evidenceBase = `${environment.apiUrl}/evidences`;
 
   constructor(private http: HttpClient) {}
-
-
-
-
-getHistory(id: number): Observable<StatusHistory[]> {
-  return this.http.get<ApiResponse<StatusHistory[]>>(`${this.base}/${id}/history`)
-    .pipe(map(r => r.data));
-}
-
-  checkDuplicate(dto: Partial<IncidentReport>): Observable<{ message: string; data: IncidentReport | null }> {
-    return this.http.post<ApiResponse<IncidentReport | null>>(
-      `${this.base}/check-duplicate`, dto
-    ).pipe(map(r => ({ message: r.message, data: r.data })));
-  }
-
-
 
   getAll(): Observable<IncidentReport[]> {
     return this.http
@@ -110,10 +92,13 @@ getHistory(id: number): Observable<StatusHistory[]> {
       .pipe(map(() => void 0));
   }
 
-
-
   upvote(id: number): Observable<IncidentReport> {
     return this.http.patch<ApiResponse<IncidentReport>>(`${this.base}/${id}/upvote`, {})
+      .pipe(map(r => r.data));
+  }
+
+  downvote(id: number): Observable<IncidentReport> {
+    return this.http.patch<ApiResponse<IncidentReport>>(`${this.base}/${id}/downvote`, {})
       .pipe(map(r => r.data));
   }
 
@@ -123,6 +108,16 @@ getHistory(id: number): Observable<StatusHistory[]> {
     ).pipe(map(r => r.data));
   }
 
+  checkDuplicate(dto: Partial<IncidentReport>): Observable<{ message: string; data: IncidentReport | null }> {
+    return this.http.post<ApiResponse<IncidentReport | null>>(
+      `${this.base}/check-duplicate`, dto
+    ).pipe(map(r => ({ message: r.message, data: r.data })));
+  }
+
+  getHistory(id: number): Observable<StatusHistory[]> {
+    return this.http.get<ApiResponse<StatusHistory[]>>(`${this.base}/${id}/history`)
+      .pipe(map(r => r.data));
+  }
 
   uploadEvidence(reportId: number, file: File): Observable<ReportEvidence> {
     const formData = new FormData();
@@ -142,5 +137,10 @@ getHistory(id: number): Observable<StatusHistory[]> {
     return this.http.delete<ApiResponse<void>>(
       `${this.evidenceBase}/${id}`
     ).pipe(map(() => void 0));
+  }
+
+  // Also expose findDuplicate for service use
+  findDuplicate(dto: Partial<IncidentReport>): Observable<IncidentReport | null> {
+    return this.checkDuplicate(dto).pipe(map(r => r.data));
   }
 }

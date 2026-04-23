@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { SidebarComponent }   from '../../shared/components/sidebar/sidebar.component';
@@ -12,7 +12,6 @@ import { MobileNavComponent } from '../../shared/components/mobile-nav/mobile-na
   templateUrl: './authenticated-layout.component.html'
 })
 export class AuthenticatedLayoutComponent {
-  // TODO: replace with real auth service
-  // For now: change this to 'ADMIN' to test admin view, 'VOLUNTEER' for user view
-  currentRole: string = 'VOLUNTEER';
+  // This layout is admin-only — always ADMIN role
+  currentRole: string = 'ADMIN';
 }

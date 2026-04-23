@@ -1,0 +1,388 @@
+<div class="min-h-screen">
+
+  <!-- Success screen -->
+  <div *ngIf="submitted"
+       class="min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-md w-full text-center">
+      <!-- Animated checkmark -->
+      <div class="relative w-28 h-28 mx-auto mb-8">
+        <div class="absolute inset-0 rounded-full bg-secondary/20 animate-ping opacity-30"></div>
+        <div class="relative w-28 h-28 rounded-full bg-secondary/20 border-2 border-secondary/40 flex items-center justify-center">
+          <span class="material-symbols-outlined text-secondary text-6xl fill-icon">check_circle</span>
+        </div>
+      </div>
+
+      <h1 class="text-4xl font-black tracking-tighter text-white mb-3">Report Submitted</h1>
+      <p class="text-on-surface-variant text-lg mb-2">
+        Your report <span class="font-mono text-primary">#{{ submittedId }}</span> is now in our system.
+      </p>
+      <p class="text-on-surface-variant text-sm mb-8">
+        Our team will review and verify it shortly. You'll be notified of any updates.
+      </p>
+
+      <!-- What happens next -->
+      <div class="glass-1 rounded-2xl p-6 border border-white/5 text-left mb-8 space-y-4">
+        <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4">What happens next</p>
+        <div class="flex items-start gap-3">
+          <div class="w-7 h-7 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <span class="material-symbols-outlined text-amber-400 text-sm">schedule</span>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-white">Under Review</p>
+            <p class="text-xs text-on-surface-variant">Admin team verifies your report for accuracy</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="w-7 h-7 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <span class="material-symbols-outlined text-secondary text-sm">groups</span>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-white">Responders Dispatched</p>
+            <p class="text-xs text-on-surface-variant">Matched volunteers and responders will be assigned</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <span class="material-symbols-outlined text-primary text-sm">notifications</span>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-white">You'll be notified</p>
+            <p class="text-xs text-on-surface-variant">Status updates will appear in your notifications</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <a routerLink="/incidents"
+           class="flex-1 py-3 glass-2 rounded-xl font-bold text-on-surface hover:bg-white/10 transition-all text-center">
+          View My Reports
+        </a>
+        <a routerLink="/help"
+           class="flex-1 py-3 rounded-xl font-bold transition-all active:scale-95 text-center"
+           style="background:#ff6e84;color:#490013">
+          Need Help Too?
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wizard -->
+  <div *ngIf="!submitted" class="max-w-2xl mx-auto px-4 py-8">
+
+    <!-- Header -->
+    <div class="mb-10">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-xl bg-error/20 border border-error/30 flex items-center justify-center">
+          <span class="material-symbols-outlined text-error fill-icon">report_problem</span>
+        </div>
+        <div>
+          <h1 class="text-2xl font-black tracking-tighter text-white">Report an Incident</h1>
+          <p class="text-xs text-on-surface-variant">Help your community — takes 2 minutes</p>
+        </div>
+      </div>
+
+      <!-- Step indicators -->
+      <div class="flex items-center gap-2 mb-4">
+        <div *ngFor="let s of [1,2,3]; let i = index"
+             class="flex items-center gap-2">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all"
+                 [ngClass]="currentStep > s
+                   ? 'bg-secondary text-on-secondary'
+                   : currentStep === s
+                   ? 'bg-primary text-on-primary shadow-[0_0_15px_rgba(172,163,255,0.4)]'
+                   : 'bg-white/10 text-on-surface-variant'">
+              <span *ngIf="currentStep > s" class="material-symbols-outlined text-sm">check</span>
+              <span *ngIf="currentStep <= s">{{ s }}</span>
+            </div>
+            <span class="text-xs font-bold hidden sm:block"
+                  [ngClass]="currentStep === s ? 'text-white' : 'text-on-surface-variant'">
+              {{ s === 1 ? 'What happened' : s === 2 ? 'Where & details' : 'Evidence' }}
+            </span>
+          </div>
+          <div *ngIf="i < 2" class="flex-1 h-px min-w-[20px]"
+               [ngClass]="currentStep > s ? 'bg-secondary' : 'bg-white/10'"></div>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+        <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
+             [style.width.%]="progressPct"></div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="errorMessage" class="mb-6 p-4 rounded-xl bg-error/10 border border-error/20 text-error text-sm flex items-center gap-2">
+      <span class="material-symbols-outlined text-sm">error</span>{{ errorMessage }}
+      <button (click)="errorMessage=''" class="ml-auto">✕</button>
+    </div>
+
+    <!-- ══ STEP 1 — What happened ══ -->
+    <div *ngIf="currentStep === 1" class="space-y-8">
+
+      <!-- Disaster type cards -->
+      <div>
+        <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4">
+          What type of incident are you reporting?
+        </p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <button *ngFor="let t of disasterTypes"
+                  type="button"
+                  (click)="selectType(t)"
+                  class="flex flex-col items-center gap-3 p-5 rounded-2xl border-2 transition-all active:scale-95"
+                  [ngClass]="selectedType?.value === t.value
+                    ? t.bg + ' shadow-lg'
+                    : 'border-white/10 bg-white/3 hover:bg-white/8 hover:border-white/20'">
+            <span class="material-symbols-outlined text-4xl"
+                  [ngClass]="selectedType?.value === t.value ? t.color : 'text-on-surface-variant'">
+              {{ t.icon }}
+            </span>
+            <div class="text-center">
+              <p class="text-sm font-black text-white">{{ t.label }}</p>
+              <p class="text-[10px] text-on-surface-variant leading-tight mt-0.5">{{ t.description }}</p>
+            </div>
+            <div *ngIf="selectedType?.value === t.value"
+                 class="w-5 h-5 rounded-full flex items-center justify-center"
+                 [ngClass]="t.color.replace('text-','bg-')">
+              <span class="material-symbols-outlined text-white text-sm fill-icon">check</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Severity -->
+      <div>
+        <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4">
+          How serious is it?
+        </p>
+        <div class="grid grid-cols-2 gap-3">
+          <button *ngFor="let s of severities"
+                  type="button"
+                  (click)="selectSeverity(s.value)"
+                  class="flex items-center gap-4 p-4 rounded-2xl border-2 transition-all active:scale-95 text-left"
+                  [ngClass]="selectedSeverity === s.value
+                    ? s.ring + ' ring-2 bg-white/8 border-transparent'
+                    : 'border-white/10 bg-white/3 hover:bg-white/8'">
+            <div class="w-4 h-4 rounded-full flex-shrink-0"
+                 [ngClass]="s.dot"
+                 [class.animate-pulse]="s.value === 'CRITICAL'"></div>
+            <div>
+              <p class="text-sm font-black text-white">{{ s.label }}</p>
+              <p class="text-[10px] text-on-surface-variant">{{ s.desc }}</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <button (click)="next()"
+              [disabled]="!canProceed()"
+              class="w-full py-4 rounded-2xl font-black text-lg transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+              [ngClass]="canProceed()
+                ? 'bg-primary text-on-primary shadow-[0_0_30px_rgba(172,163,255,0.4)]'
+                : 'bg-white/10 text-on-surface-variant'">
+        Continue
+        <span class="material-symbols-outlined align-middle ml-1">arrow_forward</span>
+      </button>
+    </div>
+
+    <!-- ══ STEP 2 — Where & details ══ -->
+    <div *ngIf="currentStep === 2" class="space-y-6">
+
+      <!-- Selected type recap -->
+      <div *ngIf="selectedType"
+           class="flex items-center gap-3 p-4 rounded-xl border"
+           [ngClass]="selectedType.bg">
+        <span class="material-symbols-outlined text-2xl" [ngClass]="selectedType.color">{{ selectedType.icon }}</span>
+        <div>
+          <p class="text-sm font-black text-white">{{ selectedType.label }}</p>
+          <p class="text-xs text-on-surface-variant">{{ getSeverityLabel() }} severity</p>
+
+        </div>
+        <button (click)="currentStep=1" class="ml-auto text-xs text-on-surface-variant hover:text-white underline">Change</button>
+      </div>
+
+      <!-- Location -->
+      <div class="space-y-2">
+        <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+          Where is this happening?
+        </label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-error fill-icon text-xl">location_on</span>
+          <input [formControl]="$any(form.get('location'))"
+                 type="text"
+                 placeholder="Street address, neighborhood, or coordinates..."
+                 class="w-full h-14 pl-12 pr-28 glass-2 rounded-2xl text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-error/50 outline-none"
+                 [ngClass]="form.get('location')?.invalid && form.get('location')?.touched ? 'ring-2 ring-error/50' : ''" />
+          <button type="button" (click)="useGPS()"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-[11px] font-black text-error bg-error/10 px-3 py-1.5 rounded-full hover:bg-error/20 transition-all">
+            <span class="material-symbols-outlined text-sm">my_location</span> GPS
+          </button>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="space-y-2">
+        <div class="flex justify-between">
+          <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+            Describe what you see
+          </label>
+          <span class="text-xs text-on-surface-variant">
+            {{ form.get('description')?.value?.length || 0 }} chars
+          </span>
+        </div>
+        <textarea [formControl]="$any(form.get('description'))"
+                  rows="5"
+                  placeholder="Be as specific as possible — number of people affected, what's happening, any immediate dangers..."
+                  class="w-full px-4 py-4 glass-2 rounded-2xl text-on-surface placeholder:text-outline/40 focus:ring-2 focus:ring-primary/50 outline-none resize-none leading-relaxed"
+                  [ngClass]="form.get('description')?.invalid && form.get('description')?.touched ? 'ring-2 ring-error/50' : ''">
+        </textarea>
+        <!-- Writing tips -->
+        <div class="flex flex-wrap gap-2">
+          <span class="text-[10px] text-on-surface-variant">Tips:</span>
+          <button *ngFor="let tip of ['How many people?','Any injuries?','Is it spreading?','Roads affected?']"
+                  type="button"
+                  (click)="form.patchValue({description: (form.get('description')?.value || '') + ' ' + tip})"
+                  class="text-[10px] px-2 py-1 glass-2 rounded-full text-primary border border-primary/20 hover:bg-primary/10 transition-all">
+            + {{ tip }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Live credibility hint -->
+      <div class="glass-2 rounded-xl p-4 border border-white/5 flex items-center gap-4">
+        <div class="relative w-12 h-12 flex-shrink-0">
+          <svg class="w-12 h-12 -rotate-90" viewBox="0 0 36 36">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"/>
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke-width="3"
+                    [attr.stroke]="liveCredibility >= 60 ? '#699cff' : liveCredibility >= 35 ? '#fbbf24' : '#ff6e84'"
+                    stroke-linecap="round"
+                    [attr.stroke-dasharray]="liveCredibility + ' 100'" stroke-dashoffset="0"/>
+          </svg>
+          <div class="absolute inset-0 flex items-center justify-center">
+            <span class="text-[10px] font-black text-on-surface">{{ liveCredibility }}%</span>
+          </div>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-on-surface">Report credibility</p>
+          <p class="text-[11px] text-on-surface-variant">
+            {{ liveCredibility >= 60 ? 'Good — add evidence on next step to boost further'
+            : liveCredibility >= 35 ? 'Fair — add more detail to your description'
+              : 'Low — fill in location and description fully' }}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button (click)="back()" class="px-6 py-4 glass-2 rounded-2xl font-bold text-on-surface hover:bg-white/10 transition-all">
+          <span class="material-symbols-outlined align-middle mr-1">arrow_back</span> Back
+        </button>
+        <button (click)="next()"
+                [disabled]="!canProceed()"
+                class="flex-1 py-4 rounded-2xl font-black transition-all active:scale-95 disabled:opacity-40"
+                [ngClass]="canProceed() ? 'bg-primary text-on-primary shadow-[0_0_25px_rgba(172,163,255,0.35)]' : 'bg-white/10 text-on-surface-variant'">
+          Add Evidence <span class="material-symbols-outlined align-middle ml-1">arrow_forward</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ══ STEP 3 — Evidence ══ -->
+    <div *ngIf="currentStep === 3" class="space-y-6">
+
+      <div class="text-center mb-2">
+        <p class="text-lg font-black text-white">Add photos or videos</p>
+        <p class="text-sm text-on-surface-variant">Optional but increases report credibility by 30%</p>
+      </div>
+
+      <!-- Credibility boost indicator -->
+      <div class="flex items-center gap-3 p-3 rounded-xl"
+           style="background:rgba(105,156,255,0.08);border:1px solid rgba(105,156,255,0.15)">
+        <span class="material-symbols-outlined text-secondary text-sm">info</span>
+        <p class="text-xs text-secondary">
+          {{ uploadedFiles.length === 0
+          ? 'Adding at least one photo boosts your credibility score by +30%'
+          : uploadedFiles.length + ' file(s) ready — credibility: ' + liveCredibility + '%' }}
+        </p>
+      </div>
+
+      <!-- Drop zone -->
+      <div class="relative rounded-2xl border-2 border-dashed transition-all cursor-pointer"
+           [ngClass]="isDragOver ? 'border-primary bg-primary/10' : 'border-white/15 hover:border-white/30'"
+           (dragover)="onDragOver($event)"
+           (dragleave)="onDragLeave()"
+           (drop)="onDrop($event)"
+           (click)="fileInput.click()">
+        <div class="flex flex-col items-center justify-center py-12 gap-3 pointer-events-none">
+          <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-2">
+            <span class="material-symbols-outlined text-4xl"
+                  [ngClass]="isDragOver ? 'text-primary' : 'text-on-surface-variant'">
+              add_photo_alternate
+            </span>
+          </div>
+          <p class="font-bold text-on-surface">{{ isDragOver ? 'Release to add' : 'Drop files here' }}</p>
+          <p class="text-xs text-on-surface-variant">or tap to browse · PNG, JPG, MP4 · Max 50MB</p>
+        </div>
+        <input #fileInput type="file" class="hidden" multiple
+               accept="image/*,video/mp4,video/quicktime"
+               (change)="onFileSelect($event)" />
+      </div>
+
+      <!-- Preview grid -->
+      <div *ngIf="uploadedFiles.length > 0" class="grid grid-cols-3 gap-3">
+        <div *ngFor="let item of uploadedFiles; let i = index"
+             class="relative aspect-square rounded-xl overflow-hidden group"
+             style="background:rgba(0,0,0,0.4)">
+          <img *ngIf="item.file.type.startsWith('image')"
+               [src]="item.preview" class="w-full h-full object-cover" />
+          <div *ngIf="item.file.type.startsWith('video')"
+               class="w-full h-full flex flex-col items-center justify-center text-on-surface-variant gap-2">
+            <span class="material-symbols-outlined text-3xl">videocam</span>
+            <span class="text-[9px]">{{ item.file.name }}</span>
+          </div>
+          <div *ngIf="item.uploading"
+               class="absolute inset-0 bg-black/60 flex items-center justify-center">
+            <svg class="animate-spin h-6 w-6 text-white" viewBox="0 0 24 24" fill="none">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>
+          </div>
+          <button (click)="removeFile(i)"
+                  class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-error">
+            <span class="material-symbols-outlined text-sm">close</span>
+          </button>
+          <div class="absolute bottom-0 inset-x-0 py-1 px-2 text-[9px] text-white font-bold text-right"
+               style="background:linear-gradient(transparent,rgba(0,0,0,0.7))">
+            {{ (item.file.size / 1024 / 1024).toFixed(1) }}MB
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button (click)="back()" class="px-6 py-4 glass-2 rounded-2xl font-bold text-on-surface hover:bg-white/10 transition-all">
+          <span class="material-symbols-outlined align-middle mr-1">arrow_back</span> Back
+        </button>
+        <button (click)="submit()"
+                [disabled]="isLoading"
+                class="flex-1 py-4 bg-error text-on-error font-black rounded-2xl shadow-[0_0_30px_rgba(255,110,132,0.4)] hover:shadow-[0_0_50px_rgba(255,110,132,0.6)] transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2">
+          <span *ngIf="!isLoading">
+            <span class="material-symbols-outlined align-middle mr-1 fill-icon">send</span>
+            Submit Report
+          </span>
+          <span *ngIf="isLoading" class="flex items-center gap-2">
+            <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>
+            Submitting...
+          </span>
+        </button>
+      </div>
+
+      <p class="text-center text-xs text-on-surface-variant">
+        <span class="material-symbols-outlined text-sm align-middle">lock</span>
+        Your report is encrypted and reviewed by our team before publishing
+      </p>
+    </div>
+
+  </div>
+</div>
