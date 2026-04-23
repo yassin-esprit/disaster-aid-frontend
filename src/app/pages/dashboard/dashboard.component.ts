@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { IncidentService, IncidentReport, StatusHistory } from '../../core/services/incident.service';
-import { CoordinationService, HelpRequest, TaskAssignment, CoordinationStats } from '../../core/services/coordination.service';
+import { CoordinationService, HelpRequest, TaskAssignment,
+  CoordinationStats, VolunteerMatch } from '../../core/services/coordination.service';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 
 @Component({
@@ -14,38 +15,46 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
 })
 export class DashboardComponent implements OnInit {
 
-  // ── Stats ────────────────────────────────────
+  // ── Stats ────────────────────────────────────────────
   stats: CoordinationStats | null = null;
 
-  // ── Incidents ────────────────────────────────
+  // ── Incidents ─────────────────────────────────────────
   incidents: IncidentReport[] = [];
   filteredIncidents: IncidentReport[] = [];
   incidentFilter = 'ALL';
   incidentSearch = '';
   expandedIncidentId: number | null = null;
-  historyMap: Record<number, StatusHistory[]> = {};
+  historyMap: Record<number, StatusHistory[] | undefined> = {};
   incidentLoading = true;
 
-  // ── Help Requests ────────────────────────────
+  // ── Help Requests ─────────────────────────────────────
   requests: HelpRequest[] = [];
   filteredRequests: HelpRequest[] = [];
   requestFilter = 'ALL';
   requestSearch = '';
   expandedRequestId: number | null = null;
-  assignmentsMap: Record<number, TaskAssignment[]> = {};
+  assignmentsMap: Record<number, TaskAssignment[] | undefined> = {};
   requestLoading = true;
 
-  // ── Active tab ───────────────────────────────
+  // ── Active tab ────────────────────────────────────────
   activeTab: 'overview' | 'incidents' | 'coordination' = 'overview';
 
-  // ── Delete confirm ───────────────────────────
+  // ── Delete confirm ────────────────────────────────────
   deleteTarget: { type: 'incident' | 'request'; id: number } | null = null;
 
-  // ── Notification feed ────────────────────────
+  // ── Assign modal ──────────────────────────────────────
+  assigningToRequestId: number | null = null;
+  matchesForRequest: VolunteerMatch[] = [];
+  loadingMatches = false;
+  assignResponderId: number | null = null;
+  assignNotes = '';
+  assignError = '';
+
+  // ── Misc ──────────────────────────────────────────────
   notifications = [
-    { color: 'bg-secondary', time: '2h ago',  msg: 'Certification "Emergency First Aid" verified.'   },
-    { color: 'bg-primary',   time: '5h ago',  msg: 'New request from Hope Shelter matching your skills.' },
-    { color: 'bg-error',     time: '1d ago',  msg: 'Flash Flood alert issued for Greater Tunis.'     },
+    { color: 'bg-secondary', time: '2h ago', msg: 'Certification "Emergency First Aid" verified.'          },
+    { color: 'bg-primary',   time: '5h ago', msg: 'New request from Hope Shelter matching skills.'         },
+    { color: 'bg-error',     time: '1d ago', msg: 'Flash Flood alert issued for Greater Tunis.'            },
   ];
 
   impactBars = [
@@ -54,8 +63,8 @@ export class DashboardComponent implements OnInit {
     { label: 'Social Support',   value: 67 },
   ];
 
-  incidentStatuses  = ['ALL','PENDING','VERIFIED','REJECTED','ESCALATED'];
-  requestStatuses   = ['ALL','OPEN','ASSIGNED','IN_PROGRESS','RESOLVED','CANCELLED'];
+  incidentStatuses = ['ALL','PENDING','VERIFIED','REJECTED','ESCALATED'];
+  requestStatuses  = ['ALL','OPEN','ASSIGNED','IN_PROGRESS','RESOLVED','CANCELLED'];
 
   severityBadge: Record<string,string> = {
     LOW:      'bg-secondary/10 text-secondary border-secondary/20',
@@ -63,6 +72,8 @@ export class DashboardComponent implements OnInit {
     HIGH:     'bg-orange-500/10 text-orange-400 border-orange-500/20',
     CRITICAL: 'bg-error/20 text-error border-error/30',
   };
+
+  urgencyColors: string[] = ['','bg-secondary','bg-secondary','bg-amber-400','bg-orange-400','bg-error'];
 
   constructor(
     private incSvc: IncidentService,
@@ -75,7 +86,7 @@ export class DashboardComponent implements OnInit {
     this.loadRequests();
   }
 
-  // ── Loaders ──────────────────────────────────
+  // ── Loaders ───────────────────────────────────────────
   loadStats(): void {
     this.coordSvc.getStats().subscribe({ next: s => this.stats = s });
   }
@@ -96,7 +107,7 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  // ── Filters ──────────────────────────────────
+  // ── Filters ───────────────────────────────────────────
   applyIncidentFilters(): void {
     this.filteredIncidents = this.incidents.filter(r => {
       const s = this.incidentFilter === 'ALL' || r.status === this.incidentFilter;
@@ -117,14 +128,13 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  // ── Incident actions ─────────────────────────
+  // ── Incident actions ──────────────────────────────────
   updateIncidentStatus(id: number, status: string): void {
     this.incSvc.updateStatus(id, status).subscribe({
       next: updated => {
         const i = this.incidents.findIndex(x => x.id === id);
         if (i !== -1) this.incidents[i] = updated as any;
         this.applyIncidentFilters();
-        // Refresh history
         this.incSvc.getHistory(id).subscribe(h => this.historyMap[id] = h);
       }
     });
@@ -137,7 +147,7 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  // ── Request actions ──────────────────────────
+  // ── Request actions ───────────────────────────────────
   updateRequestStatus(id: number, status: string): void {
     const r = this.requests.find(x => x.id === id);
     if (!r) return;
@@ -163,71 +173,7 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  // ── Delete ───────────────────────────────────
-  confirmDelete(type: 'incident' | 'request', id: number): void {
-    this.deleteTarget = { type, id };
-  }
-
-  doDelete(): void {
-    if (!this.deleteTarget) return;
-    if (this.deleteTarget.type === 'incident') {
-      this.incSvc.delete(this.deleteTarget.id).subscribe({ next: () => { this.deleteTarget = null; this.loadIncidents(); } });
-    } else {
-      this.coordSvc.deleteRequest(this.deleteTarget.id).subscribe({ next: () => { this.deleteTarget = null; this.loadRequests(); } });
-    }
-  }
-
-  // ── Helpers ──────────────────────────────────
-  credColor(score?: number): string {
-    if (!score) return 'text-on-surface-variant';
-    return score >= 0.8 ? 'text-secondary' : score >= 0.5 ? 'text-amber-400' : 'text-error';
-  }
-
-  getTimelineIcon(status: string): string {
-    const m: Record<string,string> = { PENDING: 'schedule', VERIFIED: 'check', REJECTED: 'close', ESCALATED: 'arrow_upward' };
-    return m[status] || 'circle';
-  }
-
-  getTimelineDotStyle(status: string): string {
-    const m: Record<string,string> = {
-      PENDING: 'background:rgba(245,158,11,0.8)', VERIFIED: 'background:rgba(105,156,255,0.8)',
-      REJECTED: 'background:rgba(255,110,132,0.8)', ESCALATED: 'background:rgba(249,115,22,0.8)'
-    };
-    return m[status] || 'background:rgba(255,255,255,0.2)';
-  }
-
-  getStatusPill(status: string): string {
-    const m: Record<string,string> = {
-      PENDING: 'background:rgba(245,158,11,0.15);color:#fbbf24',
-      VERIFIED: 'background:rgba(105,156,255,0.15);color:#699cff',
-      REJECTED: 'background:rgba(255,110,132,0.15);color:#ff6e84',
-      ESCALATED: 'background:rgba(249,115,22,0.15);color:#fb923c',
-    };
-    return m[status] || 'background:rgba(255,255,255,0.05);color:#94a3b8';
-  }
-
-  urgencyColors: string[] = ['','bg-secondary','bg-secondary','bg-amber-400','bg-orange-400','bg-error'];
-
-  getUrgencyDotClass(urgency: number, dotIndex: number): string {
-    return dotIndex < urgency ? this.urgencyColors[urgency] || 'bg-on-surface-variant' : 'bg-white/10';
-  }
-
-  getPendingIncidentCount(): number {
-    return this.incidents.filter(i => i.status === 'PENDING').length;
-  }
-
-  getOpenRequestCount(): number {
-    return this.requests.filter(r => r.status === 'OPEN').length;
-  }
-
-  // Assign modal state
-  assigningToRequestId: number | null = null;
-  matchesForRequest: any[] = [];
-  loadingMatches = false;
-  assignResponderId: number | null = null;
-  assignNotes = '';
-  assignError = '';
-
+  // ── Assign modal ──────────────────────────────────────
   openAssignModal(requestId: number, event: Event): void {
     event.stopPropagation();
     this.assigningToRequestId = requestId;
@@ -242,9 +188,7 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  closeAssignModal(): void {
-    this.assigningToRequestId = null;
-  }
+  closeAssignModal(): void { this.assigningToRequestId = null; }
 
   submitAssignment(): void {
     if (!this.assigningToRequestId || !this.assignResponderId) {
@@ -257,11 +201,10 @@ export class DashboardComponent implements OnInit {
     ).subscribe({
       next: () => {
         const reqId = this.assigningToRequestId!;
-        this.coordSvc.getAssignmentsByRequest(reqId)
-          .subscribe(a => this.assignmentsMap[reqId] = a);
+        this.coordSvc.getAssignmentsByRequest(reqId).subscribe(a => this.assignmentsMap[reqId] = a);
         this.closeAssignModal();
       },
-      error: () => this.assignError = 'Assignment failed. Check responder ID.'
+      error: () => this.assignError = 'Assignment failed.'
     });
   }
 
@@ -273,12 +216,73 @@ export class DashboardComponent implements OnInit {
     ).subscribe({
       next: () => {
         const reqId = this.assigningToRequestId!;
-        this.coordSvc.getAssignmentsByRequest(reqId)
-          .subscribe(a => this.assignmentsMap[reqId] = a);
+        this.coordSvc.getAssignmentsByRequest(reqId).subscribe(a => this.assignmentsMap[reqId] = a);
         this.closeAssignModal();
       },
       error: () => this.assignError = 'Assignment failed.'
     });
   }
 
+  // ── Delete ────────────────────────────────────────────
+  confirmDelete(type: 'incident' | 'request', id: number): void {
+    this.deleteTarget = { type, id };
+  }
+
+  doDelete(): void {
+    if (!this.deleteTarget) return;
+    if (this.deleteTarget.type === 'incident') {
+      this.incSvc.delete(this.deleteTarget.id).subscribe({
+        next: () => { this.deleteTarget = null; this.loadIncidents(); }
+      });
+    } else {
+      this.coordSvc.deleteRequest(this.deleteTarget.id).subscribe({
+        next: () => { this.deleteTarget = null; this.loadRequests(); }
+      });
+    }
+  }
+
+  // ── Template helpers ──────────────────────────────────
+  credColor(score?: number): string {
+    if (!score) return 'text-on-surface-variant';
+    return score >= 0.8 ? 'text-secondary' : score >= 0.5 ? 'text-amber-400' : 'text-error';
+  }
+
+  getUrgencyDotClass(urgency: number, dotIndex: number): string {
+    return dotIndex < urgency ? this.urgencyColors[urgency] || 'bg-on-surface-variant' : 'bg-white/10';
+  }
+
+  getPendingIncidentCount(): number {
+    return this.incidents.filter(i => i.status === 'PENDING').length;
+  }
+
+  getOpenRequestCount(): number {
+    return this.requests.filter(r => r.status === 'OPEN').length;
+  }
+
+  getTimelineIcon(status: string): string {
+    const m: Record<string,string> = {
+      PENDING: 'schedule', VERIFIED: 'check', REJECTED: 'close', ESCALATED: 'arrow_upward'
+    };
+    return m[status] || 'circle';
+  }
+
+  getTimelineDotStyle(status: string): string {
+    const m: Record<string,string> = {
+      PENDING:   'background:rgba(245,158,11,0.8)',
+      VERIFIED:  'background:rgba(105,156,255,0.8)',
+      REJECTED:  'background:rgba(255,110,132,0.8)',
+      ESCALATED: 'background:rgba(249,115,22,0.8)'
+    };
+    return m[status] || 'background:rgba(255,255,255,0.2)';
+  }
+
+  getStatusPill(status: string): string {
+    const m: Record<string,string> = {
+      PENDING:   'background:rgba(245,158,11,0.15);color:#fbbf24',
+      VERIFIED:  'background:rgba(105,156,255,0.15);color:#699cff',
+      REJECTED:  'background:rgba(255,110,132,0.15);color:#ff6e84',
+      ESCALATED: 'background:rgba(249,115,22,0.15);color:#fb923c',
+    };
+    return m[status] || 'background:rgba(255,255,255,0.05);color:#94a3b8';
+  }
 }

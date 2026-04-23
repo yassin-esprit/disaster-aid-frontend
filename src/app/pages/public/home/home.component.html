@@ -1,0 +1,248 @@
+<div class="font-body text-on-surface antialiased">
+
+  <!-- ── Hero ─────────────────────────────────────── -->
+  <section class="relative min-h-[60vh] flex flex-col items-center justify-center text-center px-6 py-20 overflow-hidden">
+    <!-- Background orbs -->
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/15 rounded-full blur-[120px] -z-10"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-secondary/10 rounded-full blur-[100px] -z-10"></div>
+
+    <!-- Live indicator -->
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-1 ghost-border text-sm font-medium mb-6">
+      <span class="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+      <span class="text-on-surface-variant text-xs font-bold uppercase tracking-widest">Platform Live</span>
+      <span *ngIf="stats" class="text-error font-black text-xs">
+        · {{ stats.pendingIncidents }} active incidents
+      </span>
+    </div>
+
+    <h1 class="text-white font-black tracking-tighter mb-4 max-w-3xl leading-[1.05] text-5xl md:text-6xl">
+      Welcome back. <br/>
+      <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-tertiary-dim">
+        Your community needs you.
+      </span>
+    </h1>
+    <p class="text-on-surface-variant max-w-xl mb-8 text-lg">
+      Report emergencies, request help, or join a volunteer mission — all in one place.
+    </p>
+
+    <!-- Live stats row -->
+    <div *ngIf="stats" class="flex flex-wrap gap-8 justify-center mt-4">
+      <div class="flex flex-col items-center">
+        <span class="text-3xl font-black text-error font-mono">{{ stats.openRequests }}</span>
+        <span class="text-xs uppercase tracking-widest text-on-surface-variant mt-1">Open Requests</span>
+      </div>
+      <div class="w-px h-10 bg-white/10 self-center"></div>
+      <div class="flex flex-col items-center">
+        <span class="text-3xl font-black text-tertiary-dim font-mono">{{ stats.resolvedToday }}</span>
+        <span class="text-xs uppercase tracking-widest text-on-surface-variant mt-1">Resolved Today</span>
+      </div>
+      <div class="w-px h-10 bg-white/10 self-center"></div>
+      <div class="flex flex-col items-center">
+        <span class="text-3xl font-black text-secondary font-mono">{{ stats.activeAssignments }}</span>
+        <span class="text-xs uppercase tracking-widest text-on-surface-variant mt-1">Active Missions</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Quick Actions ──────────────────────────────── -->
+  <section class="px-6 pb-16 max-w-5xl mx-auto">
+    <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant text-center mb-8">
+      What do you need?
+    </p>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <a *ngFor="let a of quickActions"
+         [routerLink]="a.route"
+         class="group flex flex-col gap-5 p-7 rounded-3xl border-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+         [ngClass]="[a.border, a.bg, a.glow]">
+        <!-- Icon -->
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center"
+             [ngClass]="a.bg">
+          <span class="material-symbols-outlined text-3xl fill-icon" [ngClass]="a.color">{{ a.icon }}</span>
+        </div>
+        <!-- Text -->
+        <div class="flex-1">
+          <p class="font-black text-white text-lg leading-tight">{{ a.label }}</p>
+          <p class="text-xs text-on-surface-variant mt-2 leading-relaxed">{{ a.desc }}</p>
+        </div>
+        <!-- CTA arrow -->
+        <div class="flex items-center gap-1.5 text-xs font-black mt-auto" [ngClass]="a.color">
+          Get started
+          <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">
+            arrow_forward
+          </span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ── Active Incident Feed ───────────────────────── -->
+  <section class="px-6 pb-16 max-w-5xl mx-auto">
+
+    <div class="flex items-end justify-between mb-8">
+      <div>
+        <h2 class="text-2xl font-black text-white">Recent Incidents</h2>
+        <p class="text-on-surface-variant text-sm mt-1">Latest reports from your community</p>
+      </div>
+      <a routerLink="/incidents"
+         class="text-primary text-sm font-bold hover:underline flex items-center gap-1">
+        View all <span class="material-symbols-outlined text-sm">arrow_forward</span>
+      </a>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="flex justify-center py-12">
+      <svg class="animate-spin h-8 w-8 text-primary" viewBox="0 0 24 24" fill="none">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+      </svg>
+    </div>
+
+    <!-- Empty -->
+    <div *ngIf="!isLoading && incidents.length === 0"
+         class="glass-1 rounded-2xl p-12 text-center border border-white/5">
+      <span class="material-symbols-outlined text-5xl text-outline block mb-3">inbox</span>
+      <p class="text-on-surface-variant mb-4">No incidents reported yet.</p>
+      <a routerLink="/report"
+         class="px-6 py-3 bg-error text-on-error rounded-xl font-bold inline-flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm">add</span> Be the first to report
+      </a>
+    </div>
+
+    <!-- Incident cards — 2-col grid, not a list -->
+    <div *ngIf="!isLoading && incidents.length > 0"
+         class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div *ngFor="let r of incidents"
+           class="glass-1 rounded-2xl border border-white/5 overflow-hidden hover:border-primary/20 transition-all group">
+
+        <!-- Severity accent bar -->
+        <div class="h-1 w-full" [ngClass]="getSeverity(r.severity).bar"></div>
+
+        <div class="p-5">
+          <div class="flex items-start gap-4">
+            <!-- Type icon -->
+            <div class="w-11 h-11 rounded-xl bg-white/5 flex items-center justify-center text-on-surface-variant flex-shrink-0">
+              <span class="material-symbols-outlined fill-icon">{{ getIcon(r.disasterType) }}</span>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <!-- Title row -->
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
+                <span class="text-xs font-mono text-outline">#{{ r.id }}</span>
+                <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                      [ngClass]="getSeverity(r.severity).bar.replace('bg-','bg-') + '/10 ' + getSeverity(r.severity).dot.replace('bg-','text-')">
+                  <span class="w-1.5 h-1.5 rounded-full" [ngClass]="getSeverity(r.severity).dot"></span>
+                  {{ getSeverity(r.severity).label }}
+                </span>
+                <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                      [ngClass]="{
+                        'bg-amber-400/10 text-amber-400': r.status === 'PENDING',
+                        'bg-secondary/10 text-secondary':  r.status === 'VERIFIED',
+                        'bg-error/10 text-error':           r.status === 'REJECTED',
+                        'bg-orange-400/10 text-orange-400': r.status === 'ESCALATED'
+                      }">
+                  <span class="w-1.5 h-1.5 rounded-full" [ngClass]="statusDot(r.status)"></span>
+                  {{ r.status }}
+                </span>
+              </div>
+
+              <!-- Type + location -->
+              <p class="font-black text-white group-hover:text-primary transition-colors">
+                {{ r.disasterType }}
+              </p>
+              <p class="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5">
+                <span class="material-symbols-outlined text-sm">location_on</span>
+                {{ r.location }}
+              </p>
+
+              <!-- Description preview -->
+              <p *ngIf="r.description" class="text-xs text-on-surface-variant mt-2 line-clamp-2 leading-relaxed">
+                {{ r.description }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Card footer -->
+          <div class="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
+            <div class="flex items-center gap-3">
+              <!-- Upvote count display (read only for home page) -->
+              <span class="flex items-center gap-1 text-xs text-on-surface-variant">
+                <span class="material-symbols-outlined text-sm">thumb_up</span>
+                {{ r.upvoteCount || 0 }}
+              </span>
+              <span class="text-xs text-outline">{{ timeAgo(r.createdAt) }}</span>
+            </div>
+            <a routerLink="/incidents"
+               class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+              View all <span class="material-symbols-outlined text-sm">chevron_right</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Report CTA -->
+    <div class="mt-6 text-center">
+      <a routerLink="/report"
+         class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-error border border-error/20 bg-error/5 hover:bg-error/10 transition-all">
+        <span class="material-symbols-outlined text-sm">add_circle</span>
+        Report a new incident
+      </a>
+    </div>
+  </section>
+
+  <!-- ── Emergency Contacts + Tips ─────────────────── -->
+  <section class="px-6 pb-16 max-w-5xl mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- Emergency numbers -->
+      <div class="glass-1 rounded-2xl border border-error/20 p-6"
+           style="background:rgba(255,110,132,0.04)">
+        <p class="text-xs font-bold uppercase tracking-widest text-error mb-5 flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm fill-icon">emergency</span>
+          Emergency contacts
+        </p>
+        <div class="space-y-4">
+          <div *ngFor="let c of emergencyContacts"
+               class="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined fill-icon" [ngClass]="c.color">{{ c.icon }}</span>
+              <span class="text-sm font-bold text-white">{{ c.name }}</span>
+            </div>
+            <a [href]="'tel:' + c.number"
+               class="font-mono font-black text-white text-xl hover:text-primary transition-colors">
+              {{ c.number }}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Volunteer CTA card -->
+      <div class="glass-1 rounded-2xl border border-secondary/20 p-6 flex flex-col justify-between"
+           style="background:rgba(105,156,255,0.04)">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-widest text-secondary mb-3 flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm fill-icon">volunteer_activism</span>
+            Ready to help?
+          </p>
+          <h3 class="text-xl font-black text-white mb-2">Join an active mission</h3>
+          <p class="text-sm text-on-surface-variant leading-relaxed">
+            Browse open help requests in your area and claim a mission. Every volunteer makes a difference.
+          </p>
+        </div>
+        <div class="flex gap-3 mt-6">
+          <a routerLink="/missions"
+             class="flex-1 py-3 text-center font-bold rounded-xl transition-all active:scale-95"
+             style="background:#699cff;color:#001e4a;box-shadow:0 0 20px rgba(105,156,255,0.25)">
+            Browse Missions
+          </a>
+          <a routerLink="/help"
+             class="px-4 py-3 glass-2 rounded-xl font-bold text-on-surface-variant hover:text-white transition-all border border-white/10">
+            Need Help
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</div>

@@ -3,6 +3,7 @@ import { LandingComponent }             from './pages/landing/landing.component'
 import { LoginComponent }               from './pages/login/login.component';
 import { RegisterComponent }            from './pages/register/register.component';
 import { AuthenticatedLayoutComponent } from './layouts/authenticated-layout/authenticated-layout.component';
+import { PublicLayoutComponent }        from './layouts/public-layout/public-layout.component';
 
 export const routes: Routes = [
   // Public
@@ -25,6 +26,7 @@ export const routes: Routes = [
             .then(m => m.FrontofficeProfileComponent),
   },
 
+  // ── Volunteer / Citizen — public top-nav layout ───────
   // ===== CHAT (AUTH REQUIRED) =====
   {
     path: 'communication/chat',
@@ -38,17 +40,12 @@ export const routes: Routes = [
   // Front Office — authenticated layout
   {
     path: '',
-    component: AuthenticatedLayoutComponent,
+    component: PublicLayoutComponent,
     children: [
       {
         path: 'home',
         loadComponent: () => import('./pages/public/home/home.component')
           .then(m => m.HomeComponent)
-      },
-      {
-        path: 'dashboard',
-        loadComponent: () => import('./pages/dashboard/dashboard.component')
-          .then(m => m.DashboardComponent)
       },
       {
         path: 'report',
@@ -91,6 +88,24 @@ export const routes: Routes = [
         path: 'coordination/new',
         loadComponent: () => import('./pages/coordination/help-request-form/help-request-form.component')
           .then(m => m.HelpRequestFormComponent)
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./pages/profile/profile.component')
+          .then(m => m.ProfileComponent)
+      },
+    ]
+  },
+
+  // ── Admin — sidebar layout ────────────────────────────
+  {
+    path: '',
+    component: AuthenticatedLayoutComponent,
+    children: [
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./pages/dashboard/dashboard.component')
+          .then(m => m.DashboardComponent)
       },
       {
         path: 'alerts',
