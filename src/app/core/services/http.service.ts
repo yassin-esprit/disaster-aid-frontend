@@ -11,22 +11,25 @@ export class HttpService {
 
   constructor(private http: HttpClient) {}
 
-  private getHeaders(customHeaders?: HttpHeaders): HttpHeaders {
+  private buildHeaders(additional?: HttpHeaders, isFormData = false): HttpHeaders {
     const token = localStorage.getItem('token');
+    let headers = new HttpHeaders();
 
-    let headers = new HttpHeaders({
-      'Content-Type': 'application/json'
-    });
+    // Only set JSON content-type when NOT sending FormData
+    if (!isFormData) {
+      headers = headers.set('Content-Type', 'application/json');
+      headers = headers.set('Accept', 'application/json');
+    }
 
     if (token) {
       headers = headers.set('Authorization', `Bearer ${token}`);
     }
 
-    if (customHeaders) {
-      customHeaders.keys().forEach((key) => {
-        const value = customHeaders.get(key);
-        if (value !== null) {
-          headers = headers.set(key, value);
+    if (additional) {
+      additional.keys().forEach(key => {
+        const val = additional.get(key);
+        if (val !== null) {
+          headers = headers.set(key, val);
         }
       });
     }
@@ -34,28 +37,37 @@ export class HttpService {
     return headers;
   }
 
-  get<T>(endpoint: string, params?: HttpParams): Observable<T> {
-    return this.http.get<T>(`${this.apiUrl}${endpoint}`, {
-      headers: this.getHeaders(),
+  get<T>(endpoint: string, params?: HttpParams, customHeaders?: HttpHeaders): Observable<T> {
+    const options = {
+      headers: this.buildHeaders(customHeaders, false),
       params
-    });
+    };
+    return this.http.get<T>(`${this.apiUrl}${endpoint}`, options);
   }
 
-  post<T>(endpoint: string, body: unknown, headers?: HttpHeaders): Observable<T> {
-    return this.http.post<T>(`${this.apiUrl}${endpoint}`, body, {
-      headers: this.getHeaders(headers)
-    });
+  post<T>(endpoint: string, body: unknown, params?: HttpParams, customHeaders?: HttpHeaders): Observable<T> {
+    const isFormData = body instanceof FormData;
+    const options = {
+      headers: this.buildHeaders(customHeaders, isFormData),
+      params
+    };
+    return this.http.post<T>(`${this.apiUrl}${endpoint}`, body as any, options);
   }
 
-  put<T>(endpoint: string, body: unknown, headers?: HttpHeaders): Observable<T> {
-    return this.http.put<T>(`${this.apiUrl}${endpoint}`, body, {
-      headers: this.getHeaders(headers)
-    });
+  put<T>(endpoint: string, body: unknown, params?: HttpParams, customHeaders?: HttpHeaders): Observable<T> {
+    const isFormData = body instanceof FormData;
+    const options = {
+      headers: this.buildHeaders(customHeaders, isFormData),
+      params
+    };
+    return this.http.put<T>(`${this.apiUrl}${endpoint}`, body as any, options);
   }
 
-  delete<T>(endpoint: string): Observable<T> {
-    return this.http.delete<T>(`${this.apiUrl}${endpoint}`, {
-      headers: this.getHeaders()
-    });
+  delete<T>(endpoint: string, params?: HttpParams, customHeaders?: HttpHeaders): Observable<T> {
+    const options = {
+      headers: this.buildHeaders(customHeaders, false),
+      params
+    };
+    return this.http.delete<T>(`${this.apiUrl}${endpoint}`, options);
   }
 }

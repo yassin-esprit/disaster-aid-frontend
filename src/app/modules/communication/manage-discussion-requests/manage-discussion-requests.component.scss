@@ -17,9 +17,55 @@
   opacity: 0.8;
 }
 
+.ai-box {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(167, 139, 250, 0.12);
+  border: 1px solid rgba(167, 139, 250, 0.25);
+}
+
+.ai-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #c4b5fd;
+}
+
+.ai-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.ai-label {
+  opacity: 0.85;
+}
+
+.ai-value {
+  font-weight: 700;
+}
+
+.priority-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #64748b;
+  color: white;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.priority-badge.high {
+  background: #f59e0b;
+}
+
+.priority-badge.critical {
+  background: #ef4444;
+}
+
 .actions {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .actions button {
@@ -28,6 +74,11 @@
   padding: 10px 16px;
   font-weight: 700;
   cursor: pointer;
+}
+
+.analyze {
+  background: #60a5fa;
+  color: white;
 }
 
 .accept {

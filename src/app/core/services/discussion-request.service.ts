@@ -2,8 +2,11 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { DiscussionRequest } from '../../modules/communication/models/discussion-request.model';
-import { DiscussionRequestCreate } from '../../modules/communication/models/discussion-request-create.model';
+import {
+  AiPrediction,
+  DiscussionRequest,
+  DiscussionRequestCreate
+} from '../../modules/communication/models/discussion-request.model';
 
 @Injectable({
   providedIn: 'root'
@@ -61,6 +64,14 @@ export class DiscussionRequestService {
     return this.http.put<DiscussionRequest>(
       `${this.apiUrl}/${requestId}/reject/admin/${adminId}`,
       {},
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  predictRequest(data: { subject: string; description: string }): Observable<AiPrediction> {
+    return this.http.post<AiPrediction>(
+      `${this.apiUrl}/predict`,
+      data,
       { headers: this.getAuthHeaders() }
     );
   }

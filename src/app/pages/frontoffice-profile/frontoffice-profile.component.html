@@ -1,0 +1,147 @@
+<div class="profile-page text-white">
+  <nav class="fixed top-0 w-full h-16 z-50 bg-white/10 backdrop-blur-md shadow-[0_0_40px_rgba(108,92,231,0.12)]">
+    <div class="flex justify-between items-center px-8 w-full max-w-screen-2xl mx-auto h-full relative">
+      <div class="text-2xl font-black text-white tracking-tighter flex items-center gap-2">
+        CPS
+        <span class="text-xs font-mono text-primary px-2 py-0.5 bg-primary/10 rounded-full tracking-normal"> HUB </span>
+      </div>
+
+      <div class="hidden md:flex items-center space-x-8 font-medium text-sm tracking-tight">
+        <a class="text-violet-400 border-b-2 border-violet-500 pb-1 font-semibold" href="#">Home</a>
+        <a class="text-slate-300 hover:text-white transition-colors" href="#">Alerts</a>
+        <a class="text-slate-300 hover:text-white transition-colors" href="#">Opportunities</a>
+        <a class="text-slate-300 hover:text-white transition-colors" href="#">About</a>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <button class="material-symbols-outlined text-slate-300 hover:text-white transition-all hover:bg-white/5 p-2 rounded-full">
+          notifications
+        </button>
+        <div class="h-6 w-[1px] bg-white/10 mx-2"></div>
+        <ng-container *ngIf="isAuthenticated; else showSignIn">
+          <a routerLink="/frontoffice-profile" class="text-slate-300 text-sm font-medium hover:text-white transition-colors">Profile</a>
+          <a (click)="logout()" class="bg-primary text-on-primary px-5 py-2 rounded-full text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">Logout</a>
+        </ng-container>
+        <ng-template #showSignIn>
+          <a routerLink="/login" class="text-slate-300 text-sm font-medium hover:text-white transition-colors">Sign In</a>
+          <a routerLink="/login" class="bg-primary text-on-primary px-5 py-2 rounded-full text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">Get Started</a>
+        </ng-template>
+      </div>
+    </div>
+  </nav>
+
+  <div class="profile-container">
+    <div class="page-heading">
+      <h1>My Profile</h1>
+      <p>View your personal information and update it when necessary.</p>
+    </div>
+
+    <div *ngIf="loading" class="profile-card">
+      <p>Loading profile...</p>
+    </div>
+
+    <div *ngIf="!loading" class="profile-card">
+      <div class="profile-top">
+
+        <!-- Avatar : affiche toujours la photo si disponible (preview > photo sauvegardée > initiales) -->
+        <div class="avatar">
+          <img
+            *ngIf="previewUrl || user.profilePhoto"
+            [src]="previewUrl || user.profilePhoto"
+            alt="Avatar"
+          />
+          <span *ngIf="!previewUrl && !user.profilePhoto">{{ getInitials() }}</span>
+        </div>
+
+        <div class="identity">
+          <h2>{{ user.firstName }} {{ user.lastName }}</h2>
+          <div class="identity-meta">
+            <span class="role-badge">{{ getRoleLabel(user.role) }}</span>
+            <span class="status-badge">{{ user.status || 'ACTIVE' }}</span>
+          </div>
+          <p class="email">{{ user.email }}</p>
+        </div>
+
+        <div class="top-actions">
+          <button *ngIf="!editMode" class="edit-btn" (click)="enableEdit()">Edit Profile</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Vue lecture seule -->
+      <div *ngIf="!editMode" class="info-grid">
+        <div class="info-item">
+          <label>First Name</label>
+          <div>{{ user.firstName || '-' }}</div>
+        </div>
+
+        <div class="info-item">
+          <label>Last Name</label>
+          <div>{{ user.lastName || '-' }}</div>
+        </div>
+
+        <div class="info-item">
+          <label>Email</label>
+          <div>{{ user.email || '-' }}</div>
+        </div>
+
+        <div class="info-item">
+          <label>Phone</label>
+          <div>{{ user.phone || '-' }}</div>
+        </div>
+
+        <div class="info-item">
+          <label>Location</label>
+          <div>{{ user.location || '-' }}</div>
+        </div>
+
+        <div class="info-item">
+          <label>Role</label>
+          <div>{{ getRoleLabel(user.role) }}</div>
+        </div>
+      </div>
+
+      <!-- Formulaire d'édition — le champ photo est DEDANS -->
+      <form *ngIf="editMode" (ngSubmit)="updateProfile()" class="form-grid">
+
+        <!-- Champ photo uniquement en mode édition -->
+        <div class="field-group" style="grid-column: 1 / -1;">
+          <label>Profile Photo</label>
+          <input type="file" accept="image/*" (change)="onFileSelected($event)" />
+        </div>
+
+        <div class="field-group">
+          <label>First Name</label>
+          <input [(ngModel)]="editableUser.firstName" name="firstName" type="text" />
+        </div>
+
+        <div class="field-group">
+          <label>Last Name</label>
+          <input [(ngModel)]="editableUser.lastName" name="lastName" type="text" />
+        </div>
+
+        <div class="field-group">
+          <label>Email</label>
+          <input [value]="user.email" name="email" type="email" disabled />
+        </div>
+
+        <div class="field-group">
+          <label>Phone</label>
+          <input [(ngModel)]="editableUser.phone" name="phone" type="text" placeholder="Phone number" />
+        </div>
+
+        <div class="field-group">
+          <label>Location</label>
+          <input [(ngModel)]="editableUser.location" name="location" type="text" placeholder="Your city" />
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="cancel-btn" (click)="cancelEdit()">Cancel</button>
+          <button type="submit" class="save-btn" [disabled]="saving">{{ saving ? 'Saving...' : 'Save Changes' }}</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>

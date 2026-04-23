@@ -1,6 +1,6 @@
 <section class="chat-shell">
   <aside class="conversation-panel">
-    <div class="panel-title">Mes conversations</div>
+    <div class="panel-title">My Conversations</div>
 
     <div
       *ngFor="let convo of conversations"
@@ -10,12 +10,12 @@
     >
       <div class="conversation-top">
         <div class="conversation-avatar">
-          {{ convo.conversationId }}
+          {{ getConversationInitials(convo) }}
         </div>
 
         <div class="conversation-info">
           <div class="conversation-name">
-            Conversation {{ convo.conversationId }}
+            {{ getConversationName(convo) }}
           </div>
           <div class="conversation-meta">
             {{ convo.type }}
@@ -37,16 +37,16 @@
         <h2>
           {{
             selectedConversationId
-              ? ('Conversation ' + selectedConversationId)
-              : 'Sélectionnez une conversation'
+              ? getConversationName(getSelectedConversation())
+              : 'Select a conversation'
           }}
         </h2>
-        <p>Messagerie instantanée entre utilisateurs</p>
+        <p>Instant messaging between users</p>
       </div>
 
       <div class="header-status" *ngIf="selectedConversationId">
         <span class="status-dot"></span>
-        En ligne
+        Online
       </div>
     </div>
 
@@ -64,81 +64,59 @@
 
             <div class="message-bubble" [class.mine]="isMine(msg)">
               <div class="message-top">
-                <span class="message-author">
-                  {{ getDisplayName(msg) }}
-                </span>
-                <span class="message-time">
-                  {{ formatTime(msg.sentAt) }}
-                </span>
+                <span class="message-author">{{ getDisplayName(msg) }}</span>
+                <span class="message-time">{{ formatTime(msg.sentAt) }}</span>
               </div>
-
-              <div class="message-text">
-                {{ msg.body }}
-              </div>
+              <div class="message-text">{{ msg.body }}</div>
             </div>
           </div>
         </ng-container>
 
-<ng-template #emptyState>
-  <div class="empty-state">
-    <div class="empty-icon">💬</div>
-    <h3>Aucune conversation</h3>
-    <p>Vous n'avez pas encore de discussion avec un administrateur.</p>
+        <ng-template #emptyState>
+          <div class="empty-state">
+            <div class="empty-icon">💬</div>
+            <h3>No conversations yet</h3>
+            <p>You don't have any discussion with an administrator yet.</p>
 
-    <button class="contact-admin-btn" (click)="showRequestForm = true">
-      Contacter un administrateur
-    </button>
+            <button class="contact-admin-btn" (click)="showRequestForm = true">
+              Contact an administrator
+            </button>
 
-    <!-- FORMULAIRE -->
-    <div *ngIf="showRequestForm" class="request-form">
-      <input
-        type="text"
-        [(ngModel)]="subject"
-        placeholder="Sujet"
-      />
-
-      <textarea
-        [(ngModel)]="description"
-        placeholder="Décrivez votre besoin"
-      ></textarea>
-
-      <button (click)="sendRequest()">Envoyer</button>
-    </div>
-  </div>
-</ng-template>
+            <div *ngIf="showRequestForm" class="request-form">
+              <input type="text" [(ngModel)]="subject" placeholder="Subject" />
+              <textarea [(ngModel)]="description" placeholder="Describe your request"></textarea>
+              <button (click)="sendRequest()">Send</button>
+            </div>
+          </div>
+        </ng-template>
       </div>
 
       <button
         class="scroll-bottom-btn"
         *ngIf="showScrollButton"
         (click)="scrollToBottomManual()"
-        title="Aller au dernier message"
-      >
-        ↓
-      </button>
+        title="Go to latest message"
+      >↓</button>
     </div>
 
     <div *ngIf="isTyping" class="typing-indicator">
-      {{ typingUser }} est en train d’écrire...
+      {{ typingUser }} is typing...
     </div>
 
     <div class="message-input-bar">
       <input
         type="text"
         [(ngModel)]="newMessage"
-        placeholder="Écrire un message..."
+        placeholder="Write a message..."
         [disabled]="!selectedConversationId"
         (input)="onTyping()"
         (keyup.enter)="sendMessage()"
       />
-
       <button
         class="send-btn"
         (click)="sendMessage()"
         [disabled]="!selectedConversationId || !newMessage.trim()"
-      >
-        Envoyer
-      </button>
+      >Send</button>
     </div>
   </div>
 </section>

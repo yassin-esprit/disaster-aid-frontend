@@ -11,8 +11,15 @@
 
     <div *ngIf="!loading" class="profile-card">
       <div class="profile-top">
+
+        <!-- Avatar : photo si disponible, sinon initiales -->
         <div class="avatar">
-          {{ getInitials() }}
+          <img
+            *ngIf="previewUrl || user.profilePhoto"
+            [src]="previewUrl || user.profilePhoto"
+            alt="Profile photo"
+          />
+          <span *ngIf="!previewUrl && !user.profilePhoto">{{ getInitials() }}</span>
         </div>
 
         <div class="identity">
@@ -66,8 +73,14 @@
         </div>
       </div>
 
-      <!-- EDIT MODE -->
+      <!-- EDIT MODE — photo upload inclus ici uniquement -->
       <form *ngIf="editMode" (ngSubmit)="updateProfile()" class="form-grid">
+
+        <div class="field-group" style="grid-column: 1 / -1;">
+          <label>Profile Photo</label>
+          <input type="file" accept="image/*" (change)="onFileSelected($event)" />
+        </div>
+
         <div class="field-group">
           <label>First Name</label>
           <input [(ngModel)]="editableUser.firstName" name="firstName" type="text" />
@@ -102,7 +115,6 @@
           <button type="button" class="cancel-btn" (click)="cancelEdit()">
             Cancel
           </button>
-
           <button type="submit" class="save-btn" [disabled]="saving">
             {{ saving ? 'Saving...' : 'Save Changes' }}
           </button>
@@ -110,5 +122,4 @@
       </form>
     </div>
   </div>
-  
 </div>

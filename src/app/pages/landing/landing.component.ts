@@ -2,17 +2,19 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { ChatComponent } from '../../modules/communication/chat/chat.component';
+import { FrontofficeProfileComponent } from '../frontoffice-profile/frontoffice-profile.component';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, RouterModule, ChatComponent],
+  imports: [CommonModule, RouterModule, ChatComponent, FrontofficeProfileComponent], // Assurez-vous que ce composant est bien importé ici.
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.scss'],
 })
 export class LandingComponent implements OnInit {
   isAuthenticated = false;
   isChatOpen = false;
+  showProfile = false;
 
   stats = [
     { value: '12', label: 'Active Alerts', color: 'text-error' },
@@ -99,6 +101,10 @@ export class LandingComponent implements OnInit {
     }
   }
 
+  toggleProfile(): void {
+    this.showProfile = !this.showProfile;  // Toggle profile visibility
+  }
+
   toggleChat(): void {
     this.checkAuthState();
 
@@ -120,5 +126,11 @@ export class LandingComponent implements OnInit {
 
   onBrowseOpportunities(): void {
     console.log('Navigate to opportunities');
+  }
+
+  logout(): void {
+    localStorage.clear();
+    this.isAuthenticated = false;
+    this.router.navigateByUrl('/landing');
   }
 }

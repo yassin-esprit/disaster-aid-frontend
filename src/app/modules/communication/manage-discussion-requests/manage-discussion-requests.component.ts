@@ -1,7 +1,7 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DiscussionRequestService } from '../../../core/services/discussion-request.service';
-import { DiscussionRequest } from '../models/discussion-request.model';
+import { AiPrediction, DiscussionRequest } from '../models/discussion-request.model';
 
 @Component({
   selector: 'app-manage-discussion-requests',
@@ -18,6 +18,9 @@ export class ManageDiscussionRequestsComponent implements OnInit {
   errorMessage = '';
 
   currentAdminId = Number(localStorage.getItem('userId'));
+
+  predictions: { [requestId: number]: AiPrediction } = {};
+  predictingIds: { [requestId: number]: boolean } = {};
 
   constructor(private discussionRequestService: DiscussionRequestService) {}
 
@@ -38,6 +41,27 @@ export class ManageDiscussionRequestsComponent implements OnInit {
         console.error(error);
         this.errorMessage = 'Erreur lors du chargement des demandes.';
         this.loading = false;
+      }
+    });
+  }
+
+  analyzeRequest(req: DiscussionRequest): void {
+    console.log('Analyse demandée pour :', req);
+
+    this.predictingIds[req.requestId] = true;
+
+    this.discussionRequestService.predictRequest({
+      subject: req.subject,
+      description: req.description
+    }).subscribe({
+      next: (prediction) => {
+        console.log('Prediction reçue :', prediction);
+        this.predictions[req.requestId] = prediction;
+        this.predictingIds[req.requestId] = false;
+      },
+      error: (error) => {
+        console.error('Erreur IA :', error);
+        this.predictingIds[req.requestId] = false;
       }
     });
   }

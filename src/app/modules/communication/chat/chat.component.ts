@@ -84,12 +84,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
 
   loadConversations(): void {
     this.chatService.getMyConversations().subscribe({
-      next: (data) => {
-        this.conversations = data || [];
-      },
-      error: (err) => {
-        console.error('Erreur conversations:', err);
-      }
+      next: (data) => { this.conversations = data || []; },
+      error: (err) => { console.error('Error loading conversations:', err); }
     });
   }
 
@@ -104,9 +100,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
         this.messages = data || [];
         this.shouldScroll = true;
       },
-      error: (err) => {
-        console.error('Erreur messages:', err);
-      }
+      error: (err) => { console.error('Error loading messages:', err); }
     });
 
     this.chatService.connectToConversation(convoId);
@@ -115,7 +109,6 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
     this.messageSubscription = this.chatService.onMessageReceived().subscribe({
       next: (msg) => {
         const exists = this.messages.some(m => m.messageId === msg.messageId);
-
         if (msg.conversationId === this.selectedConversationId) {
           if (!exists) {
             this.messages.push(msg);
@@ -126,18 +119,15 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
             (this.unreadCount[msg.conversationId] || 0) + 1;
         }
       },
-      error: (err) => {
-        console.error('Erreur websocket messages:', err);
-      }
+      error: (err) => { console.error('WebSocket message error:', err); }
     });
 
     this.typingSubscription?.unsubscribe();
     this.typingSubscription = this.chatService.onTyping(convoId).subscribe({
       next: (data) => {
         if (data.userId !== this.currentUserId) {
-          this.typingUser = data.email || 'Un utilisateur';
+          this.typingUser = data.email || 'A user';
           this.isTyping = true;
-
           clearTimeout(this.typingTimeout);
           this.typingTimeout = setTimeout(() => {
             this.isTyping = false;
@@ -145,9 +135,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
           }, 2000);
         }
       },
-      error: (err) => {
-        console.error('Erreur websocket typing:', err);
-      }
+      error: (err) => { console.error('WebSocket typing error:', err); }
     });
   }
 
@@ -175,9 +163,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
         this.newMessage = '';
         this.isTyping = false;
       },
-      error: (err) => {
-        console.error('Erreur envoi message:', err);
-      }
+      error: (err) => { console.error('Error sending message:', err); }
     });
   }
 
@@ -188,12 +174,12 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
     const citizenId = Number(localStorage.getItem('userId'));
 
     if (!citizenId) {
-      this.requestErrorMessage = 'Utilisateur non connecté.';
+      this.requestErrorMessage = 'User not logged in.';
       return;
     }
 
     if (!this.subject.trim() || !this.description.trim()) {
-      this.requestErrorMessage = 'Veuillez remplir tous les champs.';
+      this.requestErrorMessage = 'Please fill in all fields.';
       return;
     }
 
@@ -203,29 +189,47 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
       subject: this.subject.trim(),
       description: this.description.trim()
     }).subscribe({
-      next: (response) => {
-        console.log('Demande créée :', response);
+      next: () => {
         this.isSendingRequest = false;
-        this.requestSuccessMessage = 'Demande envoyée avec succès.';
+        this.requestSuccessMessage = 'Request sent successfully.';
         this.subject = '';
         this.description = '';
         this.showRequestForm = false;
       },
       error: (error) => {
-        console.error('Erreur création demande :', error);
         this.isSendingRequest = false;
         this.requestErrorMessage =
-          error?.error?.message || 'Erreur lors de l’envoi de la demande.';
+          error?.error?.message || 'Error sending request.';
       }
     });
   }
 
-  scrollToBottomManual(): void {
-    this.scrollToBottom();
+  // ─── Helpers for display (no IDs exposed) ────────────────────────────────
+
+  /** Returns a human-readable name for a conversation */
+  getConversationName(convo: Conversation | null | undefined): string {
+    if (!convo) return 'Conversation';
+    // Use subject if available, otherwise fall back to type
+    return (convo as any).subject || convo.type || 'Conversation';
   }
 
-  goToLanding(): void {
-    this.router.navigateByUrl('/landing');
+  /** Returns 2-letter initials for the conversation avatar */
+  getConversationInitials(convo: Conversation): string {
+    const name = this.getConversationName(convo);
+    return name.substring(0, 2).toUpperCase();
+  }
+
+  /** Returns the currently selected conversation object */
+  getSelectedConversation(): Conversation | null {
+    return this.conversations.find(
+      c => c.conversationId === this.selectedConversationId
+    ) ?? null;
+  }
+
+  // ─── Generic helpers ──────────────────────────────────────────────────────
+
+  scrollToBottomManual(): void {
+    this.scrollToBottom();
   }
 
   getInitials(email?: string): string {
@@ -235,8 +239,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
 
   formatTime(date?: string | null): string {
     if (!date) return '';
-    const d = new Date(date);
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
   isMine(msg: Message): boolean {
@@ -244,7 +247,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
   }
 
   getDisplayName(msg: Message): string {
-    return this.isMine(msg) ? 'Vous' : (msg.senderEmail || ('User ' + msg.senderId));
+    return this.isMine(msg) ? 'You' : (msg.senderEmail || 'User');
   }
 
   private scrollToBottom(): void {
@@ -255,7 +258,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
         this.showScrollButton = false;
       }
     } catch (error) {
-      console.error('Erreur scroll:', error);
+      console.error('Scroll error:', error);
     }
   }
 

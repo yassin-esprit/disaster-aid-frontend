@@ -1,24 +1,51 @@
 <div class="requests-page">
-  <h2>Demandes de discussion</h2>
+  <h2>Discussion Requests</h2>
 
-  <div *ngIf="loading">Chargement...</div>
+  <div *ngIf="loading">Loading...</div>
   <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
 
   <div *ngIf="!loading && requests.length === 0">
-    Aucune demande en attente.
+    No pending requests.
   </div>
 
   <div class="request-card" *ngFor="let req of requests">
     <h3>{{ req.subject }}</h3>
     <p>{{ req.description }}</p>
+
     <div class="meta">
-      <span>Citoyen ID : {{ req.citizenId }}</span>
-      <span>Statut : {{ req.status }}</span>
+      <!-- citizenId masqué : on affiche uniquement le statut -->
+      <span>Status: {{ req.status }}</span>
+    </div>
+
+    <div class="ai-box" *ngIf="predictions[req.requestId]">
+      <div class="ai-title">AI Analysis</div>
+      <div class="ai-row">
+        <span class="ai-label">Category:</span>
+        <span class="ai-value">{{ predictions[req.requestId].category }}</span>
+      </div>
+      <div class="ai-row">
+        <span class="ai-label">Priority:</span>
+        <span
+          class="priority-badge"
+          [class.high]="predictions[req.requestId].priority === 'HIGH'"
+          [class.critical]="predictions[req.requestId].priority === 'CRITICAL'"
+        >
+          {{ predictions[req.requestId].priority }}
+        </span>
+      </div>
     </div>
 
     <div class="actions">
-      <button class="accept" (click)="acceptRequest(req.requestId)">Accepter</button>
-      <button class="reject" (click)="rejectRequest(req.requestId)">Refuser</button>
+      <button
+        class="analyze"
+        (click)="analyzeRequest(req)"
+        [disabled]="predictingIds[req.requestId]"
+      >
+        {{ predictingIds[req.requestId] ? 'Analyzing...' : 'Analyze with AI' }}
+      </button>
+
+      <button class="accept" (click)="acceptRequest(req.requestId)">Accept</button>
+      <button class="reject" (click)="rejectRequest(req.requestId)">Reject</button>
     </div>
   </div>
 </div>

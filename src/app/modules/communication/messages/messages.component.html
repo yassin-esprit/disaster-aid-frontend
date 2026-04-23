@@ -2,28 +2,13 @@
   <div class="page-header">
     <div>
       <h1>Messages</h1>
-      <p>Répondez au citoyen dans la conversation acceptée.</p>
+      <p>Reply to the citizen in the accepted conversation.</p>
     </div>
   </div>
 
   <div class="chat-card">
     <div class="chat-toolbar">
-      <div class="conversation-box">
-        <label for="conversationId">Conversation ID</label>
-        <div class="conversation-actions">
-          <input
-            id="conversationId"
-            type="number"
-            [(ngModel)]="conversationId"
-            placeholder="Ex: 12"
-            class="conversation-input"
-          />
-          <button class="load-btn" (click)="loadConversation(true)">
-            Charger
-          </button>
-        </div>
-      </div>
-
+      <!-- No conversation ID input exposed — conversation is loaded internally -->
       <div class="live-indicator" *ngIf="conversationId">
         <span class="live-dot"></span>
         ONLINE
@@ -31,7 +16,7 @@
     </div>
 
     <div *ngIf="loading" class="state-box">
-      Chargement des messages...
+      Loading messages...
     </div>
 
     <div *ngIf="errorMessage" class="state-box error-box">
@@ -42,8 +27,8 @@
       <div #messagesContainer class="messages-scroll">
         <div *ngIf="messages.length === 0" class="empty-chat-state">
           <div class="empty-icon">💬</div>
-          <h3>Aucun message</h3>
-          <p>Chargez une conversation pour afficher son historique.</p>
+          <h3>No messages</h3>
+          <p>Select a conversation to display its history.</p>
         </div>
 
         <div *ngIf="messages.length > 0" class="messages-list">
@@ -76,7 +61,7 @@
         *ngIf="showScrollButton"
         class="scroll-bottom-btn"
         (click)="scrollToBottomManual()"
-        title="Aller en bas"
+        title="Go to bottom"
       >
         ↓
       </button>
@@ -87,7 +72,7 @@
     </div>
 
     <div class="typing-indicator" *ngIf="isTyping">
-      {{ typingUser }} typing...
+      {{ typingUser }} is typing...
     </div>
 
     <div class="reply-section" *ngIf="conversationId">
@@ -98,7 +83,7 @@
       <textarea
         [(ngModel)]="newMessage"
         rows="4"
-        placeholder="Écrire votre réponse... (Entrée pour envoyer, Shift+Entrée pour une nouvelle ligne)"
+        placeholder="Write your reply... (Enter to send, Shift+Enter for new line)"
         class="reply-textarea"
         (input)="onTyping()"
         (keydown.enter)="handleEnter($event)"
@@ -110,7 +95,7 @@
           (click)="sendMessage()"
           [disabled]="sending || !newMessage.trim()"
         >
-          {{ sending ? 'Envoi...' : 'Envoyer' }}
+          {{ sending ? 'Sending...' : 'Send' }}
         </button>
       </div>
     </div>

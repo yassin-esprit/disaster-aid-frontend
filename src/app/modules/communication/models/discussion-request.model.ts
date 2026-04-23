@@ -4,8 +4,18 @@ export interface DiscussionRequest {
   adminId?: number | null;
   subject: string;
   description: string;
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  status: string;
   conversationId?: number | null;
   createdAt?: string;
   processedAt?: string;
+}
+
+export interface DiscussionRequestCreate {
+  subject: string;
+  description: string;
+}
+
+export interface AiPrediction {
+  category: string;
+  priority: string;
 }

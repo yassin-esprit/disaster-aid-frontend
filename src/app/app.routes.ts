@@ -20,6 +20,12 @@ export const routes: Routes = [
       import('./modules/identity/social-auth-success/social-auth-success.component')
         .then(m => m.SocialAuthSuccessComponent),
   },
+  {
+        path: 'frontoffice-profile',
+        loadComponent: () =>
+          import('./pages/frontoffice-profile/frontoffice-profile.component')
+            .then(m => m.FrontofficeProfileComponent),
+  },
 
   // ===== CHAT (AUTH REQUIRED) =====
   {
@@ -37,6 +43,7 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
 
+      // Dashboard page, only accessible to authenticated users
       {
         path: 'dashboard',
         loadComponent: () =>
@@ -44,6 +51,7 @@ export const routes: Routes = [
             .then(m => m.DashboardComponent),
       },
 
+      // Alerts, requires authentication
       {
         path: 'alerts',
         loadComponent: () =>
@@ -51,6 +59,7 @@ export const routes: Routes = [
             .then(m => m.AlertsMapComponent),
       },
 
+      // Incident reporting, requires authentication
       {
         path: 'incidents',
         loadComponent: () =>
@@ -58,13 +67,15 @@ export const routes: Routes = [
             .then(m => m.IncidentFormComponent),
       },
 
+      // Opportunities page, requires authentication
       {
         path: 'opportunities',
         loadComponent: () =>
           import('./pages/opportunities/opportunities.component')
             .then(m => m.OpportunitiesComponent),
       },
-
+      
+      // Profile page, only accessible to authenticated users
       {
         path: 'profile',
         loadComponent: () =>
@@ -72,6 +83,7 @@ export const routes: Routes = [
             .then(m => m.ProfileComponent),
       },
 
+      // Users management page (Admin only)
       {
         path: 'users-management',
         loadComponent: () =>
@@ -79,16 +91,16 @@ export const routes: Routes = [
             .then(m => m.UsersManagementComponent),
       },
 
+      // Communication page, only accessible to authenticated users
       {
         path: 'communication',
         loadComponent: () =>
           import('./modules/communication/communication/communication.component')
             .then(m => m.CommunicationComponent),
       },
-
     ],
   },
 
-  // ===== FALLBACK =====
+  // ===== FALLBACK ROUTE =====
   { path: '**', redirectTo: 'landing' },
 ];

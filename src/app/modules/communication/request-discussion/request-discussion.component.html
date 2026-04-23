@@ -1,21 +1,21 @@
 <div class="request-box">
-  <h2>Demander une discussion</h2>
-  <p>Envoyez une demande pour contacter un administrateur.</p>
+  <h2>Request a Discussion</h2>
+  <p>Send a request to contact an administrator.</p>
 
   <input
     type="text"
     [(ngModel)]="subject"
-    placeholder="Sujet"
+    placeholder="Subject"
   />
 
   <textarea
     [(ngModel)]="description"
     rows="5"
-    placeholder="Décrivez votre besoin"
+    placeholder="Describe your request"
   ></textarea>
 
   <button (click)="submitRequest()" [disabled]="isSubmitting">
-    {{ isSubmitting ? 'Envoi...' : 'Envoyer la demande' }}
+    {{ isSubmitting ? 'Sending...' : 'Send Request' }}
   </button>
 
   <div class="success" *ngIf="successMessage">{{ successMessage }}</div>
