@@ -4,7 +4,7 @@ import { LoginComponent } from './pages/login/login.component';
 import { RegisterComponent } from './pages/register/register.component';
 import { AuthenticatedLayoutComponent } from './layouts/authenticated-layout/authenticated-layout.component';
 import { authGuard } from './core/guards/auth.guard';
-
+import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password.component';
 export const routes: Routes = [
 
   // ===== PUBLIC ROUTES =====
@@ -12,6 +12,7 @@ export const routes: Routes = [
   { path: 'landing', component: LandingComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
+  { path: 'forgot-password', component: ForgotPasswordComponent },
 
   // ===== SOCIAL LOGIN CALLBACK =====
   {
