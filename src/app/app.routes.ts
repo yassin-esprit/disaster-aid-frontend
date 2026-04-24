@@ -9,6 +9,10 @@ export const routes: Routes = [
   // Public
   { path: '', component: LandingComponent },
   { path: 'login', component: LoginComponent },
+
+  // ── Unauthenticated public pages ─────────────────────
+  { path: '',         component: LandingComponent  },
+  { path: 'login',    component: LoginComponent    },
   { path: 'register', component: RegisterComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
 
@@ -26,6 +30,60 @@ export const routes: Routes = [
             .then(m => m.FrontofficeProfileComponent),
   },
 
+  // ── ADMIN — sidebar layout (/dashboard, /admin/*) ─────
+  {
+    path: '',
+    component: AuthenticatedLayoutComponent,
+    children: [
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./pages/dashboard/dashboard.component')
+          .then(m => m.DashboardComponent)
+      },
+      {
+        path: 'admin/incidents',
+        loadComponent: () => import('./pages/admin/admin-incidents/admin-incidents.component')
+          .then(m => m.AdminIncidentsComponent)
+      },
+      {
+        path: 'admin/incidents/new',
+        loadComponent: () => import('./pages/incidents/incident-form/incident-form.component')
+          .then(m => m.IncidentFormComponent)
+      },
+      {
+        path: 'admin/incidents/:id/edit',
+        loadComponent: () => import('./pages/incidents/incident-form/incident-form.component')
+          .then(m => m.IncidentFormComponent)
+      },
+      {
+        path: 'admin/coordination',
+        loadComponent: () => import('./pages/admin/admin-coordination/admin-coordination.component')
+          .then(m => m.AdminCoordinationComponent)
+      },
+      {
+        path: 'admin/coordination/new',
+        loadComponent: () => import('./pages/coordination/help-request-form/help-request-form.component')
+          .then(m => m.HelpRequestFormComponent)
+      },
+      {
+        path: 'alerts',
+        loadComponent: () => import('./pages/alerts-map/alerts-map.component')
+          .then(m => m.AlertsMapComponent)
+      },
+      {
+        path: 'opportunities',
+        loadComponent: () => import('./pages/opportunities/opportunities.component')
+          .then(m => m.OpportunitiesComponent)
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./pages/profile/profile.component')
+          .then(m => m.ProfileComponent)
+      },
+    ]
+  },
+
+  // ── VOLUNTEER / CITIZEN — public top-nav layout ───────
   // ── Volunteer / Citizen — public top-nav layout ───────
   // ===== CHAT (AUTH REQUIRED) =====
   {
