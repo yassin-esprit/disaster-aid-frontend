@@ -11,11 +11,11 @@
       </p>
     </div>
     <div class="flex flex-wrap gap-3">
-      <a routerLink="/incidents/new"
+      <a routerLink="/admin/incidents/new"
          class="flex items-center gap-2 px-5 py-2.5 bg-error/10 border border-error/20 text-error rounded-xl font-bold text-sm hover:bg-error/20 transition-all active:scale-95">
         <span class="material-symbols-outlined text-sm">add</span> New Report
       </a>
-      <a routerLink="/coordination/new"
+      <a routerLink="/admin/coordination/new"
          class="flex items-center gap-2 px-5 py-2.5 bg-secondary/10 border border-secondary/20 text-secondary rounded-xl font-bold text-sm hover:bg-secondary/20 transition-all active:scale-95">
         <span class="material-symbols-outlined text-sm">add</span> New Request
       </a>
@@ -109,7 +109,7 @@
           <h3 class="text-lg font-black flex items-center gap-2">
             <span class="w-2 h-6 bg-error rounded-full"></span> Recent Incidents
           </h3>
-          <a routerLink="/incidents" class="text-xs text-primary font-bold hover:underline">View all →</a>
+          <a routerLink="/admin/incidents" class="text-xs text-primary font-bold hover:underline">View all →</a>
         </div>
 
         <div *ngIf="incidentLoading" class="flex justify-center py-8">
@@ -231,7 +231,7 @@
           {{ f }}
         </button>
       </div>
-      <a routerLink="/incidents/new"
+      <a routerLink="/admin/incidents/new"
          class="flex items-center gap-1.5 px-4 py-2 bg-error text-on-error rounded-xl font-bold text-xs hover:bg-error/80 transition-all">
         <span class="material-symbols-outlined text-sm">add</span> New
       </a>
@@ -370,7 +370,7 @@
               No history.
             </div>
             <div *ngIf="historyMap[r.id!]?.length ?? 0 > 0" class="relative">
-            <div class="absolute left-3 top-0 bottom-0 w-px"
+              <div class="absolute left-3 top-0 bottom-0 w-px"
                    style="background:rgba(255,255,255,0.07)"></div>
               <div class="space-y-3">
                 <div *ngFor="let h of historyMap[r.id!]" class="relative flex gap-3 pl-8">
@@ -427,7 +427,7 @@
           {{ f }}
         </button>
       </div>
-      <a routerLink="/coordination/new"
+      <a routerLink="/admin/coordination/new"
          class="flex items-center gap-1.5 px-4 py-2 bg-secondary text-on-secondary rounded-xl font-bold text-xs hover:bg-secondary/80 transition-all">
         <span class="material-symbols-outlined text-sm">add</span> New
       </a>
