@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';   // ← import ActivatedRoute
 import { FormsModule } from '@angular/forms';
 import { IncidentService, IncidentReport, StatusHistory } from '../../core/services/incident.service';
 import { CoordinationService, HelpRequest, TaskAssignment,
@@ -77,10 +77,16 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     private incSvc: IncidentService,
-    private coordSvc: CoordinationService
+    private coordSvc: CoordinationService,
+    private route: ActivatedRoute   // ← inject
   ) {}
 
   ngOnInit(): void {
+    // Read optional tab from route data
+    const routeTab = this.route.snapshot.data['tab'];
+    if (routeTab && ['overview','incidents','coordination'].includes(routeTab)) {
+      this.activeTab = routeTab;
+    }
     this.loadStats();
     this.loadIncidents();
     this.loadRequests();

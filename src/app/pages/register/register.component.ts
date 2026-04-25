@@ -161,7 +161,7 @@ private redirectByRole(role: string): void {
   if (adminRoles.includes(normalizedRole)) {
     this.router.navigate(['/dashboard']);
   } else {
-    this.router.navigate(['/landing']);
+    this.router.navigate(['/home']);
   }
 }
 

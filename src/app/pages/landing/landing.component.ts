@@ -2,12 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {Router, RouterModule} from '@angular/router';
 import { ChatComponent } from '../../modules/communication/chat/chat.component';
-import { FrontofficeProfileComponent } from '../frontoffice-profile/frontoffice-profile.component';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, RouterModule, ChatComponent, FrontofficeProfileComponent], // Assurez-vous que ce composant est bien importé ici.
+  imports: [CommonModule, RouterModule, ChatComponent ], // Assurez-vous que ce composant est bien importé ici.
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.scss'],
 })

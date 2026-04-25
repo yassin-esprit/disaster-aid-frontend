@@ -18,6 +18,9 @@ export class LoginComponent {
   isLoading: boolean = false;
   errorMessage: string = '';
 
+  // Admin roles matching master UserRole enum
+  private adminRoles = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN'];
+
   constructor(
     private authService: AuthService,
     private router: Router
@@ -28,13 +31,13 @@ export class LoginComponent {
   }
 
   private redirectByRole(role: string): void {
-    const normalizedRole = (role || '').trim().toUpperCase();
-    const adminRoles = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN'];
-
-    if (adminRoles.includes(normalizedRole)) {
+    const normalized = (role || '').trim().toUpperCase();
+    if (this.adminRoles.includes(normalized)) {
+      // Admin → sidebar dashboard
       this.router.navigateByUrl('/dashboard');
     } else {
-      this.router.navigateByUrl('/landing');
+      // CITIZEN, VOLUNTEER, RESPONDER → public front office
+      this.router.navigateByUrl('/home');
     }
   }
 
@@ -48,26 +51,17 @@ export class LoginComponent {
 
     this.isLoading = true;
 
-    this.authService.login({
-      email: this.email,
-      password: this.password
-    }).subscribe({
+    this.authService.login({ email: this.email, password: this.password }).subscribe({
       next: (response) => {
         this.isLoading = false;
         this.redirectByRole(response.role);
       },
       error: (error) => {
         this.isLoading = false;
-
-        if (error?.error?.message) {
-          this.errorMessage = error.error.message;
-        } else if (error?.status === 401) {
-          this.errorMessage = 'Invalid email or password.';
-        } else if (error?.status === 0) {
-          this.errorMessage = 'Cannot connect to the server.';
-        } else {
-          this.errorMessage = 'Login failed. Please try again.';
-        }
+        if (error?.error?.message)      this.errorMessage = error.error.message;
+        else if (error?.status === 401) this.errorMessage = 'Invalid email or password.';
+        else if (error?.status === 0)   this.errorMessage = 'Cannot connect to the server.';
+        else                             this.errorMessage = 'Login failed. Please try again.';
       }
     });
   }
