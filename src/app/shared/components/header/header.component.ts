@@ -1,7 +1,8 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-header',
@@ -9,12 +10,13 @@ import { FormsModule } from '@angular/forms';
   imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './header.component.html',
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit {
   @Input() pageTitle: string = 'Dashboard';
   @Input() breadcrumb: string = '';
-  @Input() userName: string = 'User';
-  @Input() userRole: string = 'Volunteer';
-  @Input() userAvatar: string = '';
+
+  userName: string = 'User';
+  userRole: string = '';
+  userAvatar: string = '';
 
   searchQuery: string = '';
   showNotifications: boolean = false;
@@ -36,6 +38,14 @@ export class HeaderComponent {
       message: 'Flash Flood alert issued for Greater Tunis area.',
     },
   ];
+
+  constructor(private authService: AuthService) {}
+
+  ngOnInit(): void {
+    const email = localStorage.getItem('email') || '';
+    this.userName = email.split('@')[0] || 'User';
+    this.userRole = (this.authService.getRole() || '').replace(/_/g, ' ');
+  }
 
   dotColor(type: string): string {
     const map: Record<string, string> = {

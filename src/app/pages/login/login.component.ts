@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
+const ADMIN_ROLES = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN'];
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -29,11 +31,12 @@ export class LoginComponent {
 
   private redirectByRole(role: string): void {
     const normalizedRole = (role || '').trim().toUpperCase();
-    const adminRoles = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN'];
 
-    if (adminRoles.includes(normalizedRole)) {
+    if (ADMIN_ROLES.includes(normalizedRole)) {
+      // Admins go to the back-office dashboard
       this.router.navigateByUrl('/dashboard');
     } else {
+      // Volunteers, Citizens, Responders go to the front-office landing page
       this.router.navigateByUrl('/landing');
     }
   }
@@ -70,10 +73,6 @@ export class LoginComponent {
         }
       }
     });
-  }
-
-  onGuestLogin(): void {
-    this.router.navigateByUrl('/landing');
   }
 
   loginWithGoogle(): void {
