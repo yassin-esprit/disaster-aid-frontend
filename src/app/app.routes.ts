@@ -11,7 +11,7 @@ import { GeofenceMapComponent } from './pages/geofence-map/geofence-map.componen
 import { EvacuationRoutesComponent } from './pages/evacuation-routes/evacuation-routes.component';
 import { RouteDetailComponent } from './pages/route-detail/route-detail.component';
 import { SpatialDashboardComponent } from './pages/spatial-dashboard/spatial-dashboard.component';
-import { authGuard } from './core/guards/auth.guard';
+import { authGuard, adminGuard } from './core/guards/auth.guard';
 import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password.component';
 
 export const routes: Routes = [
@@ -45,28 +45,39 @@ export const routes: Routes = [
         .then(m => m.ChatComponent),
   },
 
-  // ===== AUTHENTICATED LAYOUT (protects all child routes) =====
+  // ===== AUTHENTICATED LAYOUT =====
   {
     path: '',
     component: AuthenticatedLayoutComponent,
     canActivate: [authGuard],
     children: [
-      { path: 'dashboard', loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
-      { path: 'sensors', component: SensorListComponent },
-      { path: 'sensors/:id', component: SensorDetailComponent },
-      { path: 'alerts', component: AlertListComponent },
-      { path: 'alerts/new', component: AlertDetailComponent },
-      { path: 'alerts/:id', component: AlertDetailComponent },
-      { path: 'geofence', component: GeofenceMapComponent },
-      { path: 'evacuation', component: EvacuationRoutesComponent },
-      { path: 'evacuation/:id', component: RouteDetailComponent },
-      { path: 'spatial', component: SpatialDashboardComponent },
+      // Shared routes (all authenticated users)
+      {
+        path: 'dashboard',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent)
+      },
+      { path: 'alerts', component: AlertListComponent },                          // view-only for all
+      { path: 'alerts/:id', component: AlertDetailComponent },                   // view-only for all
       { path: 'incidents', loadComponent: () => import('./pages/incident-form/incident-form.component').then(m => m.IncidentFormComponent) },
       { path: 'opportunities', loadComponent: () => import('./pages/opportunities/opportunities.component').then(m => m.OpportunitiesComponent) },
       { path: 'profile', loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent) },
       { path: 'alerts-map', loadComponent: () => import('./pages/alerts-map/alerts-map.component').then(m => m.AlertsMapComponent) },
-      { path: 'users-management', loadComponent: () => import('./pages/users-management/users-management.component').then(m => m.UsersManagementComponent) },
       { path: 'communication', loadComponent: () => import('./modules/communication/communication/communication.component').then(m => m.CommunicationComponent) },
+
+      // ===== ADMIN-ONLY ROUTES =====
+      { path: 'sensors',        canActivate: [adminGuard], component: SensorListComponent },
+      { path: 'sensors/:id',    canActivate: [adminGuard], component: SensorDetailComponent },
+      { path: 'alerts/new',     canActivate: [adminGuard], component: AlertDetailComponent },
+      { path: 'geofence',       canActivate: [adminGuard], component: GeofenceMapComponent },
+      { path: 'evacuation',     canActivate: [adminGuard], component: EvacuationRoutesComponent },
+      { path: 'evacuation/:id', canActivate: [adminGuard], component: RouteDetailComponent },
+      { path: 'spatial',        canActivate: [adminGuard], component: SpatialDashboardComponent },
+      {
+        path: 'users-management',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./pages/users-management/users-management.component').then(m => m.UsersManagementComponent)
+      },
     ]
   },
 
