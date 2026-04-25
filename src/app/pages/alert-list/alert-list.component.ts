@@ -4,8 +4,11 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AlertService } from '../../core/services/alert.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Alert } from '../../shared/models/sensor.model';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
+
+const ADMIN_ROLES = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN'];
 
 @Component({
   selector: 'app-alert-list',
@@ -22,7 +25,8 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
             {{ filtered.length }} alert{{ filtered.length !== 1 ? 's' : '' }}
           </p>
         </div>
-        <a routerLink="/alerts/new"
+        <!-- Create Alert button — admins only -->
+        <a *ngIf="isAdmin" routerLink="/alerts/new"
            class="flex items-center gap-2 bg-error/20 border border-error/30 text-error px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-error/30 transition-all active:scale-95 self-start">
           <span class="material-symbols-outlined text-sm">add_alert</span> Create Alert
         </a>
@@ -124,10 +128,17 @@ export class AlertListComponent implements OnInit {
   searchTerm     = '';
   severityFilter = '';
   statusFilter   = '';
+  isAdmin        = false;
 
-  constructor(private alertService: AlertService) {}
+  constructor(
+    private alertService: AlertService,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
+    const role = (this.authService.getRole() || '').trim().toUpperCase();
+    this.isAdmin = ADMIN_ROLES.includes(role);
+
     this.alertService.getAllAlerts().subscribe(data => {
       this.alerts   = data;
       this.filtered = data;
@@ -151,12 +162,12 @@ export class AlertListComponent implements OnInit {
   }
 
   severityClass(severity: string): string {
-    return {
+    return ({
       CRITICAL: 'bg-error text-white',
       HIGH:     'bg-orange-500/20 text-orange-400 border border-orange-500/30',
       MODERATE: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
       LOW:      'bg-green-500/20 text-green-400 border border-green-500/30',
-    }[severity] ?? 'bg-white/10 text-white';
+    } as Record<string,string>)[severity] ?? 'bg-white/10 text-white';
   }
 
   disasterIcon(type: string): string {
