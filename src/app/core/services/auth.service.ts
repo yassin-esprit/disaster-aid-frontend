@@ -1,14 +1,17 @@
+// core/services/auth.service.ts
 import { Injectable } from '@angular/core';
 import { Observable, tap, catchError, throwError } from 'rxjs';
+import { HttpClient } from '@angular/common/http'; // Remove this if not needed
 import { HttpService } from './http.service';
 
 export interface AuthResponse {
   token: string;
-  tokenType: string;
-  userId: number;
+  tokenType?: string;
+  userId?: number;
+  id?: number;
   email: string;
   role: string;
-  message: string;
+  message?: string;
 }
 
 export interface LogoutResponse {
@@ -25,31 +28,65 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
+  role?: string;
+  phoneNumber?: string;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-
-  constructor(private httpService: HttpService) {}
+  // Make sure you're ONLY using HttpService, NOT HttpClient directly
+  constructor(private httpService: HttpService) {
+    console.log('AuthService initialized with HttpService');
+  }
 
   register(data: RegisterRequest): Observable<AuthResponse> {
-    return this.httpService.post<AuthResponse>('/auth/register', data).pipe(
-      tap(res => this.storeAuthData(res))
+    const registrationData = {
+      ...data,
+      role: data.role || 'CITIZEN'
+    };
+
+    console.log('📝 Registering user:', registrationData.email);
+    console.log('📍 Register endpoint: /auth/register');
+
+    return this.httpService.post<AuthResponse>('/auth/register', registrationData).pipe(
+      tap(res => {
+        console.log('✅ Registration API response:', res);
+        this.storeAuthData(res);
+      }),
+      catchError(error => {
+        console.error('❌ Registration API error:', error);
+        return throwError(() => error);
+      })
     );
   }
 
   login(data: LoginRequest): Observable<AuthResponse> {
+    console.log('🔐 Logging in user:', data.email);
+    console.log('📍 Login endpoint: /auth/login');
+
     return this.httpService.post<AuthResponse>('/auth/login', data).pipe(
-      tap(res => this.storeAuthData(res))
+      tap(res => {
+        console.log('✅ Login API response:', res);
+        this.storeAuthData(res);
+      }),
+      catchError(error => {
+        console.error('❌ Login API error:', error);
+        return throwError(() => error);
+      })
     );
   }
 
   logout(): Observable<LogoutResponse> {
+    console.log('🚪 Logging out');
     return this.httpService.post<LogoutResponse>('/auth/logout', {}).pipe(
-      tap(() => this.clearAuthData()),
+      tap(() => {
+        console.log('✅ Logout successful');
+        this.clearAuthData();
+      }),
       catchError((error) => {
+        console.error('❌ Logout error:', error);
         this.clearAuthData();
         return throwError(() => error);
       })
@@ -57,10 +94,24 @@ export class AuthService {
   }
 
   private storeAuthData(res: AuthResponse): void {
-    localStorage.setItem('token', res.token);
-    localStorage.setItem('userId', res.userId.toString());
-    localStorage.setItem('email', res.email);
-    localStorage.setItem('role', res.role);
+    if (res.token) {
+      localStorage.setItem('token', res.token);
+    }
+
+    const userId = res.userId || res.id;
+    if (userId) {
+      localStorage.setItem('userId', userId.toString());
+    }
+
+    if (res.email) {
+      localStorage.setItem('email', res.email);
+    }
+
+    if (res.role) {
+      localStorage.setItem('role', res.role);
+    }
+
+    console.log('💾 Auth data stored - Role:', res.role, 'UserId:', userId);
   }
 
   clearAuthData(): void {
@@ -68,6 +119,7 @@ export class AuthService {
     localStorage.removeItem('userId');
     localStorage.removeItem('email');
     localStorage.removeItem('role');
+    console.log('🗑️ Auth data cleared');
   }
 
   getToken(): string | null {
@@ -78,11 +130,18 @@ export class AuthService {
     return localStorage.getItem('userId');
   }
 
+  getEmail(): string | null {
+    return localStorage.getItem('email');
+  }
+
   getRole(): string | null {
     return localStorage.getItem('role');
   }
 
   isLoggedIn(): boolean {
-    return !!this.getToken();
+    const token = this.getToken();
+    const isLoggedIn = !!token;
+    console.log('🔍 Is logged in:', isLoggedIn);
+    return isLoggedIn;
   }
 }
