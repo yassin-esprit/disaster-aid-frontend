@@ -12,8 +12,20 @@ import { NavItem } from '../../models/nav-item.model';
 export class SidebarComponent {
   @Input() accentColor: string = '#6C5CE7';
   @Output() logoutClicked = new EventEmitter<void>();
+  @Input() ctaLabel: string = 'Report Incident';
+  @Input() ctaRoute: string = '/incidents';
 
   navItems: NavItem[] = [
+    { label: 'Overview',        icon: 'dashboard',      route: '/dashboard'    },
+    { label: 'Sensors',         icon: 'sensors',        route: '/sensors'      },
+    { label: 'Alerts',          icon: 'emergency',      route: '/alerts'       },
+    { label: 'Geofence Zones',  icon: 'map',            route: '/geofence'     },
+    { label: 'Evacuation',      icon: 'directions',     route: '/evacuation'   },
+    { label: 'Spatial Queries', icon: 'travel_explore', route: '/spatial'      },
+    { label: 'Statistics',      icon: 'bar_chart',      route: '/statistics'   },
+    { label: 'Incidents',       icon: 'report_problem', route: '/incidents'    },
+    { label: 'Opportunities',   icon: 'explore',        route: '/opportunities'},
+    { label: 'My Profile',      icon: 'person',         route: '/profile'      },
     { label: 'Overview', icon: 'dashboard', route: '/dashboard' },
     { label: 'Alerts', icon: 'emergency', route: '/alerts' },
     { label: 'Incidents', icon: 'report_problem', route: '/incidents' },
