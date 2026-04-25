@@ -1,0 +1,765 @@
+<div>
+  <!-- Main dashboard content container -->
+  <div class="space-y-8">
+
+    <!-- Greeting -->
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div class="relative">
+        <div class="absolute -top-8 -left-8 w-48 h-48 bg-primary/10 blur-[80px] rounded-full pointer-events-none"></div>
+        <h2 class="text-4xl font-black tracking-tight text-on-surface relative">Good morning, Admin 👋</h2>
+        <p class="text-on-surface-variant mt-1">
+          Command center is <span class="text-secondary font-bold">operational</span> ·
+          <span class="text-xs font-mono text-on-surface-variant">{{ stats?.pendingIncidents }} pending reviews</span>
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <a routerLink="/incidents/new"
+           class="flex items-center gap-2 px-5 py-2.5 bg-error/10 border border-error/20 text-error rounded-xl font-bold text-sm hover:bg-error/20 transition-all active:scale-95">
+          <span class="material-symbols-outlined text-sm">add</span> New Report
+        </a>
+        <a routerLink="/coordination/new"
+           class="flex items-center gap-2 px-5 py-2.5 bg-secondary/10 border border-secondary/20 text-secondary rounded-xl font-bold text-sm hover:bg-secondary/20 transition-all active:scale-95">
+          <span class="material-symbols-outlined text-sm">add</span> New Request
+        </a>
+        <button (click)="loadStats(); loadIncidents(); loadRequests()"
+                class="flex items-center gap-2 px-5 py-2.5 glass-2 border border-white/10 text-on-surface rounded-xl font-bold text-sm hover:bg-white/10 transition-all active:scale-95">
+          <span class="material-symbols-outlined text-sm">refresh</span> Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div *ngIf="stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div class="glass-1 p-5 rounded-xl border border-white/5 relative">
+        <div class="absolute -top-3 left-4 w-8 h-8 bg-secondary rounded-lg flex items-center justify-center shadow-lg shadow-secondary/20">
+          <span class="material-symbols-outlined text-on-secondary text-sm fill-icon">help</span>
+        </div>
+        <div class="mt-3">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Open Requests</p>
+          <h3 class="text-3xl font-black text-on-surface">{{ stats.openRequests }}</h3>
+        </div>
+      </div>
+      <div class="glass-1 p-5 rounded-xl border border-white/5 relative">
+        <div class="absolute -top-3 left-4 w-8 h-8 bg-tertiary-dim/80 rounded-lg flex items-center justify-center shadow-lg">
+          <span class="material-symbols-outlined text-on-tertiary text-sm fill-icon">check_circle</span>
+        </div>
+        <div class="mt-3">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Resolved Today</p>
+          <h3 class="text-3xl font-black text-on-surface">{{ stats.resolvedToday }}</h3>
+        </div>
+      </div>
+      <div class="glass-1 p-5 rounded-xl border border-white/5 relative">
+        <div class="absolute -top-3 left-4 w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center shadow-lg shadow-amber-500/20">
+          <span class="material-symbols-outlined text-white text-sm fill-icon">assignment_ind</span>
+        </div>
+        <div class="mt-3">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Active Assign.</p>
+          <h3 class="text-3xl font-black text-on-surface">{{ stats.activeAssignments }}</h3>
+        </div>
+      </div>
+      <div class="glass-1 p-5 rounded-xl border border-white/5 relative">
+        <div class="absolute -top-3 left-4 w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center shadow-lg">
+          <span class="material-symbols-outlined text-white text-sm fill-icon">timer</span>
+        </div>
+        <div class="mt-3">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Avg Response</p>
+          <h3 class="text-3xl font-black text-on-surface">{{ stats.avgResponseTimeMin }}m</h3>
+        </div>
+      </div>
+      <div class="glass-1 p-5 rounded-xl border border-white/5 relative">
+        <div class="absolute -top-3 left-4 w-8 h-8 bg-error rounded-lg flex items-center justify-center shadow-lg shadow-error/20">
+          <span class="material-symbols-outlined text-white text-sm fill-icon">report_problem</span>
+        </div>
+        <div class="mt-3">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Pending Inc.</p>
+          <h3 class="text-3xl font-black text-on-surface">{{ stats.pendingIncidents }}</h3>
+        </div>
+      </div>
+      <div class="glass-1 p-5 rounded-xl border border-white/5 relative">
+        <div class="absolute -top-3 left-4 w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
+          <span class="material-symbols-outlined text-on-primary text-sm fill-icon">verified</span>
+        </div>
+        <div class="mt-3">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Avg Credibility</p>
+          <h3 class="text-3xl font-black text-on-surface">{{ ((stats.avgCredibilityScore || 0) * 100).toFixed(0) }}%</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-1 glass-2 rounded-2xl p-1 border border-white/5 w-fit">
+      <button *ngFor="let t of ['overview','incidents','coordination']"
+              (click)="activeTab = $any(t)"
+              class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all capitalize"
+              [ngClass]="activeTab === t
+                ? 'bg-primary text-on-primary shadow-[0_0_15px_rgba(172,163,255,0.3)]'
+                : 'text-on-surface-variant hover:text-white'">
+        {{ t }}
+      </button>
+    </div>
+
+    <!-- ══ OVERVIEW TAB ══ -->
+    <div *ngIf="activeTab === 'overview'" class="grid grid-cols-1 lg:grid-cols-10 gap-6">
+
+      <!-- Recent incidents snapshot -->
+      <div class="lg:col-span-6 glass-1 rounded-2xl border border-error/10 relative overflow-hidden">
+        <div class="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
+          <span class="material-symbols-outlined text-on-surface" style="font-size:8rem">emergency_share</span>
+        </div>
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-black flex items-center gap-2">
+              <span class="w-2 h-6 bg-error rounded-full"></span> Recent Incidents
+            </h3>
+            <a routerLink="/incidents" class="text-xs text-primary font-bold hover:underline">View all →</a>
+          </div>
+
+          <div *ngIf="incidentLoading" class="flex justify-center py-8">
+            <svg class="animate-spin h-8 w-8 text-primary" viewBox="0 0 24 24" fill="none">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>
+          </div>
+
+          <div class="space-y-3">
+            <div *ngFor="let r of incidents.slice(0,4)"
+                 class="flex items-center justify-between p-3 rounded-xl glass-2 hover:bg-white/10 transition-all cursor-pointer"
+                 (click)="activeTab = 'incidents'; expandedIncidentId = r.id!">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-error/10 flex items-center justify-center text-error flex-shrink-0">
+                  <span class="material-symbols-outlined text-sm fill-icon">crisis_alert</span>
+                </div>
+                <div>
+                  <p class="text-sm font-bold text-on-surface">{{ r.disasterType }}</p>
+                  <p class="text-xs text-on-surface-variant">{{ r.location }}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border"
+                      [ngClass]="severityBadge[r.severity || ''] || 'bg-white/5 text-slate-400 border-white/10'">
+                  {{ r.severity }}
+                </span>
+                <app-status-badge [status]="r.status || ''"></app-status-badge>
+              </div>
+            </div>
+            <div *ngIf="!incidentLoading && incidents.length === 0"
+                 class="py-8 text-center text-on-surface-variant text-sm">
+              No incidents yet.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column -->
+      <div class="lg:col-span-4 space-y-4">
+
+        <!-- Activity feed -->
+        <div class="glass-1 p-5 rounded-2xl border border-white/5">
+          <h4 class="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">notifications_active</span> Recent Activity
+          </h4>
+          <div class="space-y-4">
+            <div *ngFor="let n of notifications" class="flex gap-3">
+              <div class="w-2 h-2 rounded-full mt-1.5 shrink-0" [ngClass]="n.color"></div>
+              <div>
+                <p class="text-[10px] text-on-surface-variant">{{ n.time }}</p>
+                <p class="text-xs font-medium text-on-surface">{{ n.msg }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Impact bars -->
+        <div class="glass-1 p-5 rounded-2xl border border-white/5">
+          <h4 class="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">analytics</span> Impact Velocity
+          </h4>
+          <div class="space-y-4">
+            <div *ngFor="let b of impactBars">
+              <div class="flex justify-between text-xs font-bold mb-1">
+                <span>{{ b.label }}</span><span class="text-secondary">{{ b.value }}%</span>
+              </div>
+              <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-secondary/40 to-secondary rounded-full"
+                     [style.width.%]="b.value"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="glass-1 p-5 rounded-2xl border border-white/5">
+          <h4 class="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-4">Quick Actions</h4>
+          <div class="space-y-2">
+            <button (click)="activeTab = 'incidents'"
+                    class="w-full flex items-center gap-3 px-4 py-3 glass-2 rounded-xl text-left hover:bg-white/10 transition-all text-sm font-bold text-on-surface">
+              <span class="material-symbols-outlined text-error text-sm">report_problem</span>
+              Review Pending Incidents
+              <span class="ml-auto text-xs font-bold px-2 py-0.5 rounded-full bg-error/10 text-error">
+                {{ getPendingIncidentCount() }}
+              </span>
+            </button>
+            <button (click)="activeTab = 'coordination'"
+                    class="w-full flex items-center gap-3 px-4 py-3 glass-2 rounded-xl text-left hover:bg-white/10 transition-all text-sm font-bold text-on-surface">
+              <span class="material-symbols-outlined text-secondary text-sm">volunteer_activism</span>
+              Manage Requests
+              <span class="ml-auto text-xs font-bold px-2 py-0.5 rounded-full bg-secondary/10 text-secondary">
+                {{ getOpenRequestCount() }}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ INCIDENTS TAB ══ -->
+    <div *ngIf="activeTab === 'incidents'" class="space-y-4">
+
+      <!-- Toolbar -->
+      <div class="flex flex-wrap gap-3 items-center">
+        <div class="relative flex-1 min-w-[200px]">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+          <input [(ngModel)]="incidentSearch" (ngModelChange)="applyIncidentFilters()"
+                 placeholder="Search type or location..."
+                 class="w-full h-10 pl-9 pr-4 glass-2 rounded-xl text-on-surface text-sm placeholder:text-outline/50 focus:ring-2 focus:ring-primary outline-none border border-white/5" />
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button *ngFor="let f of incidentStatuses"
+                  (click)="incidentFilter = f; applyIncidentFilters()"
+                  class="px-3 py-1.5 rounded-full text-xs font-bold transition-all"
+                  [ngClass]="incidentFilter === f
+                    ? 'bg-primary text-on-primary'
+                    : 'glass-2 text-on-surface-variant hover:text-white border border-white/5'">
+            {{ f }}
+          </button>
+        </div>
+        <a routerLink="/incidents/new"
+           class="flex items-center gap-1.5 px-4 py-2 bg-error text-on-error rounded-xl font-bold text-xs hover:bg-error/80 transition-all">
+          <span class="material-symbols-outlined text-sm">add</span> New
+        </a>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="incidentLoading" class="flex justify-center py-12">
+        <svg class="animate-spin h-8 w-8 text-primary" viewBox="0 0 24 24" fill="none">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+        </svg>
+      </div>
+
+      <!-- Empty -->
+      <div *ngIf="!incidentLoading && filteredIncidents.length === 0"
+           class="glass-1 rounded-2xl p-12 text-center border border-white/5">
+        <span class="material-symbols-outlined text-5xl text-outline block mb-3">report_off</span>
+        <p class="text-on-surface-variant">No incidents match current filters.</p>
+      </div>
+
+      <!-- Incident rows -->
+      <div *ngIf="!incidentLoading" class="space-y-3">
+        <div *ngFor="let r of filteredIncidents"
+             class="glass-1 rounded-2xl border border-white/5 overflow-hidden">
+
+          <!-- Row header -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 cursor-pointer hover:bg-white/5 transition-colors"
+               (click)="toggleIncident(r.id!)">
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 rounded-xl bg-error/10 flex items-center justify-center text-error flex-shrink-0">
+                <span class="material-symbols-outlined fill-icon text-sm">crisis_alert</span>
+              </div>
+              <div>
+                <div class="flex items-center flex-wrap gap-2 mb-1">
+                  <span class="text-xs font-mono text-on-surface-variant">#{{ r.id }}</span>
+                  <app-status-badge [status]="r.status || ''"></app-status-badge>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border"
+                        [ngClass]="severityBadge[r.severity || ''] || 'bg-white/5 text-slate-400 border-white/10'">
+                    {{ r.severity }}
+                  </span>
+                </div>
+                <p class="font-bold text-on-surface">{{ r.disasterType }}</p>
+                <p class="text-xs text-on-surface-variant">{{ r.location }}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="relative w-10 h-10">
+                <svg class="w-10 h-10 -rotate-90" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"/>
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke-width="3"
+                          [attr.stroke]="(r.credibilityScore||0)>=0.8?'#699cff':(r.credibilityScore||0)>=0.5?'#fbbf24':'#ff6e84'"
+                          stroke-linecap="round"
+                          [attr.stroke-dasharray]="((r.credibilityScore||0)*100).toFixed(0)+' 100'"
+                          stroke-dashoffset="0"/>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <span class="text-[9px] font-black" [ngClass]="credColor(r.credibilityScore)">
+                    {{ ((r.credibilityScore||0)*100).toFixed(0) }}%
+                  </span>
+                </div>
+              </div>
+              <span class="material-symbols-outlined text-on-surface-variant text-sm transition-transform"
+                    [ngClass]="expandedIncidentId === r.id ? 'rotate-180' : ''">expand_more</span>
+            </div>
+          </div>
+
+          <!-- Expanded incident -->
+          <div *ngIf="expandedIncidentId === r.id"
+               class="border-t border-white/5 p-5 grid grid-cols-1 md:grid-cols-3 gap-5"
+               style="background:rgba(255,110,132,0.03)">
+
+            <!-- Details -->
+            <div class="space-y-2 text-sm">
+              <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Details</p>
+              <div class="flex gap-2">
+                <span class="text-on-surface-variant w-20 flex-shrink-0">Location</span>
+                <span class="text-white">{{ r.location }}</span>
+              </div>
+              <div class="flex gap-2">
+                <span class="text-on-surface-variant w-20 flex-shrink-0">Reporter</span>
+                <span class="text-white font-mono">{{ r.reporterId ?? '—' }}</span>
+              </div>
+              <div class="flex gap-2">
+                <span class="text-on-surface-variant w-20 flex-shrink-0">Upvotes</span>
+                <span class="text-white">{{ r.upvoteCount }}</span>
+              </div>
+              <div class="mt-2">
+                <span class="text-on-surface-variant text-xs block mb-1">Description</span>
+                <p class="text-on-surface text-xs leading-relaxed">{{ r.description }}</p>
+              </div>
+            </div>
+
+            <!-- Admin actions -->
+            <div>
+              <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3">Actions</p>
+              <div class="flex flex-wrap gap-2 mb-3">
+                <button (click)="updateIncidentStatus(r.id!, 'VERIFIED'); $event.stopPropagation()"
+                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
+                        style="background:rgba(105,156,255,0.15);color:#699cff;border:1px solid rgba(105,156,255,0.3)">
+                  ✓ Verify
+                </button>
+                <button (click)="updateIncidentStatus(r.id!, 'REJECTED'); $event.stopPropagation()"
+                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
+                        style="background:rgba(255,110,132,0.1);color:#ff6e84;border:1px solid rgba(255,110,132,0.2)">
+                  ✗ Reject
+                </button>
+                <button (click)="updateIncidentStatus(r.id!, 'ESCALATED'); $event.stopPropagation()"
+                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
+                        style="background:rgba(249,115,22,0.1);color:#fb923c;border:1px solid rgba(249,115,22,0.2)">
+                  ↑ Escalate
+                </button>
+                <button (click)="updateIncidentStatus(r.id!, 'PENDING'); $event.stopPropagation()"
+                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
+                        style="background:rgba(245,158,11,0.1);color:#fbbf24;border:1px solid rgba(245,158,11,0.2)">
+                  ↺ Reset
+                </button>
+              </div>
+              <button (click)="confirmDelete('incident', r.id!); $event.stopPropagation()"
+                      class="w-full py-2 rounded-xl text-xs font-bold transition-all"
+                      style="background:rgba(255,110,132,0.08);color:#ff6e84;border:1px solid rgba(255,110,132,0.15)">
+                Delete
+              </button>
+            </div>
+
+            <!-- Status Timeline -->
+            <div>
+              <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3">Status Timeline</p>
+              <div *ngIf="!historyMap[r.id!]" class="text-xs text-on-surface-variant flex items-center gap-2">
+                <svg class="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+                Loading...
+              </div>
+              <div *ngIf="historyMap[r.id!]?.length === 0" class="text-xs text-on-surface-variant">
+                No history.
+              </div>
+              <div *ngIf="historyMap[r.id!]?.length > 0" class="relative">
+                <div class="absolute left-3 top-0 bottom-0 w-px"
+                     style="background:rgba(255,255,255,0.07)"></div>
+                <div class="space-y-3">
+                  <div *ngFor="let h of historyMap[r.id!]" class="relative flex gap-3 pl-8">
+                    <div class="absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center z-10"
+                         [style]="getTimelineDotStyle(h.toStatus)">
+                      <span class="material-symbols-outlined text-white text-[11px]">
+                        {{ getTimelineIcon(h.toStatus) }}
+                      </span>
+                    </div>
+                    <div>
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <span *ngIf="h.fromStatus"
+                              class="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase"
+                              [style]="getStatusPill(h.fromStatus)">
+                          {{ h.fromStatus }}
+                        </span>
+                        <span *ngIf="h.fromStatus" class="text-outline text-[10px]">→</span>
+                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase"
+                              [style]="getStatusPill(h.toStatus)">
+                          {{ h.toStatus }}
+                        </span>
+                      </div>
+                      <p *ngIf="h.note" class="text-[10px] text-on-surface-variant mt-0.5">{{ h.note }}</p>
+                      <p class="text-[10px] text-outline mt-0.5">{{ h.changedAt | date:'MMM d, h:mm a' }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ COORDINATION TAB ══ -->
+    <div *ngIf="activeTab === 'coordination'" class="space-y-4">
+
+      <!-- Toolbar -->
+      <div class="flex flex-wrap gap-3 items-center">
+        <div class="relative flex-1 min-w-[200px]">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+          <input [(ngModel)]="requestSearch" (ngModelChange)="applyRequestFilters()"
+                 placeholder="Search type or location..."
+                 class="w-full h-10 pl-9 pr-4 glass-2 rounded-xl text-on-surface text-sm placeholder:text-outline/50 focus:ring-2 focus:ring-secondary outline-none border border-white/5" />
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button *ngFor="let f of requestStatuses"
+                  (click)="requestFilter = f; applyRequestFilters()"
+                  class="px-3 py-1.5 rounded-full text-xs font-bold transition-all"
+                  [ngClass]="requestFilter === f
+                    ? 'bg-secondary text-on-secondary'
+                    : 'glass-2 text-on-surface-variant hover:text-white border border-white/5'">
+            {{ f }}
+          </button>
+        </div>
+        <a routerLink="/coordination/new"
+           class="flex items-center gap-1.5 px-4 py-2 bg-secondary text-on-secondary rounded-xl font-bold text-xs hover:bg-secondary/80 transition-all">
+          <span class="material-symbols-outlined text-sm">add</span> New
+        </a>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="requestLoading" class="flex justify-center py-12">
+        <svg class="animate-spin h-8 w-8 text-secondary" viewBox="0 0 24 24" fill="none">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+        </svg>
+      </div>
+
+      <!-- Empty -->
+      <div *ngIf="!requestLoading && filteredRequests.length === 0"
+           class="glass-1 rounded-2xl p-12 text-center border border-white/5">
+        <span class="material-symbols-outlined text-5xl text-outline block mb-3">help_outline</span>
+        <p class="text-on-surface-variant">No requests match current filters.</p>
+      </div>
+
+      <!-- Request rows -->
+      <div *ngIf="!requestLoading" class="space-y-3">
+        <div *ngFor="let r of filteredRequests"
+             class="glass-1 rounded-2xl border border-white/5 overflow-hidden">
+
+          <!-- Row header -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 cursor-pointer hover:bg-white/5 transition-colors"
+               (click)="toggleRequest(r.id!)">
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary flex-shrink-0">
+                <span class="material-symbols-outlined fill-icon text-sm">volunteer_activism</span>
+              </div>
+              <div>
+                <div class="flex items-center flex-wrap gap-2 mb-1">
+                  <span class="text-xs font-mono text-on-surface-variant">#{{ r.id }}</span>
+                  <app-status-badge [status]="r.status || ''"></app-status-badge>
+                  <span class="text-xs font-bold px-2 py-0.5 rounded border border-white/10 bg-white/5">
+                    {{ r.type }}
+                  </span>
+                </div>
+                <p class="font-bold text-on-surface">{{ r.location }}</p>
+                <p class="text-xs text-on-surface-variant line-clamp-1">{{ r.description }}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <!-- Urgency dots -->
+              <div class="flex gap-0.5">
+                <div *ngFor="let d of [0,1,2,3,4]"
+                     class="w-2 h-2 rounded-full"
+                     [ngClass]="getUrgencyDotClass(r.urgency, d)">
+                </div>
+              </div>
+              <span class="material-symbols-outlined text-on-surface-variant text-sm transition-transform"
+                    [ngClass]="expandedRequestId === r.id ? 'rotate-180' : ''">
+                expand_more
+              </span>
+            </div>
+          </div>
+
+          <!-- Expanded request -->
+          <div *ngIf="expandedRequestId === r.id"
+               class="border-t border-white/5 p-5 grid grid-cols-1 md:grid-cols-2 gap-5"
+               style="background:rgba(105,156,255,0.03)">
+
+            <!-- Status actions -->
+            <div>
+              <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3">Request Status</p>
+              <div class="flex flex-wrap gap-2 mb-3">
+                <button *ngFor="let s of ['OPEN','ASSIGNED','IN_PROGRESS','RESOLVED','CANCELLED']"
+                        (click)="updateRequestStatus(r.id!, s); $event.stopPropagation()"
+                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
+                        [style]="r.status === s
+                          ? 'background:rgba(105,156,255,0.3);color:#93c5fd;border:1px solid rgba(105,156,255,0.4)'
+                          : 'background:rgba(255,255,255,0.05);color:#94a3b8;border:1px solid rgba(255,255,255,0.08)'">
+                  {{ s }}
+                </button>
+              </div>
+
+              <!-- Assign button -->
+              <button (click)="openAssignModal(r.id!, $event)"
+                      class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 mb-4"
+                      style="background:rgba(105,156,255,0.15);color:#699cff;border:1px solid rgba(105,156,255,0.3)">
+                <span class="material-symbols-outlined text-sm">person_add</span>
+                Assign Responder
+              </button>
+
+              <div class="text-sm space-y-1">
+                <div class="flex gap-2">
+                  <span class="text-on-surface-variant w-20 flex-shrink-0">Location</span>
+                  <span class="text-white">{{ r.location }}</span>
+                </div>
+                <div class="flex gap-2">
+                  <span class="text-on-surface-variant w-20 flex-shrink-0">Reporter</span>
+                  <span class="text-white font-mono">{{ r.reporterId ?? '—' }}</span>
+                </div>
+                <div class="flex gap-2">
+                  <span class="text-on-surface-variant w-20 flex-shrink-0">Description</span>
+                  <span class="text-white text-xs leading-relaxed">{{ r.description }}</span>
+                </div>
+              </div>
+
+              <button (click)="confirmDelete('request', r.id!); $event.stopPropagation()"
+                      class="mt-4 w-full py-2 rounded-xl text-xs font-bold transition-all"
+                      style="background:rgba(255,110,132,0.08);color:#ff6e84;border:1px solid rgba(255,110,132,0.15)">
+                Delete Request
+              </button>
+            </div>
+
+            <!-- Assignments -->
+            <div>
+              <p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3">
+                Assignments ({{ assignmentsMap[r.id!]?.length ?? '…' }})
+              </p>
+              <div *ngIf="!assignmentsMap[r.id!]?.length"
+                   class="text-xs text-on-surface-variant">
+                None yet. Use "Assign Responder" to add one.
+              </div>
+              <div class="space-y-2">
+                <div *ngFor="let a of assignmentsMap[r.id!]"
+                     class="flex items-center justify-between p-3 rounded-xl glass-2">
+                  <div>
+                    <span class="text-xs font-mono text-on-surface-variant">#{{ a.id }}</span>
+                    <span class="text-sm font-bold text-on-surface ml-2">Responder {{ a.responderId }}</span>
+                    <span *ngIf="a.mlScoreAtAssignment"
+                          class="text-[10px] ml-2 text-primary">
+                      ML {{ ((a.mlScoreAtAssignment || 0) * 100).toFixed(0) }}%
+                    </span>
+                    <span *ngIf="a.responseTimeMin"
+                          class="text-[10px] ml-2 text-on-surface-variant">
+                      {{ a.responseTimeMin }}m
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <app-status-badge [status]="a.status || ''"></app-status-badge>
+                    <button *ngIf="a.status === 'ASSIGNED'"
+                            (click)="updateAssignmentStatus(a.id!, 'ACCEPTED', r.id!); $event.stopPropagation()"
+                            class="text-[10px] px-2 py-1 rounded font-bold"
+                            style="background:rgba(105,156,255,0.1);color:#699cff">
+                      Accept
+                    </button>
+                    <button *ngIf="a.status === 'ACCEPTED'"
+                            (click)="updateAssignmentStatus(a.id!, 'COMPLETED', r.id!); $event.stopPropagation()"
+                            class="text-[10px] px-2 py-1 rounded font-bold"
+                            style="background:rgba(52,211,153,0.1);color:#34d399">
+                      Complete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- End of main content container -->
+
+  <!-- ══ DELETE CONFIRM MODAL ══ -->
+  <div *ngIf="deleteTarget"
+       class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="glass-1 rounded-2xl p-8 max-w-sm w-full border border-error/20 shadow-[0_0_40px_rgba(255,110,132,0.2)]">
+      <span class="material-symbols-outlined text-error text-5xl block mb-4">warning</span>
+      <h3 class="text-xl font-black text-on-surface mb-2">Delete {{ deleteTarget?.type }}?</h3>
+      <p class="text-on-surface-variant text-sm mb-6">This action cannot be undone.</p>
+      <div class="flex gap-3">
+        <button (click)="deleteTarget = null"
+                class="flex-1 py-3 glass-2 rounded-xl font-bold text-on-surface hover:bg-white/10 transition-all">
+          Cancel
+        </button>
+        <button (click)="doDelete()"
+                class="flex-1 py-3 bg-error text-on-error rounded-xl font-bold hover:bg-error/80 transition-all">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ASSIGN MODAL ══ (moved to root level) -->
+  <div *ngIf="assigningToRequestId !== null"
+       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+       style="background:rgba(0,0,0,0.7);backdrop-filter:blur(8px)"
+       (click)="closeAssignModal()">
+
+    <div class="w-full max-w-lg rounded-2xl overflow-hidden"
+         style="background:rgba(8,24,56,0.95);border:1px solid rgba(105,156,255,0.2);box-shadow:0 0 60px rgba(105,156,255,0.15)"
+         (click)="$event.stopPropagation()">
+
+      <!-- Modal header -->
+      <div class="flex items-center justify-between px-6 py-4"
+           style="border-bottom:1px solid rgba(255,255,255,0.06)">
+        <div>
+          <h3 class="text-lg font-black text-white">Assign Responder</h3>
+          <p class="text-xs text-on-surface-variant mt-0.5">Request #{{ assigningToRequestId }}</p>
+        </div>
+        <button (click)="closeAssignModal()"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-white hover:bg-white/10 transition-all">
+          <span class="material-symbols-outlined text-sm">close</span>
+        </button>
+      </div>
+
+      <!-- Scrollable body -->
+      <div class="max-h-[65vh] overflow-y-auto">
+
+        <!-- AI Matched Volunteers -->
+        <div class="px-6 py-4" style="border-bottom:1px solid rgba(255,255,255,0.05)">
+          <p class="text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2"
+             style="color:#9fabcc">
+            <span class="material-symbols-outlined text-sm">auto_awesome</span>
+            AI-Matched Volunteers
+          </p>
+
+          <!-- Loading -->
+          <div *ngIf="loadingMatches" class="flex items-center gap-2 py-3" style="color:#9fabcc">
+            <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>
+            <span class="text-xs">Finding best matches...</span>
+          </div>
+
+          <!-- No matches -->
+          <p *ngIf="!loadingMatches && matchesForRequest.length === 0"
+             class="text-xs py-2" style="color:#6a7594">
+            No active volunteer offers found. Assign manually below.
+          </p>
+
+          <!-- Match cards -->
+          <div *ngIf="!loadingMatches && matchesForRequest.length > 0" class="space-y-2">
+            <div *ngFor="let m of matchesForRequest"
+                 class="flex items-center justify-between p-3 rounded-xl transition-all"
+                 style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07)">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0"
+                     style="background:rgba(172,163,255,0.15);color:#aca3ff">
+                  V{{ m.volunteerId }}
+                </div>
+                <div>
+                  <p class="text-sm font-bold text-white">Volunteer #{{ m.volunteerId }}</p>
+                  <p class="text-[10px]" style="color:#9fabcc">{{ m.skills || 'No skills listed' }}</p>
+                  <p class="text-[10px]" style="color:#6a7594">{{ m.location }}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 flex-shrink-0">
+                <!-- Match score ring -->
+                <div class="relative w-11 h-11">
+                  <svg class="w-11 h-11 -rotate-90" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="15.9" fill="none"
+                            stroke="rgba(255,255,255,0.08)" stroke-width="3"/>
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke-width="3"
+                            [attr.stroke]="m.matchScore >= 0.7 ? '#699cff' : m.matchScore >= 0.4 ? '#fbbf24' : '#ff6e84'"
+                            stroke-linecap="round"
+                            [attr.stroke-dasharray]="(m.matchScore * 100).toFixed(0) + ' 100'"
+                            stroke-dashoffset="0"/>
+                  </svg>
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-[9px] font-black"
+                          [ngClass]="m.matchScore >= 0.7 ? 'text-secondary' : m.matchScore >= 0.4 ? 'text-amber-400' : 'text-error'">
+                      {{ (m.matchScore * 100).toFixed(0) }}%
+                    </span>
+                  </div>
+                </div>
+                <button (click)="assignFromMatch(m.volunteerId)"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
+                        style="background:rgba(105,156,255,0.15);color:#699cff;border:1px solid rgba(105,156,255,0.3)">
+                  Assign
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manual assignment -->
+        <div class="px-6 py-4">
+          <p class="text-xs font-bold uppercase tracking-widest mb-3" style="color:#9fabcc">
+            Or assign manually
+          </p>
+
+          <div *ngIf="assignError"
+               class="mb-3 p-3 rounded-xl text-xs flex items-center gap-2"
+               style="background:rgba(255,110,132,0.1);color:#ff6e84;border:1px solid rgba(255,110,132,0.2)">
+            <span class="material-symbols-outlined text-sm">error</span>
+            {{ assignError }}
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-widest mb-2"
+                     style="color:#9fabcc">
+                Responder ID
+              </label>
+              <input type="number"
+                     [(ngModel)]="assignResponderId"
+                     placeholder="Enter user ID of responder..."
+                     class="w-full h-11 px-4 rounded-xl text-sm outline-none transition-all"
+                     style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#dde5ff" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-widest mb-2"
+                     style="color:#9fabcc">
+                Notes (optional)
+              </label>
+              <textarea [(ngModel)]="assignNotes"
+                        rows="2"
+                        placeholder="Any special instructions..."
+                        class="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none transition-all"
+                        style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#dde5ff">
+              </textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal footer -->
+      <div class="flex gap-3 px-6 py-4"
+           style="border-top:1px solid rgba(255,255,255,0.06)">
+        <button (click)="closeAssignModal()"
+                class="flex-1 py-3 rounded-xl font-bold text-sm transition-all hover:bg-white/10"
+                style="background:rgba(255,255,255,0.05);color:#dde5ff;border:1px solid rgba(255,255,255,0.08)">
+          Cancel
+        </button>
+        <button (click)="submitAssignment()"
+                class="flex-1 py-3 rounded-xl font-bold text-sm transition-all active:scale-95"
+                style="background:#699cff;color:#001e4a;box-shadow:0 0 20px rgba(105,156,255,0.3)">
+          <span class="material-symbols-outlined text-sm align-middle mr-1">person_add</span>
+          Assign
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>

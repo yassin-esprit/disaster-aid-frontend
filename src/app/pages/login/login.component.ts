@@ -4,8 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
-const ADMIN_ROLES = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN'];
-
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -20,6 +18,9 @@ export class LoginComponent {
   isLoading: boolean = false;
   errorMessage: string = '';
 
+  // Admin roles matching master UserRole enum
+  private adminRoles = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN'];
+
   constructor(
     private authService: AuthService,
     private router: Router
@@ -30,14 +31,13 @@ export class LoginComponent {
   }
 
   private redirectByRole(role: string): void {
-    const normalizedRole = (role || '').trim().toUpperCase();
-
-    if (ADMIN_ROLES.includes(normalizedRole)) {
-      // Admins go to the back-office dashboard
+    const normalized = (role || '').trim().toUpperCase();
+    if (this.adminRoles.includes(normalized)) {
+      // Admin → sidebar dashboard
       this.router.navigateByUrl('/dashboard');
     } else {
-      // Volunteers, Citizens, Responders go to the front-office landing page
-      this.router.navigateByUrl('/landing');
+      // CITIZEN, VOLUNTEER, RESPONDER → public front office
+      this.router.navigateByUrl('/home');
     }
   }
 
@@ -51,26 +51,17 @@ export class LoginComponent {
 
     this.isLoading = true;
 
-    this.authService.login({
-      email: this.email,
-      password: this.password
-    }).subscribe({
+    this.authService.login({ email: this.email, password: this.password }).subscribe({
       next: (response) => {
         this.isLoading = false;
         this.redirectByRole(response.role);
       },
       error: (error) => {
         this.isLoading = false;
-
-        if (error?.error?.message) {
-          this.errorMessage = error.error.message;
-        } else if (error?.status === 401) {
-          this.errorMessage = 'Invalid email or password.';
-        } else if (error?.status === 0) {
-          this.errorMessage = 'Cannot connect to the server.';
-        } else {
-          this.errorMessage = 'Login failed. Please try again.';
-        }
+        if (error?.error?.message)      this.errorMessage = error.error.message;
+        else if (error?.status === 401) this.errorMessage = 'Invalid email or password.';
+        else if (error?.status === 0)   this.errorMessage = 'Cannot connect to the server.';
+        else                             this.errorMessage = 'Login failed. Please try again.';
       }
     });
   }

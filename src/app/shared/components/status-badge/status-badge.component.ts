@@ -35,7 +35,7 @@ export type StatusType =
   `,
 })
 export class StatusBadgeComponent {
-  @Input() status: StatusType = 'PENDING';
+  @Input() status: string = 'PENDING';
   @Input() label: string = '';
   @Input() showDot: boolean = false;
 

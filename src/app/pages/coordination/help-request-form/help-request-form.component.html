@@ -1,0 +1,177 @@
+<div class="max-w-2xl mx-auto">
+  <div class="mb-8">
+    <div
+      class="w-16 h-1 mb-3 shadow-[0_0_10px_rgba(105,156,255,0.5)]"
+      style="background: #699cff"
+    ></div>
+    <h1 class="text-3xl font-black tracking-tighter text-on-surface">
+      Submit Help Request
+    </h1>
+    <p class="text-on-surface-variant text-sm mt-1">
+      Describe what you need and where you are
+    </p>
+  </div>
+
+  <div
+    *ngIf="successMessage"
+    class="mb-6 p-4 rounded-xl bg-secondary/10 border border-secondary/20 text-secondary flex items-center gap-2"
+  >
+    <span class="material-symbols-outlined text-sm">check_circle</span
+    >{{ successMessage }}
+  </div>
+  <div
+    *ngIf="errorMessage"
+    class="mb-6 p-4 rounded-xl bg-error/10 border border-error/20 text-error flex items-center gap-2"
+  >
+    <span class="material-symbols-outlined text-sm">error</span
+    >{{ errorMessage }}
+  </div>
+
+  <div class="glass-1 rounded-2xl border border-white/5 p-8">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+      <!-- Type -->
+      <div class="space-y-2">
+        <label
+          class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1"
+          >Request Type</label
+        >
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <button
+            *ngFor="let t of requestTypes"
+            type="button"
+            (click)="form.patchValue({ type: t })"
+            class="py-3 px-4 rounded-xl text-sm font-bold transition-all border"
+            [ngClass]="
+              form.get('type')?.value === t
+                ? 'bg-secondary/20 border-secondary text-secondary shadow-[0_0_15px_rgba(105,156,255,0.2)]'
+                : 'glass-2 border-white/5 text-on-surface-variant hover:bg-white/5'
+            "
+          >
+            {{ t }}
+          </button>
+        </div>
+        <p *ngIf="inv('type')" class="text-xs text-error ml-1">
+          Please select a type.
+        </p>
+      </div>
+
+      <!-- Urgency -->
+      <div class="space-y-2">
+        <label
+          class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1"
+        >
+          Urgency Level —
+          <span
+            [ngClass]="{
+              'text-secondary': form.get('urgency')?.value <= 2,
+              'text-amber-400': form.get('urgency')?.value === 3,
+              'text-orange-400': form.get('urgency')?.value === 4,
+              'text-error': form.get('urgency')?.value === 5,
+            }"
+            >{{ form.get("urgency")?.value }}/5</span
+          >
+        </label>
+        <input
+          type="range"
+          formControlName="urgency"
+          min="1"
+          max="5"
+          class="w-full accent-secondary"
+        />
+        <div class="flex justify-between text-[10px] text-on-surface-variant">
+          <span>Low</span><span>Critical</span>
+        </div>
+      </div>
+
+      <!-- Location -->
+      <div class="space-y-1.5">
+        <label
+          class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1"
+          >Location</label
+        >
+        <div class="relative">
+          <span
+            class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-secondary text-xl fill-icon"
+            >location_on</span
+          >
+          <input
+            formControlName="location"
+            type="text"
+            placeholder="Address or use GPS..."
+            class="w-full h-14 pl-12 pr-24 glass-2 rounded-xl text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-secondary outline-none"
+            [ngClass]="inv('location') ? 'ring-2 ring-error/50' : ''"
+          />
+          <button
+            type="button"
+            (click)="useGPS()"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-secondary bg-secondary/10 px-3 py-1.5 rounded-full hover:bg-secondary/20 transition-all"
+          >
+            GPS
+          </button>
+        </div>
+        <p *ngIf="inv('location')" class="text-xs text-error ml-1">
+          Location is required.
+        </p>
+      </div>
+
+      <!-- Description -->
+      <div class="space-y-1.5">
+        <label
+          class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1"
+          >Description</label
+        >
+        <textarea
+          formControlName="description"
+          rows="4"
+          placeholder="Describe your situation in detail..."
+          class="w-full px-4 py-3 glass-2 rounded-xl text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-secondary outline-none resize-none"
+          [ngClass]="inv('description') ? 'ring-2 ring-error/50' : ''"
+        >
+        </textarea>
+        <p *ngIf="inv('description')" class="text-xs text-error ml-1">
+          Minimum 10 characters.
+        </p>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex gap-3 pt-2">
+        <a
+          routerLink="/coordination"
+          class="flex-1 py-4 glass-2 rounded-xl font-bold text-on-surface text-center hover:bg-white/10 transition-all"
+        >
+          Cancel
+        </a>
+        <button
+          type="submit"
+          [disabled]="isLoading"
+          class="flex-1 py-4 font-bold rounded-xl transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
+          style="
+            background: #699cff;
+            color: #001e4a;
+            box-shadow: 0 0 25px rgba(105, 156, 255, 0.3);
+          "
+        >
+          <span *ngIf="!isLoading">Submit Request</span>
+          <span *ngIf="isLoading" class="flex items-center gap-2">
+            <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8z"
+              />
+            </svg>
+            Submitting...
+          </span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
