@@ -1,6 +1,6 @@
 <!-- Desktop sidebar -->
 <aside
-  class="fixed left-0 top-0 h-full w-[240px] z-[60] bg-slate-900/60 backdrop-blur-2xl border-r border-white/5 flex flex-col py-6 gap-2 shadow-[10px_0_30px_rgba(0,0,0,0.5)] hidden md:flex"
+  class="hidden md:flex flex-col w-[240px] flex-shrink-0 bg-slate-900/60 backdrop-blur-2xl border-r border-white/5 py-6 gap-2 h-full"
 >
   <!-- Brand -->
   <div class="px-6 mb-8">
@@ -9,7 +9,7 @@
         class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30"
       >
         <span class="material-symbols-outlined text-primary fill-icon"
-          >shield</span
+        >shield</span
         >
       </div>
       <div>
@@ -37,19 +37,19 @@
     >
       <span class="material-symbols-outlined">{{ item.icon }}</span>
       <span class="text-[13px] font-medium tracking-wide uppercase">{{
-        item.label
-      }}</span>
+          item.label
+        }}</span>
     </a>
   </nav>
 
   <!-- CTA -->
-<div class="px-4 mt-auto">
-  <button
-    type="button"
-    (click)="onLogout()"
-    class="block w-full bg-red-500/80 text-white py-3 rounded-lg font-bold text-xs uppercase tracking-widest text-center hover:bg-red-500 transition-all active:scale-95"
-  >
-    Logout
-  </button>
-</div>
+  <div class="px-4 mt-auto">
+    <button
+      type="button"
+      (click)="onLogout()"
+      class="block w-full bg-red-500/80 text-white py-3 rounded-lg font-bold text-xs uppercase tracking-widest text-center hover:bg-red-500 transition-all active:scale-95"
+    >
+      Logout
+    </button>
+  </div>
 </aside>

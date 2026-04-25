@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import {T} from '@angular/cdk/keycodes';
 
 @Injectable({
   providedIn: 'root'
@@ -37,7 +38,7 @@ export class HttpService {
     return headers;
   }
 
-  get<T>(endpoint: string, params?: HttpParams, customHeaders?: HttpHeaders): Observable<T> {
+  get<T>(endpoint: string, params?: { polygon: string }, customHeaders?: HttpHeaders): Observable<T> {
     const options = {
       headers: this.buildHeaders(customHeaders, false),
       params
@@ -62,7 +63,14 @@ export class HttpService {
     };
     return this.http.put<T>(`${this.apiUrl}${endpoint}`, body as any, options);
   }
-
+  patch<T>(endpoint: string, body: unknown, params?: HttpParams, customHeaders?: HttpHeaders): Observable<T> {
+    const isFormData = body instanceof FormData;
+    const options = {
+      headers: this.buildHeaders(customHeaders, isFormData),
+      params
+    };
+    return this.http.patch<T>(`${this.apiUrl}${endpoint}`, body as any, options);
+  }
   delete<T>(endpoint: string, params?: HttpParams, customHeaders?: HttpHeaders): Observable<T> {
     const options = {
       headers: this.buildHeaders(customHeaders, false),

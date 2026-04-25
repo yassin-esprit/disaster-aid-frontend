@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { HttpService } from './http.service';
+import { environment } from '../../../environments/environment';
 
 export interface SpatialSensor {
   id: number;
@@ -13,13 +15,30 @@ export interface SpatialSensor {
 
 @Injectable({ providedIn: 'root' })
 export class SpatialService {
-  constructor(private http: HttpService) {}
+  private readonly apiUrl = environment.apiUrl;
+
+  constructor(
+    private http: HttpService,      // keep for other endpoints if needed
+    private httpClient: HttpClient  // add this
+  ) {}
 
   getSensorsInsideZone(polygonWkt: string): Observable<SpatialSensor[]> {
-    return this.http.get<SpatialSensor[]>('spatial/sensors/inside-zone', { polygon: polygonWkt });
+    const params = new HttpParams().set('polygon', polygonWkt);
+    // Use httpClient directly to bypass restrictive HttpService
+    return this.httpClient.get<SpatialSensor[]>(
+      `${this.apiUrl}/spatial/sensors/inside-zone`,
+      { params }
+    );
   }
 
   getNearestSensors(pointWkt: string, limit: number = 5): Observable<SpatialSensor[]> {
-    return this.http.get<SpatialSensor[]>('spatial/sensors/nearest', { point: pointWkt, limit });
+    let params = new HttpParams()
+      .set('point', pointWkt)
+      .set('limit', limit.toString());
+    // Use httpClient directly
+    return this.httpClient.get<SpatialSensor[]>(
+      `${this.apiUrl}/spatial/sensors/nearest`,
+      { params }
+    );
   }
 }
