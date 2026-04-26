@@ -10,6 +10,7 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'my-hours', loadComponent: () => import('./pages/my-hours/my-hours.component').then(m => m.MyHoursComponent) },
+  { path: 'my-gamification', loadComponent: () => import('./pages/my-gamification/my-gamification.component').then(m => m.MyGamificationComponent) },
 
   {
 
