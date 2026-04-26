@@ -248,7 +248,7 @@ export class GamificationComponent implements OnInit {
   boardForm: any = this.emptyBoardForm();
 
   scopes: LeaderboardScope[] = ['GLOBAL', 'REGIONAL', 'CAUSE', 'ORGANISATION'];
-  metrics = ['HOURS', 'POINTS', 'IMPACT_SCORE', 'DISASTER_RESPONSES'];
+  metrics = ['IMPACT_SCORE'];
 
   loadLeaderboards(): void {
     this.loading = true;
@@ -272,18 +272,23 @@ export class GamificationComponent implements OnInit {
   openEditBoard(item: any): void {
     this.editMode = true;
     this.selectedId = item.boardId;
-    this.boardForm = { scope: item.scope, metric: item.metric, snapshotJson: item.snapshotJson || '' };
+    this.boardForm = { scope: item.scope, metric: item.metric };
     this.showModal = true;
   }
 
   submitBoard(): void {
     this.saving = true;
+    const payload = {
+      scope: this.boardForm.scope,
+      metric: this.boardForm.metric,
+      snapshotJson: '[]'   // default empty snapshot
+    };
     const url = this.editMode && this.selectedId
       ? `${environment.apiUrl}/leaderboards/${this.selectedId}`
       : `${environment.apiUrl}/leaderboards`;
     const req$ = this.editMode && this.selectedId
-      ? this.http.put<any>(url, this.boardForm, { headers: this.headers })
-      : this.http.post<any>(url, this.boardForm, { headers: this.headers });
+      ? this.http.put<any>(url, payload, { headers: this.headers })
+      : this.http.post<any>(url, payload, { headers: this.headers });
     req$.subscribe({
       next: () => { this.saving = false; this.closeModal(); this.loadLeaderboards(); },
       error: () => { this.saving = false; }
@@ -312,7 +317,7 @@ export class GamificationComponent implements OnInit {
   }
 
   private emptyBoardForm() {
-    return { scope: 'GLOBAL', metric: 'HOURS', snapshotJson: '' };
+    return { scope: 'GLOBAL', metric: 'IMPACT_SCORE' };
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -320,10 +325,6 @@ export class GamificationComponent implements OnInit {
   // ════════════════════════════════════════════════════════════════════════════
   challenges: any[] = [];
   filteredChallenges: any[] = [];
-  showJoinModal = false;
-  joinChallengeId: number | null = null;
-  joinVolunteerId = 0;
-  joinAction: 'join' | 'leave' = 'join';
   challengeForm: any = this.emptyChallengeForm();
 
   statuses: ChallengeStatus[] = ['UPCOMING', 'ACTIVE', 'COMPLETED'];
@@ -363,33 +364,31 @@ export class GamificationComponent implements OnInit {
 
   submitChallenge(): void {
     this.saving = true;
+
+    const payload = {
+      title: this.challengeForm.title,
+      description: this.challengeForm.description,
+      targetMetric: 'HOURS',      // default since we removed the field
+      targetValue: 0,             // default since we removed the field
+      rewardPoints: this.challengeForm.rewardPoints,
+      startDate: this.challengeForm.startDate,
+      endDate: this.challengeForm.endDate,
+      participantIds: this.challengeForm.participantIds || [],
+      status: this.challengeForm.status
+    };
+
     const url = this.editMode && this.selectedId
       ? `${environment.apiUrl}/challenges/${this.selectedId}`
       : `${environment.apiUrl}/challenges`;
     const req$ = this.editMode && this.selectedId
-      ? this.http.put<any>(url, this.challengeForm, { headers: this.headers })
-      : this.http.post<any>(url, this.challengeForm, { headers: this.headers });
+      ? this.http.put<any>(url, payload, { headers: this.headers })
+      : this.http.post<any>(url, payload, { headers: this.headers });
     req$.subscribe({
       next: () => { this.saving = false; this.closeModal(); this.loadChallenges(); },
       error: () => { this.saving = false; }
     });
   }
 
-  openJoin(id: number, action: 'join' | 'leave'): void {
-    this.joinChallengeId = id;
-    this.joinAction = action;
-    this.joinVolunteerId = 0;
-    this.showJoinModal = true;
-  }
-
-  confirmJoin(): void {
-    if (!this.joinChallengeId || !this.joinVolunteerId) return;
-    const endpoint = `${environment.apiUrl}/challenges/${this.joinChallengeId}/${this.joinAction}?volunteerId=${this.joinVolunteerId}`;
-    this.http.post<any>(endpoint, {}, { headers: this.headers }).subscribe({
-      next: () => { this.showJoinModal = false; this.loadChallenges(); },
-      error: (err) => alert(err?.error?.message || 'Operation failed.')
-    });
-  }
 
   deleteChallenge(id: number): void {
     if (!confirm('Delete this challenge?')) return;
@@ -402,7 +401,15 @@ export class GamificationComponent implements OnInit {
   }
 
   private emptyChallengeForm() {
-    return { title: '', description: '', targetMetric: 'HOURS', targetValue: 0, rewardPoints: 0, startDate: '', endDate: '', participantIds: [], status: 'UPCOMING' };
+    return {
+      title: '',
+      description: '',
+      rewardPoints: 0,
+      startDate: '',
+      endDate: '',
+      participantIds: [],
+      status: 'UPCOMING'
+    };
   }
 
   /** The auto-managed Global/Impact Score board */

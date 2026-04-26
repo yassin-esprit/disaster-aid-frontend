@@ -172,7 +172,7 @@
           <span class="stats-label">Total</span>
           <span class="stats-value">{{ badges.length }}</span>
         </div>
-        <button class="add-btn" (click)="openAwardBadge()">+ Award Badge</button>
+        <!-- <button class="add-btn" (click)="openAwardBadge()">+ Award Badge</button> -->
       </div>
     </div>
 
@@ -360,13 +360,8 @@
           <div class="form-group">
             <label>Metric</label>
             <select [(ngModel)]="boardForm.metric">
-              <option *ngFor="let m of metrics" [value]="m">{{ m }}</option>
+              <option value="IMPACT_SCORE">IMPACT_SCORE</option>
             </select>
-          </div>
-          <div class="form-group full">
-            <label>Snapshot JSON (optional)</label>
-            <textarea rows="4" [(ngModel)]="boardForm.snapshotJson"
-                      placeholder='[{"rank":1,"volunteerId":42,"value":120}]'></textarea>
           </div>
         </div>
         <div class="form-actions">
@@ -432,14 +427,12 @@
       <div *ngIf="!loading" class="table-wrapper">
         <table>
           <thead>
-            <tr><th>ID</th><th>Title</th><th>Metric</th><th>Target</th><th>Reward</th><th>Period</th><th>Participants</th><th>Status</th><th>Actions</th></tr>
+            <tr><th>ID</th><th>Title</th><th>Reward</th><th>Period</th><th>Participants</th><th>Status</th><th>Actions</th></tr>
           </thead>
           <tbody>
             <tr *ngFor="let item of filteredChallenges">
               <td>{{ item.challengeId }}</td>
               <td><strong>{{ item.title }}</strong></td>
-              <td><span class="badge badge-purple">{{ item.targetMetric }}</span></td>
-              <td>{{ item.targetValue }}</td>
               <td><span class="badge badge-yellow">{{ item.rewardPoints }} pts</span></td>
               <td>{{ item.startDate }} → {{ item.endDate }}</td>
               <td>
@@ -450,8 +443,6 @@
               <td><span class="badge" [ngClass]="statusClass(item.status)">{{ item.status }}</span></td>
               <td class="actions-cell">
                 <button class="action-btn edit-btn" (click)="openEditChallenge(item)">Edit</button>
-                <button class="action-btn approve-btn" (click)="openJoin(item.challengeId, 'join')">Join</button>
-                <button class="action-btn reject-btn" (click)="openJoin(item.challengeId, 'leave')">Leave</button>
                 <button class="action-btn delete-btn" (click)="deleteChallenge(item.challengeId)">Delete</button>
               </td>
             </tr>
@@ -471,18 +462,11 @@
         <div class="modal-form">
           <div class="form-group full"><label>Title</label><input type="text" [(ngModel)]="challengeForm.title" placeholder="Challenge name…" /></div>
           <div class="form-group">
-            <label>Target Metric</label>
-            <select [(ngModel)]="challengeForm.targetMetric">
-              <option *ngFor="let m of challengeMetrics" [value]="m">{{ m }}</option>
-            </select>
-          </div>
-          <div class="form-group">
             <label>Status</label>
             <select [(ngModel)]="challengeForm.status">
               <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
             </select>
           </div>
-          <div class="form-group"><label>Target Value</label><input type="number" step="0.5" [(ngModel)]="challengeForm.targetValue" /></div>
           <div class="form-group"><label>Reward Points</label><input type="number" [(ngModel)]="challengeForm.rewardPoints" /></div>
           <div class="form-group"><label>Start Date</label><input type="date" [(ngModel)]="challengeForm.startDate" /></div>
           <div class="form-group"><label>End Date</label><input type="date" [(ngModel)]="challengeForm.endDate" /></div>
@@ -491,23 +475,6 @@
         <div class="form-actions">
           <button class="btn-secondary" (click)="closeModal()">Cancel</button>
           <button class="btn-primary" [disabled]="saving" (click)="submitChallenge()">{{ saving ? 'Saving…' : (editMode ? 'Update' : 'Create') }}</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Join / Leave Modal -->
-    <div class="modal-backdrop" *ngIf="showJoinModal">
-      <div class="modal-card small-modal">
-        <div class="modal-header">
-          <h2>{{ joinAction === 'join' ? 'Join Challenge' : 'Leave Challenge' }}</h2>
-          <button class="close-btn" (click)="showJoinModal = false">✕</button>
-        </div>
-        <div class="modal-form">
-          <div class="form-group full"><label>Volunteer ID</label><input type="number" [(ngModel)]="joinVolunteerId" placeholder="Enter volunteer ID…" /></div>
-        </div>
-        <div class="form-actions">
-          <button class="btn-secondary" (click)="showJoinModal = false">Cancel</button>
-          <button class="btn-primary" (click)="confirmJoin()">{{ joinAction === 'join' ? 'Confirm Join' : 'Confirm Leave' }}</button>
         </div>
       </div>
     </div>
