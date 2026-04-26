@@ -1,0 +1,5042 @@
+
+
+=== FILE: \src\app\app.component.ts ===
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [RouterOutlet],
+  template: '<router-outlet />',
+})
+export class AppComponent {
+  title = 'disaster-aid-frontend';
+}
+
+
+=== FILE: \src\app\pages\alert-detail\alert-detail.component.ts ===
+// src/app/pages/alert-detail/alert-detail.component.ts
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { AlertService } from '../../core/services/alert.service';
+import { Alert } from '../../shared/models/sensor.model';
+import { MapViewComponent } from '../../shared/components/map-view/map-view.component';
+import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
+
+@Component({
+  selector: 'app-alert-detail',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterModule, MapViewComponent, StatusBadgeComponent],
+  template: `
+    <div class="p-6 max-w-5xl mx-auto space-y-6">
+
+      <!-- ── CREATE MODE ────────────────────────────────────── -->
+      <ng-container *ngIf="isNew">
+        <div class="flex items-center gap-3">
+          <a routerLink="/alerts" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <span class="material-symbols-outlined">arrow_back</span>
+          </a>
+          <h1 class="text-3xl font-black">New Alert</h1>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="glass-1 p-6 rounded-2xl border border-white/5 space-y-4">
+            <h2 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Alert Details</h2>
+
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Title *</label>
+              <input [(ngModel)]="formData.title"
+                     class="w-full p-3 rounded-xl bg-white/5 border border-white/10 outline-none focus:border-primary/50 transition-colors" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="space-y-1">
+                <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Disaster Type *</label>
+                <select [(ngModel)]="formData.disasterType"
+                        class="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-on-surface outline-none focus:border-primary/50">
+                  <option *ngFor="let t of disasterTypes" [value]="t">{{ t }}</option>
+                </select>
+              </div>
+              <div class="space-y-1">
+                <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Severity *</label>
+                <select [(ngModel)]="formData.severity"
+                        class="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-on-surface outline-none focus:border-primary/50">
+                  <option *ngFor="let s of severities" [value]="s">{{ s }}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Description</label>
+              <textarea [(ngModel)]="formData.description" rows="3"
+                        class="w-full p-3 rounded-xl bg-white/5 border border-white/10 outline-none focus:border-primary/50 transition-colors resize-none"></textarea>
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Confidence Score (0–1)</label>
+              <input type="number" [(ngModel)]="formData.confidenceScore" min="0" max="1" step="0.01"
+                     class="w-full p-3 rounded-xl bg-white/5 border border-white/10 outline-none focus:border-primary/50 transition-colors" />
+            </div>
+
+            <div class="flex gap-3 pt-2">
+              <button (click)="createAlert()"
+                      class="flex-1 bg-error/20 border border-error/30 text-error py-3 rounded-xl font-bold text-sm hover:bg-error/30 transition-all">
+                Create Alert
+              </button>
+              <a routerLink="/alerts"
+                 class="px-5 py-3 rounded-xl border border-white/20 font-bold text-sm text-on-surface-variant hover:bg-white/5 transition-all">
+                Cancel
+              </a>
+            </div>
+          </div>
+
+          <!-- Info note about geometry -->
+          <div class="glass-1 p-6 rounded-2xl border border-white/5 flex flex-col gap-4">
+            <h2 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Affected Area</h2>
+            <div class="flex-1 flex flex-col items-center justify-center text-center text-on-surface-variant gap-3">
+              <span class="material-symbols-outlined text-5xl text-primary/40">draw</span>
+              <p class="text-sm">Polygon geometry can be set after creation by editing the alert and providing WKT coordinates, or through the Geofence Zones page.</p>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ── VIEW MODE ──────────────────────────────────────── -->
+      <ng-container *ngIf="!isNew && !editMode && alert">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <a routerLink="/alerts" class="text-on-surface-variant hover:text-on-surface transition-colors">
+              <span class="material-symbols-outlined">arrow_back</span>
+            </a>
+            <div>
+              <h1 class="text-3xl font-black">{{ alert.title }}</h1>
+              <p class="text-sm text-on-surface-variant font-mono">{{ alert.disasterType }}</p>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button *ngIf="alert.status !== 'RESOLVED'" (click)="resolve()"
+                    class="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 text-green-400 rounded-xl text-sm font-bold hover:bg-green-500/20 transition-all">
+              <span class="material-symbols-outlined text-sm">check_circle</span> Resolve
+            </button>
+            <button (click)="enableEdit()"
+                    class="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm font-bold hover:bg-white/10 transition-all">
+              <span class="material-symbols-outlined text-sm">edit</span> Edit
+            </button>
+            <button (click)="deleteAlert()"
+                    class="flex items-center gap-2 px-4 py-2 bg-error/10 border border-error/20 text-error rounded-xl text-sm font-bold hover:bg-error/20 transition-all">
+              <span class="material-symbols-outlined text-sm">delete</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <!-- Info -->
+          <div class="lg:col-span-2 glass-1 p-6 rounded-2xl border border-white/5 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Severity</span>
+              <span class="px-2 py-1 rounded text-[10px] font-black uppercase"
+                    [ngClass]="severityClass(alert.severity)">{{ alert.severity }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Status</span>
+              <app-status-badge [status]="alert.status"></app-status-badge>
+            </div>
+            <div class="h-px bg-white/5"></div>
+            <div class="space-y-3 text-sm">
+              <div class="flex justify-between">
+                <span class="text-on-surface-variant">Confidence</span>
+                <span class="font-medium">{{ alert.confidenceScore != null ? (alert.confidenceScore * 100).toFixed(0) + '%' : '—' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-on-surface-variant">Issued</span>
+                <span class="font-medium">{{ alert.issuedAt | date:'dd MMM yyyy, HH:mm' }}</span>
+              </div>
+              <div class="flex justify-between" *ngIf="alert.resolvedAt">
+                <span class="text-on-surface-variant">Resolved</span>
+                <span class="font-medium text-green-400">{{ alert.resolvedAt | date:'dd MMM yyyy, HH:mm' }}</span>
+              </div>
+              <div *ngIf="alert.description" class="pt-2 border-t border-white/5">
+                <p class="text-on-surface-variant text-xs uppercase tracking-widest mb-1">Description</p>
+                <p class="text-sm">{{ alert.description }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Map -->
+          <div class="lg:col-span-3 glass-1 p-4 rounded-2xl border border-white/5" style="height: 380px;">
+            <app-map-view [geometries]="mapGeometries"></app-map-view>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ── EDIT MODE ───────────────────────────────────────── -->
+      <ng-container *ngIf="!isNew && editMode && alert">
+        <div class="flex items-center gap-3">
+          <button (click)="cancelEdit()" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <span class="material-symbols-outlined">arrow_back</span>
+          </button>
+          <h1 class="text-3xl font-black">Edit — {{ alert.title }}</h1>
+        </div>
+        <div class="glass-1 p-6 rounded-2xl border border-white/5 max-w-xl space-y-4">
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Title</label>
+            <input [(ngModel)]="editData.title"
+                   class="w-full p-3 rounded-xl bg-white/5 border border-white/10 outline-none focus:border-primary/50" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Disaster Type</label>
+              <select [(ngModel)]="editData.disasterType"
+                      class="w-full p-3 rounded-xl bg-white/5 border border-white/10 outline-none">
+                <option *ngFor="let t of disasterTypes" [value]="t">{{ t }}</option>
+              </select>
+            </div>
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Severity</label>
+              <select [(ngModel)]="editData.severity"
+                      class="w-full p-3 rounded-xl bg-white/5 border border-white/10 outline-none">
+                <option *ngFor="let s of severities" [value]="s">{{ s }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Description</label>
+            <textarea [(ngModel)]="editData.description" rows="3"
+                      class="w-full p-3 rounded-xl bg-white/5 border border-white/10 outline-none resize-none"></textarea>
+          </div>
+          <div class="flex gap-3 pt-2">
+            <button (click)="updateAlert()"
+                    class="flex-1 bg-primary text-on-primary py-3 rounded-xl font-bold text-sm">Save Changes</button>
+            <button (click)="cancelEdit()"
+                    class="px-5 py-3 rounded-xl border border-white/20 font-bold text-sm">Cancel</button>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  `
+})
+export class AlertDetailComponent implements OnInit {
+  alert?: Alert;
+  isNew     = false;
+  editMode  = false;
+
+  disasterTypes = ['FLOOD', 'EARTHQUAKE', 'WILDFIRE', 'LANDSLIDE', 'STORM', 'CHEMICAL'];
+  severities    = ['LOW', 'MODERATE', 'HIGH', 'CRITICAL'];
+
+  formData: any = { title: '', disasterType: 'FLOOD', severity: 'MODERATE', description: '', confidenceScore: null, issuedBy: 1 };
+  editData: any = {};
+
+  get mapGeometries() {
+    const geoms: any[] = [];
+    if (this.alert?.affectedArea)    geoms.push({ type: 'Polygon', wkt: this.alert.affectedArea,    color: '#ff3388' });
+    if (this.alert?.predictedArea2h) geoms.push({ type: 'Polygon', wkt: this.alert.predictedArea2h, color: '#ffaa33' });
+    if (this.alert?.predictedArea6h) geoms.push({ type: 'Polygon', wkt: this.alert.predictedArea6h, color: '#33aaff' });
+    return geoms;
+  }
+
+  constructor(private route: ActivatedRoute, private router: Router, private alertService: AlertService) {}
+
+  ngOnInit(): void {
+    this.isNew = window.location.href.includes('/new');
+    if (!this.isNew) {
+      const id = Number(this.route.snapshot.paramMap.get('id'));
+      if (!isNaN(id) && id > 0) {
+        this.alertService.getAlertById(id).subscribe(data => {
+          this.alert    = data;
+          this.editData = { ...data };
+        });
+      }
+    }
+  }
+
+  createAlert(): void  { this.alertService.createAlert(this.formData).subscribe(() => this.router.navigate(['/alerts'])); }
+  enableEdit(): void   { this.editMode = true; this.editData = { ...this.alert }; }
+  cancelEdit(): void   { this.editMode = false; }
+  updateAlert(): void  {
+    if (!this.alert) return;
+    this.alertService.updateAlert(this.alert.id, this.editData).subscribe(u => { this.alert = u; this.editMode = false; });
+  }
+  deleteAlert(): void {
+    if (!this.alert) return;
+    if (confirm('Delete this alert?')) {
+      this.alertService.deleteAlert(this.alert.id).subscribe({ next: () => this.router.navigate(['/alerts']) });
+    }
+  }
+  resolve(): void {
+    if (this.alert) this.alertService.resolveAlert(this.alert.id).subscribe(u => this.alert = u);
+  }
+  severityClass(s: string): string {
+    return { CRITICAL: 'bg-error text-white', HIGH: 'bg-orange-500/20 text-orange-400', MODERATE: 'bg-amber-500/20 text-amber-400', LOW: 'bg-green-500/20 text-green-400' }[s] ?? '';
+  }
+}
+
+
+=== FILE: \src\app\pages\alert-list\alert-list.component.ts ===
+// src/app/pages/alert-list/alert-list.component.ts
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { AlertService } from '../../core/services/alert.service';
+import { Alert } from '../../shared/models/sensor.model';
+import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
+
+@Component({
+  selector: 'app-alert-list',
+  standalone: true,
+  imports: [CommonModule, RouterModule, FormsModule, StatusBadgeComponent],
+  template: `
+    <div class="p-6 space-y-6">
+
+      <!-- Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-black tracking-tight">Alerts</h1>
+          <p class="text-sm text-on-surface-variant mt-1">
+            {{ filtered.length }} alert{{ filtered.length !== 1 ? 's' : '' }}
+          </p>
+        </div>
+        <a routerLink="/alerts/new"
+           class="flex items-center gap-2 bg-error/20 border border-error/30 text-error px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-error/30 transition-all active:scale-95 self-start">
+          <span class="material-symbols-outlined text-sm">add_alert</span> Create Alert
+        </a>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="flex flex-wrap gap-3">
+        <div class="flex-1 min-w-[200px] flex items-center gap-2 glass-1 px-4 py-2 rounded-xl border border-white/10">
+          <span class="material-symbols-outlined text-sm text-on-surface-variant">search</span>
+          <input [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()"
+                 placeholder="Search by title or type…"
+                 class="bg-transparent text-sm outline-none flex-1 text-on-surface placeholder:text-on-surface-variant" />
+        </div>
+        <select [(ngModel)]="severityFilter" (ngModelChange)="applyFilters()"
+                class="glass-1 px-4 py-2 rounded-xl border border-white/10 text-sm text-on-surface bg-transparent outline-none">
+          <option value="">All Severities</option>
+          <option value="CRITICAL">Critical</option>
+          <option value="HIGH">High</option>
+          <option value="MODERATE">Moderate</option>
+          <option value="LOW">Low</option>
+        </select>
+        <select [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()"
+                class="glass-1 px-4 py-2 rounded-xl border border-white/10 text-sm text-on-surface bg-transparent outline-none">
+          <option value="">All Statuses</option>
+          <option value="ACTIVE">Active</option>
+          <option value="MONITORING">Monitoring</option>
+          <option value="RESOLVED">Resolved</option>
+          <option value="FALSE_ALARM">False Alarm</option>
+        </select>
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-x-auto glass-1 rounded-2xl border border-white/5">
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-white/10 text-xs uppercase tracking-widest text-on-surface-variant">
+          <tr>
+            <th class="px-5 py-4">Alert</th>
+            <th class="px-5 py-4">Disaster Type</th>
+            <th class="px-5 py-4">Severity</th>
+            <th class="px-5 py-4">Status</th>
+            <th class="px-5 py-4">Issued</th>
+            <th class="px-5 py-4">Confidence</th>
+            <th class="px-5 py-4"></th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let a of filtered"
+              class="border-b border-white/5 hover:bg-white/5 transition-colors group"
+              [ngClass]="rowClass(a.severity)">
+            <td class="px-5 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                     [ngClass]="disasterIconBg(a.disasterType)">
+                    <span class="material-symbols-outlined text-sm" [ngClass]="disasterIconColor(a.disasterType)">
+                      {{ disasterIcon(a.disasterType) }}
+                    </span>
+                </div>
+                <div>
+                  <p class="font-semibold text-on-surface">{{ a.title || 'Untitled Alert' }}</p>
+                  <p class="text-xs text-on-surface-variant">{{ a.description | slice:0:50 }}{{ (a.description?.length ?? 0) > 50 ? '…' : '' }}</p>
+                </div>
+              </div>
+            </td>
+            <td class="px-5 py-4 font-mono text-xs text-on-surface-variant">{{ a.disasterType }}</td>
+            <td class="px-5 py-4">
+                <span class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider"
+                      [ngClass]="severityClass(a.severity)">{{ a.severity }}</span>
+            </td>
+            <td class="px-5 py-4">
+              <app-status-badge [status]="a.status"></app-status-badge>
+            </td>
+            <td class="px-5 py-4 text-on-surface-variant text-xs">{{ a.issuedAt | date:'dd MMM, HH:mm' }}</td>
+            <td class="px-5 py-4 text-on-surface-variant text-xs">
+              <span *ngIf="a.confidenceScore != null">{{ (a.confidenceScore * 100).toFixed(0) }}%</span>
+              <span *ngIf="a.confidenceScore == null">—</span>
+            </td>
+            <td class="px-5 py-4">
+              <a [routerLink]="['/alerts', a.id]"
+                 class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-primary text-xs font-bold">
+                View <span class="material-symbols-outlined text-xs">arrow_forward</span>
+              </a>
+            </td>
+          </tr>
+          <tr *ngIf="filtered.length === 0">
+            <td colspan="7" class="px-5 py-12 text-center text-on-surface-variant">
+              <span class="material-symbols-outlined text-4xl block mb-2">check_circle</span>
+              No alerts found
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `
+})
+export class AlertListComponent implements OnInit {
+  alerts: Alert[]  = [];
+  filtered: Alert[] = [];
+  searchTerm     = '';
+  severityFilter = '';
+  statusFilter   = '';
+
+  constructor(private alertService: AlertService) {}
+
+  ngOnInit(): void {
+    this.alertService.getAllAlerts().subscribe(data => {
+      this.alerts   = data;
+      this.filtered = data;
+    });
+  }
+
+  applyFilters(): void {
+    this.filtered = this.alerts.filter(a => {
+      const matchSearch   = !this.searchTerm     ||
+        (a.title || '').toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        a.disasterType.toLowerCase().includes(this.searchTerm.toLowerCase());
+      const matchSeverity = !this.severityFilter || a.severity     === this.severityFilter;
+      const matchStatus   = !this.statusFilter   || a.status       === this.statusFilter;
+      return matchSearch && matchSeverity && matchStatus;
+    });
+  }
+
+  rowClass(severity: string): string {
+    return severity === 'CRITICAL' ? 'border-l-2 border-l-error' :
+      severity === 'HIGH'     ? 'border-l-2 border-l-orange-500' : '';
+  }
+
+  severityClass(severity: string): string {
+    return {
+      CRITICAL: 'bg-error text-white',
+      HIGH:     'bg-orange-500/20 text-orange-400 border border-orange-500/30',
+      MODERATE: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
+      LOW:      'bg-green-500/20 text-green-400 border border-green-500/30',
+    }[severity] ?? 'bg-white/10 text-white';
+  }
+
+  disasterIcon(type: string): string {
+    const m: Record<string,string> = {
+      FLOOD: 'water', EARTHQUAKE: 'earthquake', WILDFIRE: 'local_fire_department',
+      LANDSLIDE: 'landslide', STORM: 'thunderstorm', CHEMICAL: 'science'
+    };
+    return m[type] ?? 'emergency';
+  }
+  disasterIconBg(type: string): string {
+    const m: Record<string,string> = {
+      FLOOD: 'bg-blue-500/20', EARTHQUAKE: 'bg-orange-500/20', WILDFIRE: 'bg-red-500/20',
+      LANDSLIDE: 'bg-amber-500/20', STORM: 'bg-sky-500/20', CHEMICAL: 'bg-purple-500/20'
+    };
+    return m[type] ?? 'bg-white/10';
+  }
+  disasterIconColor(type: string): string {
+    const m: Record<string,string> = {
+      FLOOD: 'text-blue-400', EARTHQUAKE: 'text-orange-400', WILDFIRE: 'text-red-400',
+      LANDSLIDE: 'text-amber-400', STORM: 'text-sky-400', CHEMICAL: 'text-purple-400'
+    };
+    return m[type] ?? 'text-white';
+  }
+}
+
+
+=== FILE: \src\app\pages\alerts-map\alerts-map.component.ts ===
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-alerts-map',
+  standalone: true,
+  imports: [],
+  templateUrl: './alerts-map.component.html',
+  styleUrl: './alerts-map.component.scss'
+})
+export class AlertsMapComponent {
+
+}
+
+
+=== FILE: \src\app\pages\dashboard\dashboard.component.ts ===
+// src/app/pages/dashboard/dashboard.component.ts
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { AuthenticatedLayoutComponent } from '../../layouts/authenticated-layout/authenticated-layout.component';
+import { SensorService } from '../../core/services/sensor.service';
+import { AlertService } from '../../core/services/alert.service';
+import { EvacuationService } from '../../core/services/evacuation.service';
+import { forkJoin, interval, Subscription } from 'rxjs';
+import { startWith, switchMap } from 'rxjs/operators';
+
+@Component({
+  selector: 'app-dashboard',
+  standalone: true,
+  imports: [CommonModule, RouterModule, AuthenticatedLayoutComponent],
+  templateUrl: './dashboard.component.html',
+})
+export class DashboardComponent implements OnInit, OnDestroy {
+  // ── Live stats ──────────────────────────────────────────────────────────────
+  totalSensors  = 0;
+  activeSensors = 0;
+  offlineSensors = 0;
+  activeAlerts  = 0;
+  criticalAlerts = 0;
+  activeRoutes  = 0;
+  anomaliesCount = 0;
+
+  // ── Live alerts feed ────────────────────────────────────────────────────────
+  recentAlerts: any[] = [];
+
+  // ── Stat cards ───────────────────────────────────────────────────────────────
+  get stats() {
+    return [
+      {
+        label: 'Active Sensors',
+        value: this.activeSensors,
+        subLabel: `${this.offlineSensors} offline`,
+        icon: 'sensors',
+        iconBg: 'bg-secondary/20',
+        iconColor: 'text-secondary',
+        trend: this.offlineSensors > 0 ? `⚠ ${this.offlineSensors} need attention` : '✓ All sensors online',
+        trendColor: this.offlineSensors > 0 ? 'text-amber-400' : 'text-green-400',
+      },
+      {
+        label: 'Active Alerts',
+        value: this.activeAlerts,
+        subLabel: `${this.criticalAlerts} critical`,
+        icon: 'emergency',
+        iconBg: 'bg-error/20',
+        iconColor: 'text-error',
+        trend: this.criticalAlerts > 0 ? `🔴 ${this.criticalAlerts} critical active` : '✓ No critical alerts',
+        trendColor: this.criticalAlerts > 0 ? 'text-error' : 'text-green-400',
+      },
+      {
+        label: 'Active Routes',
+        value: this.activeRoutes,
+        subLabel: 'evacuation routes',
+        icon: 'directions',
+        iconBg: 'bg-primary/20',
+        iconColor: 'text-primary',
+        trend: this.activeRoutes > 0 ? `${this.activeRoutes} route(s) operational` : 'No active evacuations',
+        trendColor: this.activeRoutes > 0 ? 'text-primary' : 'text-on-surface-variant',
+      },
+      {
+        label: 'Anomalies',
+        value: this.anomaliesCount,
+        subLabel: 'detected readings',
+        icon: 'troubleshoot',
+        iconBg: 'bg-amber-500/20',
+        iconColor: 'text-amber-400',
+        trend: this.anomaliesCount > 0 ? `${this.anomaliesCount} anomalous readings` : '✓ All readings normal',
+        trendColor: this.anomaliesCount > 0 ? 'text-amber-400' : 'text-green-400',
+      },
+    ];
+  }
+
+  // ── Static dashboard data (UX items kept from original) ──────────────────
+  readonly notifications = [
+    { color: 'bg-secondary', time: '2 min ago',  message: 'Scheduler: 3 geofence zones expired and were flagged.' },
+    { color: 'bg-primary',   time: '8 min ago',  message: 'New evacuation route activated for alert #12.' },
+    { color: 'bg-amber-500', time: '15 min ago', message: 'Sensor SEISMIC-04 has gone offline (no ping).' },
+    { color: 'bg-error',     time: '1 hr ago',   message: 'CRITICAL alert auto-triggered — Flood Gauge threshold exceeded.' },
+  ];
+
+  readonly quickLinks = [
+    { label: 'Add Sensor',     icon: 'sensors',     route: '/sensors/new',    color: 'text-secondary' },
+    { label: 'Create Alert',   icon: 'add_alert',   route: '/alerts/new',     color: 'text-error' },
+    { label: 'New Route',      icon: 'add_road',    route: '/evacuation/new', color: 'text-primary' },
+    { label: 'Geofence Zones', icon: 'map',         route: '/geofence',       color: 'text-amber-400' },
+  ];
+
+  readonly systemStatus = [
+    { label: 'JWT Auth',         status: 'Online',   color: 'text-green-400' },
+    { label: 'WebSocket',        status: 'Live',     color: 'text-green-400' },
+    { label: 'Cache (Caffeine)', status: 'Active',   color: 'text-green-400' },
+    { label: 'Scheduler',        status: 'Running',  color: 'text-green-400' },
+    { label: 'PostGIS Spatial',  status: 'Ready',    color: 'text-green-400' },
+  ];
+
+  private sub?: Subscription;
+
+  constructor(
+    private sensorService: SensorService,
+    private alertService: AlertService,
+    private evacuationService: EvacuationService
+  ) {}
+
+  ngOnInit(): void {
+    // Auto-refresh every 30 seconds
+    this.sub = interval(30_000).pipe(
+      startWith(0),
+      switchMap(() => forkJoin({
+        sensors:    this.sensorService.getAllSensors(),
+        alerts:     this.alertService.getAllAlerts(),
+        routes:     this.evacuationService.getAllRoutes(),
+      }))
+    ).subscribe(({ sensors, alerts, routes }) => {
+      this.totalSensors   = sensors.length;
+      this.activeSensors  = sensors.filter(s => s.status === 'ACTIVE').length;
+      this.offlineSensors = sensors.filter(s => s.status === 'OFFLINE').length;
+
+      this.activeAlerts   = alerts.filter(a => a.status === 'ACTIVE').length;
+      this.criticalAlerts = alerts.filter(a => a.severity === 'CRITICAL' && a.status === 'ACTIVE').length;
+
+      this.activeRoutes   = routes.filter(r => r.status === 'ACTIVE').length;
+
+      // Recent 4 alerts sorted newest first
+      this.recentAlerts = [...alerts]
+        .sort((a, b) => new Date(b.issuedAt).getTime() - new Date(a.issuedAt).getTime())
+        .slice(0, 4)
+        .map(a => ({
+          ...a,
+          icon:          this.alertIcon(a.disasterType),
+          iconBg:        this.alertIconBg(a.severity),
+          severityClass: this.severityClass(a.severity),
+          borderClass:   this.borderClass(a.severity),
+        }));
+    });
+  }
+
+  ngOnDestroy(): void { this.sub?.unsubscribe(); }
+
+  alertIcon(type: string): string {
+    return { FLOOD: 'water', EARTHQUAKE: 'earthquake', WILDFIRE: 'local_fire_department',
+      LANDSLIDE: 'landslide', STORM: 'thunderstorm', CHEMICAL: 'science' }[type] ?? 'emergency';
+  }
+  alertIconBg(severity: string): string {
+    return { CRITICAL: 'bg-error/20 text-error', HIGH: 'bg-orange-500/20 text-orange-400',
+      MODERATE: 'bg-amber-500/20 text-amber-400', LOW: 'bg-green-500/20 text-green-400' }[severity] ?? 'bg-white/10 text-white';
+  }
+  severityClass(severity: string): string {
+    return { CRITICAL: 'bg-error text-white', HIGH: 'bg-orange-500/20 text-orange-400 border border-orange-500/30',
+      MODERATE: 'bg-amber-500/20 text-amber-400', LOW: 'bg-green-500/20 text-green-400' }[severity] ?? '';
+  }
+  borderClass(severity: string): string {
+    return { CRITICAL: 'border-error', HIGH: 'border-orange-500',
+      MODERATE: 'border-amber-500', LOW: 'border-green-500' }[severity] ?? 'border-white/10';
+  }
+}
+
+
+=== FILE: \src\app\pages\emergency-dashboard\emergency-dashboard.component.ts ===
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-emergency-dashboard',
+  standalone: true,
+  imports: [],
+  templateUrl: './emergency-dashboard.component.html',
+  styleUrl: './emergency-dashboard.component.scss'
+})
+export class EmergencyDashboardComponent {
+
+}
+
+
+=== FILE: \src\app\pages\evacuation-routes\evacuation-routes.component.ts ===
+import { Component, OnInit, AfterViewInit, OnDestroy, ElementRef, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { CommonModule, DecimalPipe } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { EvacuationService } from '../../core/services/evacuation.service';
+import { AlertService } from '../../core/services/alert.service';
+import { EvacuationRoute } from '../../shared/models/evacuation.model';
+import { Alert } from '../../shared/models/sensor.model';
+import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
+import * as L from 'leaflet';
+import wkt from 'wkt';
+
+@Component({
+  selector: 'app-evacuation-routes',
+  standalone: true,
+  imports: [CommonModule, RouterModule, FormsModule, StatusBadgeComponent, DecimalPipe],
+  template: `
+    <div class="p-6 space-y-6">
+
+      <!-- Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-black tracking-tight">Evacuation Routes</h1>
+          <p class="text-sm text-on-surface-variant mt-1">
+            {{ filtered.length }} route{{ filtered.length !== 1 ? 's' : '' }}
+            <span *ngIf="statusFilter"> · filtered by {{ statusFilter }}</span>
+          </p>
+        </div>
+        <button (click)="toggleForm()"
+                class="flex items-center gap-2 bg-primary text-on-primary px-5 py-2.5 rounded-xl font-bold text-sm hover:shadow-[0_0_20px_rgba(108,92,231,0.4)] transition-all active:scale-95 self-start">
+          <span class="material-symbols-outlined text-sm">{{ showForm ? 'close' : 'add_road' }}</span>
+          {{ showForm ? 'Cancel' : 'Create Route' }}
+        </button>
+      </div>
+
+      <!-- Create form with embedded map picker -->
+      <div *ngIf="showForm" class="glass-1 rounded-2xl border border-primary/20 p-6 space-y-5">
+        <h2 class="text-lg font-bold text-primary">New Evacuation Route</h2>
+        <p class="text-xs text-on-surface-variant">
+          Pin your <span class="text-amber-400 font-bold">origin</span> and <span class="text-green-400 font-bold">shelter</span> on the map below. The road route will be computed automatically via OSRM.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Alert *</label>
+            <select [(ngModel)]="newRoute.alertId"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary">
+              <option [ngValue]="null" disabled>Select an alert...</option>
+              <option *ngFor="let a of alerts" [ngValue]="a.id">
+                {{ a.title || ('Alert #' + a.id) }} — {{ a.disasterType }} · {{ a.severity }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Shelter Name *</label>
+            <input type="text" [(ngModel)]="newRoute.shelterName" placeholder="e.g. Shelter El Menzah"
+                   class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Capacity (people)</label>
+            <input type="number" [(ngModel)]="newRoute.capacity" placeholder="500"
+                   class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary" />
+          </div>
+        </div>
+
+        <!-- Pin mode selector -->
+        <div class="flex gap-3">
+          <button (click)="pinMode='origin'"
+                  class="flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all"
+                  [ngClass]="pinMode==='origin' ? 'bg-amber-500/20 border-amber-400 text-amber-400' : 'border-white/10 text-on-surface-variant hover:border-white/30'">
+            <span class="material-symbols-outlined text-sm align-middle mr-1">my_location</span>
+            {{ newRoute.fromLatitude ? ('Origin set (' + (newRoute.fromLatitude|number:\'1.4-4\') + ', ' + (newRoute.fromLongitude|number:\'1.4-4\') + ')') : 'Click map to set Origin' }}
+          </button>
+          <button (click)="pinMode='shelter'"
+                  class="flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all"
+                  [ngClass]="pinMode==='shelter' ? 'bg-green-500/20 border-green-400 text-green-400' : 'border-white/10 text-on-surface-variant hover:border-white/30'">
+            <span class="material-symbols-outlined text-sm align-middle mr-1">home</span>
+            {{ newRoute.toLatitude ? ('Shelter set (' + (newRoute.toLatitude|number:\'1.4-4\') + ', ' + (newRoute.toLongitude|number:\'1.4-4\') + ')') : 'Click map to set Shelter' }}
+          </button>
+        </div>
+
+        <!-- Picker map -->
+        <div class="rounded-2xl overflow-hidden border border-white/10 relative" style="height:320px;">
+          <div #pickerMap style="height:100%;width:100%;"></div>
+          <div class="absolute top-3 left-1/2 -translate-x-1/2 pointer-events-none">
+            <span class="bg-black/75 text-white text-xs px-3 py-1.5 rounded-full">
+              {{ pinMode === 'origin' ? '🟡 Click to place Origin point' : '🟢 Click to place Shelter point' }}
+            </span>
+          </div>
+        </div>
+
+        <button (click)="createRoute()" [disabled]="creating"
+                class="flex items-center gap-2 bg-primary text-on-primary px-6 py-2.5 rounded-xl font-bold text-sm disabled:opacity-50 hover:shadow-[0_0_16px_rgba(108,92,231,0.4)] transition-all">
+          <span class="material-symbols-outlined text-sm">route</span>
+          {{ creating ? 'Computing route via OSRM…' : 'Create & Compute Route' }}
+        </button>
+        <p *ngIf="formError" class="text-xs text-red-400">{{ formError }}</p>
+      </div>
+
+      <!-- Status filter pills -->
+      <div class="flex flex-wrap gap-2">
+        <button *ngFor="let s of ['', 'PLANNED', 'ACTIVE', 'BLOCKED', 'CLOSED']"
+                (click)="statusFilter = s; applyFilters()"
+                class="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all"
+                [ngClass]="statusFilter === s
+                  ? 'bg-primary text-on-primary shadow-[0_0_12px_rgba(108,92,231,0.4)]'
+                  : 'bg-white/5 text-on-surface-variant hover:bg-white/10'">
+          {{ s || 'All' }}
+        </button>
+      </div>
+
+      <!-- Route cards -->
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-5" *ngIf="filtered.length > 0">
+        <div *ngFor="let r of filtered"
+             class="glass-1 rounded-2xl border border-white/5 overflow-hidden hover:border-primary/30 transition-all">
+          <!-- Mini map -->
+          <div [id]="'rmap-' + r.id" style="height:180px;" class="bg-white/5"></div>
+
+          <div class="p-5">
+            <div class="flex items-start justify-between mb-3 gap-2">
+              <div>
+                <p class="font-bold text-sm leading-tight">{{ r.alertTitle || ('Alert #' + r.alertId) }}</p>
+                <p class="text-xs text-on-surface-variant mt-0.5">
+                  <span class="material-symbols-outlined text-[12px] align-middle">home</span>
+                  {{ r.shelterName || (r.toShelterId ? 'Shelter #' + r.toShelterId : 'No shelter') }}
+                </p>
+              </div>
+              <app-status-badge [status]="r.status"></app-status-badge>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 mb-4">
+              <div class="bg-white/5 rounded-xl p-2.5 text-center">
+                <p class="text-[9px] uppercase tracking-widest text-on-surface-variant mb-0.5">Distance</p>
+                <p class="text-base font-black">{{ r.distanceKm != null ? (r.distanceKm | number:'1.1-1') : '—' }}<span class="text-[10px] font-normal ml-0.5">km</span></p>
+              </div>
+              <div class="bg-white/5 rounded-xl p-2.5 text-center">
+                <p class="text-[9px] uppercase tracking-widest text-on-surface-variant mb-0.5">Duration</p>
+                <p class="text-base font-black">{{ r.estimatedDurationMin ?? '—' }}<span class="text-[10px] font-normal ml-0.5">min</span></p>
+              </div>
+              <div class="bg-white/5 rounded-xl p-2.5 text-center">
+                <p class="text-[9px] uppercase tracking-widest text-on-surface-variant mb-0.5">Capacity</p>
+                <p class="text-base font-black">{{ r.capacity ?? '—' }}<span class="text-[10px] font-normal ml-0.5">ppl</span></p>
+              </div>
+            </div>
+
+            <div class="flex gap-2 pt-3 border-t border-white/5">
+              <a [routerLink]="['/evacuation', r.id]"
+                 class="flex-1 py-1.5 text-center text-xs font-bold text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors">
+                Details
+              </a>
+              <button *ngIf="r.status === 'PLANNED'" (click)="activate(r)"
+                      class="flex-1 py-1.5 text-xs font-bold text-green-400 border border-green-400/30 rounded-lg hover:bg-green-400/10 transition-colors">
+                Activate
+              </button>
+              <button *ngIf="r.status === 'ACTIVE'" (click)="close(r)"
+                      class="flex-1 py-1.5 text-xs font-bold text-red-400 border border-red-400/30 rounded-lg hover:bg-red-400/10 transition-colors">
+                Close
+              </button>
+              <button (click)="recompute(r)" title="Recompute road route"
+                      class="px-3 py-1.5 text-xs font-bold text-amber-400 border border-amber-400/30 rounded-lg hover:bg-amber-400/10 transition-colors">
+                <span class="material-symbols-outlined text-sm">refresh</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="filtered.length === 0 && !loading"
+           class="glass-1 rounded-2xl border border-white/5 py-16 flex flex-col items-center text-on-surface-variant">
+        <span class="material-symbols-outlined text-5xl mb-3">directions_off</span>
+        <p class="font-bold">No routes found</p>
+        <p class="text-sm mt-1">Try changing your filter or create a new route above</p>
+      </div>
+
+      <div *ngIf="loading" class="flex justify-center py-12">
+        <span class="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+      </div>
+    </div>
+  `
+})
+export class EvacuationRoutesComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('pickerMap') pickerMapRef!: ElementRef;
+
+  routes: EvacuationRoute[] = [];
+  filtered: EvacuationRoute[] = [];
+  alerts: Alert[] = [];
+  statusFilter = '';
+  showForm = false;
+  creating = false;
+  loading = true;
+  formError = '';
+  pinMode: 'origin' | 'shelter' = 'origin';
+  newRoute: Partial<EvacuationRoute> = {};
+
+  private pickerMap!: L.Map;
+  private pickerOriginMarker: L.Marker | null = null;
+  private pickerShelterMarker: L.Marker | null = null;
+  private cardMaps: Map<number, L.Map> = new Map();
+  private pickerMapInit = false;
+
+  constructor(
+    private evacuationService: EvacuationService,
+    private alertService: AlertService,
+    private cdr: ChangeDetectorRef
+  ) {}
+
+  ngOnInit(): void {
+    this.load();
+    this.alertService.getAllAlerts().subscribe(a => this.alerts = a);
+  }
+
+  ngAfterViewInit(): void {
+    setTimeout(() => this.initCardMaps(), 600);
+  }
+
+  ngOnDestroy(): void {
+    this.cardMaps.forEach(m => m.remove());
+    if (this.pickerMap) this.pickerMap.remove();
+  }
+
+  toggleForm(): void {
+    this.showForm = !this.showForm;
+    if (this.showForm) {
+      this.newRoute = {};
+      this.pinMode = 'origin';
+      this.pickerMapInit = false;
+      setTimeout(() => this.initPickerMap(), 150);
+    } else {
+      if (this.pickerMap) { this.pickerMap.remove(); this.pickerMapInit = false; }
+    }
+  }
+
+  load(): void {
+    this.loading = true;
+    this.evacuationService.getAllRoutes().subscribe({
+      next: data => {
+        this.routes = data;
+        this.filtered = data;
+        this.loading = false;
+        setTimeout(() => this.initCardMaps(), 400);
+      },
+      error: () => { this.loading = false; }
+    });
+  }
+
+  applyFilters(): void {
+    this.filtered = this.statusFilter
+      ? this.routes.filter(r => r.status === this.statusFilter)
+      : [...this.routes];
+    setTimeout(() => this.initCardMaps(), 300);
+  }
+
+  createRoute(): void {
+    this.formError = '';
+    if (!this.newRoute.alertId) { this.formError = 'Please select an alert.'; return; }
+    if (!this.newRoute.shelterName?.trim()) { this.formError = 'Please enter a shelter name.'; return; }
+    if (!this.newRoute.fromLatitude || !this.newRoute.fromLongitude) { this.formError = 'Please pin the origin on the map.'; return; }
+    if (!this.newRoute.toLatitude || !this.newRoute.toLongitude) { this.formError = 'Please pin the shelter on the map.'; return; }
+    this.creating = true;
+    this.evacuationService.createRoute(this.newRoute).subscribe({
+      next: () => { this.creating = false; this.toggleForm(); this.load(); },
+      error: (err) => { this.creating = false; this.formError = err?.error?.message || 'Failed to create route.'; }
+    });
+  }
+
+  activate(r: EvacuationRoute): void { this.evacuationService.activateRoute(r.id).subscribe(() => this.load()); }
+  close(r: EvacuationRoute): void { this.evacuationService.closeRoute(r.id).subscribe(() => this.load()); }
+  recompute(r: EvacuationRoute): void { this.evacuationService.recomputeRoute(r.id).subscribe(() => this.load()); }
+
+  private initPickerMap(): void {
+    if (this.pickerMapInit || !this.pickerMapRef?.nativeElement) return;
+    this.pickerMapInit = true;
+
+    if (this.pickerMap) this.pickerMap.remove();
+    this.pickerMap = L.map(this.pickerMapRef.nativeElement, {
+      zoomControl: true, scrollWheelZoom: true, preferCanvas: true
+    }).setView([36.8065, 10.1815], 10);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OSM © CartoDB', subdomains: 'abcd', maxZoom: 19
+    }).addTo(this.pickerMap);
+
+    this.pickerMap.getContainer().style.cursor = 'crosshair';
+
+    this.pickerMap.on('click', (e: L.LeafletMouseEvent) => {
+      const lat = parseFloat(e.latlng.lat.toFixed(6));
+      const lng = parseFloat(e.latlng.lng.toFixed(6));
+
+      if (this.pinMode === 'origin') {
+        this.newRoute.fromLatitude = lat;
+        this.newRoute.fromLongitude = lng;
+        if (this.pickerOriginMarker) this.pickerMap.removeLayer(this.pickerOriginMarker);
+        const icon = L.divIcon({
+          html: `<div style="width:20px;height:20px;background:#f59e0b;border:3px solid white;border-radius:50%;box-shadow:0 0 14px rgba(245,158,11,0.9);display:flex;align-items:center;justify-content:center;font-size:10px;color:white;font-weight:bold">O</div>`,
+          iconSize: [20, 20], iconAnchor: [10, 10], className: ''
+        });
+        this.pickerOriginMarker = L.marker([lat, lng], { icon })
+          .bindPopup(`<b>Origin</b><br>${lat.toFixed(4)}, ${lng.toFixed(4)}`).addTo(this.pickerMap);
+        this.pinMode = 'shelter'; // auto-switch to shelter pin next
+      } else {
+        this.newRoute.toLatitude = lat;
+        this.newRoute.toLongitude = lng;
+        if (this.pickerShelterMarker) this.pickerMap.removeLayer(this.pickerShelterMarker);
+        const icon = L.divIcon({
+          html: `<div style="width:20px;height:20px;background:#22c55e;border:3px solid white;border-radius:50%;box-shadow:0 0 14px rgba(34,197,94,0.9);display:flex;align-items:center;justify-content:center;font-size:10px;color:white;font-weight:bold">S</div>`,
+          iconSize: [20, 20], iconAnchor: [10, 10], className: ''
+        });
+        this.pickerShelterMarker = L.marker([lat, lng], { icon })
+          .bindPopup(`<b>Shelter</b><br>${lat.toFixed(4)}, ${lng.toFixed(4)}`).addTo(this.pickerMap);
+      }
+      this.cdr.detectChanges();
+    });
+
+    setTimeout(() => this.pickerMap.invalidateSize(), 100);
+  }
+
+  private initCardMaps(): void {
+    this.cardMaps.forEach(m => m.remove());
+    this.cardMaps.clear();
+
+    this.filtered.forEach(r => {
+      if (!r.path) return;
+      const el = document.getElementById('rmap-' + r.id);
+      if (!el) return;
+      try {
+        const map = L.map(el, {
+          zoomControl: false, scrollWheelZoom: false, dragging: false,
+          doubleClickZoom: false, touchZoom: false, keyboard: false,
+          attributionControl: false, preferCanvas: true
+        });
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+          { subdomains: 'abcd', maxZoom: 19 }).addTo(map);
+
+        const geom = wkt.parse(r.path);
+        if (geom && geom.type === 'LineString') {
+          const latLngs: [number, number][] = geom.coordinates.map((c: number[]) => [c[1], c[0]]);
+          const color = r.status === 'ACTIVE' ? '#22c55e' : r.status === 'BLOCKED' ? '#ef4444' : '#6c5ce7';
+          const line = L.polyline(latLngs, { color, weight: 4, opacity: 0.95 }).addTo(map);
+
+          // Origin pin (amber)
+          L.circleMarker(latLngs[0], { radius: 7, color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 1, weight: 2 })
+            .bindTooltip('Origin').addTo(map);
+          // Shelter pin (green)
+          L.circleMarker(latLngs[latLngs.length - 1], { radius: 8, color: '#22c55e', fillColor: '#22c55e', fillOpacity: 1, weight: 2 })
+            .bindTooltip('Shelter').addTo(map);
+
+          map.fitBounds(line.getBounds(), { padding: [14, 14] });
+        }
+        this.cardMaps.set(r.id, map);
+        setTimeout(() => map.invalidateSize(), 100);
+      } catch (e) { console.error('Card map error for route', r.id, e); }
+    });
+  }
+}
+
+
+=== FILE: \src\app\pages\forgot-password\forgot-password.component.ts ===
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+
+type Step = 'email' | 'code' | 'reset' | 'done';
+
+@Component({
+  selector: 'app-forgot-password',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterModule],
+  templateUrl: './forgot-password.component.html',
+  styleUrls: ['./forgot-password.component.scss']
+})
+export class ForgotPasswordComponent {
+  step: Step = 'email';
+
+  // Step 1
+  email = '';
+
+  // Step 2
+  code = '';
+
+  // Step 3
+  newPassword = '';
+  confirmPassword = '';
+  showNew = false;
+  showConfirm = false;
+
+  isLoading = false;
+  errorMessage = '';
+  successMessage = '';
+
+  private api = environment.apiUrl + '/auth';
+
+  constructor(private http: HttpClient, private router: Router) {}
+
+  // ── Step 1 : send code ────────────────────────────────────────────────────
+  sendCode(): void {
+    this.errorMessage = '';
+    if (!this.email.trim()) { this.errorMessage = 'Please enter your email.'; return; }
+
+    this.isLoading = true;
+    this.http.post(`${this.api}/forgot-password`, { email: this.email }, { responseType: 'text' })
+      .subscribe({
+        next: () => { this.isLoading = false; this.step = 'code'; },
+        error: (err) => {
+          this.isLoading = false;
+          this.errorMessage = err?.error || 'No account found with this email.';
+        }
+      });
+  }
+
+  // ── Step 2 : verify code ──────────────────────────────────────────────────
+  verifyCode(): void {
+    this.errorMessage = '';
+    if (!this.code.trim()) { this.errorMessage = 'Please enter the code.'; return; }
+
+    this.isLoading = true;
+    this.http.post(`${this.api}/verify-reset-code`, { email: this.email, code: this.code }, { responseType: 'text' })
+      .subscribe({
+        next: () => { this.isLoading = false; this.step = 'reset'; },
+        error: (err) => {
+          this.isLoading = false;
+          this.errorMessage = err?.error || 'Invalid or expired code.';
+        }
+      });
+  }
+
+  // ── Step 3 : reset password ───────────────────────────────────────────────
+  resetPassword(): void {
+    this.errorMessage = '';
+    if (!this.newPassword || this.newPassword.length < 6) {
+      this.errorMessage = 'Password must be at least 6 characters.'; return;
+    }
+    if (this.newPassword !== this.confirmPassword) {
+      this.errorMessage = 'Passwords do not match.'; return;
+    }
+
+    this.isLoading = true;
+    this.http.post(`${this.api}/reset-password`,
+      { email: this.email, code: this.code, newPassword: this.newPassword },
+      { responseType: 'text' }
+    ).subscribe({
+      next: () => { this.isLoading = false; this.step = 'done'; },
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage = err?.error || 'Error resetting password.';
+      }
+    });
+  }
+
+  resendCode(): void {
+    this.code = '';
+    this.errorMessage = '';
+    this.sendCode();
+  }
+
+  goToLogin(): void {
+    this.router.navigateByUrl('/login');
+  }
+}
+
+=== FILE: \src\app\pages\frontoffice-profile\frontoffice-profile.component.ts ===
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { UserService } from '../../core/services/user.service';
+import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { environment } from '../../../environments/environment';
+
+@Component({
+  selector: 'app-profile',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './frontoffice-profile.component.html',
+  styleUrl: './frontoffice-profile.component.scss'
+})
+export class FrontofficeProfileComponent implements OnInit, OnDestroy {
+  user: any = {};
+  editableUser: any = {};
+  loading = true;
+  saving = false;
+  editMode = false;
+  isAuthenticated = true;
+
+  selectedFile: File | null = null;
+  previewUrl: string | null = null;
+
+  private subs: Subscription[] = [];
+
+  constructor(private userService: UserService, private router: Router) {}
+
+  ngOnInit(): void {
+    this.loadProfile();
+  }
+
+  ngOnDestroy(): void {
+    this.revokePreview();
+    this.subs.forEach(s => s.unsubscribe());
+  }
+
+  loadProfile(): void {
+    const s = this.userService.getMyProfile().subscribe({
+      next: (res) => {
+        this.user = { ...res };
+        this.editableUser = { ...res };
+        // Construire l'URL absolue dès le chargement du profil
+        if (res?.profilePhoto) {
+          this.user.profilePhoto = this.buildPhotoUrl(res.profilePhoto);
+        }
+        this.loading = false;
+      },
+      error: () => { this.loading = false; }
+    });
+    this.subs.push(s);
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target.files?.[0];
+    if (file) {
+      this.selectedFile = file;
+      this.setPreview(file);
+    } else {
+      this.selectedFile = null;
+      this.revokePreview();
+      this.previewUrl = null;
+    }
+  }
+
+  private setPreview(file: File): void {
+    this.revokePreview();
+    this.previewUrl = URL.createObjectURL(file);
+  }
+
+  private revokePreview(): void {
+    if (this.previewUrl && this.previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(this.previewUrl);
+    }
+  }
+
+  enableEdit(): void {
+    this.editMode = true;
+    this.editableUser = { ...this.user };
+  }
+
+  cancelEdit(): void {
+    this.editMode = false;
+    this.editableUser = { ...this.user };
+    this.selectedFile = null;
+    this.revokePreview();
+    this.previewUrl = null;
+  }
+
+  /**
+   * Le serveur retourne un chemin relatif comme "/uploads/167xxx_photo.png".
+   * Angular tourne sur :4200 et le backend sur :8080 → il faut préfixer
+   * avec l'URL du backend pour que le navigateur trouve le fichier.
+   *
+   * Pas besoin de cache-buster : le nom du fichier contient déjà le timestamp
+   * (System.currentTimeMillis() côté Spring), donc chaque upload = nouvelle URL.
+   */
+  private buildPhotoUrl(path: string): string {
+    if (!path) return '';
+    // Déjà une URL absolue → retourner tel quel
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+    const backendBase = environment.apiUrl;
+    const cleanPath = path.startsWith('/') ? path : '/' + path;
+    return backendBase + cleanPath;
+  }
+
+  updateProfile(): void {
+    this.saving = true;
+
+    const payload = {
+      firstName: this.editableUser.firstName,
+      lastName: this.editableUser.lastName,
+      phone: this.editableUser.phone,
+      location: this.editableUser.location
+    };
+
+    const formData = new FormData();
+    formData.append('request', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+
+    if (this.selectedFile) {
+      formData.append('profilePhoto', this.selectedFile, this.selectedFile.name);
+    }
+
+    const s = this.userService.updateMyProfile(formData).subscribe({
+      next: (res) => {
+        // 1. Révoquer le blob AVANT de changer previewUrl
+        this.revokePreview();
+        this.previewUrl = null;
+        this.selectedFile = null;
+
+        // 2. Mettre à jour l'utilisateur
+        this.user = { ...res };
+        this.editableUser = { ...res };
+
+        // 3. Construire l'URL absolue (sans cache-buster : timestamp déjà dans le nom)
+        if (res?.profilePhoto) {
+          this.user.profilePhoto = this.buildPhotoUrl(res.profilePhoto);
+        }
+
+        this.editMode = false;
+        this.saving = false;
+
+        alert('Profile updated successfully');
+      },
+      error: (err) => {
+        console.error('Update profile error:', err);
+        this.saving = false;
+        alert(`Error updating profile: ${err.error?.message || 'Unknown error'}`);
+      }
+    });
+    this.subs.push(s);
+  }
+
+  getInitials(): string {
+    const first = this.user?.firstName?.charAt(0) || '';
+    const last = this.user?.lastName?.charAt(0) || '';
+    return (first + last).toUpperCase() || 'U';
+  }
+
+  getRoleLabel(role: string): string {
+    return role?.replaceAll('_', ' ') || 'USER';
+  }
+
+  logout(): void {
+    localStorage.clear();
+    this.isAuthenticated = false;
+    this.router.navigateByUrl('/landing');
+  }
+}
+
+=== FILE: \src\app\pages\geofence-map\geofence-map.component.ts ===
+// src/app/pages/geofence-map/geofence-map.component.ts
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { AlertService } from '../../core/services/alert.service';
+import { GeofenceZone } from '../../shared/models/sensor.model';
+import { MapViewComponent } from '../../shared/components/map-view/map-view.component';
+
+@Component({
+  selector: 'app-geofence-map',
+  standalone: true,
+  imports: [CommonModule, MapViewComponent],
+  template: `
+    <div class="p-6 h-full">
+      <h1 class="text-3xl font-bold mb-6">Geofence Zones</h1>
+      <div class="glass-1 rounded-xl overflow-hidden" style="height: calc(100vh - 120px);">
+        <app-map-view [geometries]="zonesGeometry"></app-map-view>
+      </div>
+    </div>
+  `
+})
+export class GeofenceMapComponent implements OnInit {
+  zones: GeofenceZone[] = [];
+  get zonesGeometry() {
+    return this.zones.map(z => ({ type: 'Polygon', wkt: z.polygon, color: z.zoneType === 'EVACUATION' ? '#3388ff' : '#ffaa33' }));
+  }
+  constructor(private alertService: AlertService) {}
+  ngOnInit(): void {
+    this.alertService.getAllZones().subscribe(data => this.zones = data);
+  }
+}
+
+
+=== FILE: \src\app\pages\incident-form\incident-form.component.ts ===
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-incident-form',
+  standalone: true,
+  imports: [],
+  templateUrl: './incident-form.component.html',
+  styleUrl: './incident-form.component.scss'
+})
+export class IncidentFormComponent {
+
+}
+
+
+=== FILE: \src\app\pages\landing\landing.component.ts ===
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router, RouterModule } from '@angular/router';
+import { ChatComponent } from '../../modules/communication/chat/chat.component';
+import { FrontofficeProfileComponent } from '../frontoffice-profile/frontoffice-profile.component';
+
+@Component({
+  selector: 'app-landing',
+  standalone: true,
+  imports: [CommonModule, RouterModule, ChatComponent, FrontofficeProfileComponent], // Assurez-vous que ce composant est bien importé ici.
+  templateUrl: './landing.component.html',
+  styleUrls: ['./landing.component.scss'],
+})
+export class LandingComponent implements OnInit {
+  isAuthenticated = false;
+  isChatOpen = false;
+  showProfile = false;
+
+  stats = [
+    { value: '12', label: 'Active Alerts', color: 'text-error' },
+    { value: '4.2k', label: 'Registered Volunteers', color: 'text-primary' },
+    { value: '85k+', label: 'Hours Logged', color: 'text-tertiary-dim' },
+  ];
+
+  impactNumbers = [
+    { value: '142', label: 'Disasters Responded' },
+    { value: '4,281', label: 'Volunteers Active' },
+    { value: '85.6k', label: 'Hours Logged' },
+    { value: '1.2M', label: 'Lives Impacted' },
+  ];
+
+  steps = [
+    {
+      number: '01',
+      icon: 'how_to_reg',
+      color: 'text-primary',
+      bg: 'bg-primary/10',
+      title: 'Register Profile',
+      description:
+        'Securely sign up with your credentials and list your specific skills (First Aid, Logistics, Tech, etc.).',
+    },
+    {
+      number: '02',
+      icon: 'notifications_active',
+      color: 'text-secondary',
+      bg: 'bg-secondary/10',
+      title: 'Get Targeted Alerts',
+      description:
+        'Receive precision notifications based on your location and expertise when an incident occurs.',
+    },
+    {
+      number: '03',
+      icon: 'task_alt',
+      color: 'text-tertiary-dim',
+      bg: 'bg-tertiary-dim/10',
+      title: 'Respond & Log',
+      description:
+        'Accept missions, coordinate with teams, and log your impact hours directly in the app.',
+    },
+  ];
+
+  testimonials = [
+    {
+      quote:
+        'During the floods in Sousse, this platform was our lifeline. We knew exactly where to go and what was needed before even leaving our homes.',
+      name: 'Amine',
+      role: 'Regional Logistics Lead, Sousse',
+      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCZSPIZtz7Tu-xE4OUF4PNqd6o7nF4ZEzBhPDJkJRbwXErRe5jkKUIU3reO9jDethT2tZBmtL8nIoC3OKnhVq74x_PH8WbpgruHW7tXuRcipWGvSuQxPye-awRovI5l6AKnFs4jHnSwXYfWsLVZ-IZdD-HWjPJexAgjvgokTY5kk5JX-l16pLmuQHyyUKkp_--gJpY0ZVwfjYNaMLyPhpSYkNtJpLaxBuoay9uL00aY4pIg9ugGwAhpPryEwLP-VUJ-yijM78vikuPg',
+    },
+    {
+      quote:
+        'Registering as a digital volunteer allowed me to support the national efforts even while working my day job. Every hour logged feels like it matters.',
+      name: 'Leila',
+      role: 'Data Analyst, Tunis',
+      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDFGdDsZBD-vBp5ImGxvZTJMCY1pQYYD_udXm-wjWwpGy407guE6z1B_3jg_xo6KGnpYVgBGTWIdgkdWieHbG4TIW8YiKmFVgaQpazNhwdJHQ03UX063AheARIzAOw9q5A4CT2jrWzAR0xVtIDuuNEmn7XjyxiA3d0M_L1iXxzk03HA-9XM16hbEbv8x7eV2af9-IflD1yzQQCSDnyBMGJM_I-U0g7fv9cFV4roW8MuYPse4nkdlpVfS1joGLhLLk09d6ftAycrVrJL',
+    },
+    {
+      quote:
+        'The coordination between government agencies and citizen volunteers has never been this efficient. CPS Hub is the future of civil defense.',
+      name: 'Hassen',
+      role: 'Emergency Agency Liaison',
+      img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAQuX3z9XrVsVdOKc0IkSHgta_KejRROITRjWF_rJd15R1f84i6KNcqaDj1jgXw5rQRnT34U38ctrdSnAURa0abMkVvXNCMHc0ScG93pBh_vvHYCRCSGdfTGUNqbCNc2IycvExEUkOnp6r_GsMmGffxqEv0GjH5U1hOn3DjI-5Fxo75pTYnMv3FI-dCO9QSJi9ih7WyMZnu-gHvuzxcFcBq0ahHFUyLmnMbIAc3N84MDZZv9jgNcNKxcr_OYfaImuzNgE-I41PAAKEH',
+    },
+  ];
+
+  constructor(private router: Router) {}
+
+  ngOnInit(): void {
+    this.checkAuthState();
+  }
+
+  checkAuthState(): void {
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+    const email = localStorage.getItem('email');
+
+    this.isAuthenticated = !!(token && userId && email);
+
+    if (!this.isAuthenticated) {
+      this.isChatOpen = false;
+    }
+  }
+
+  toggleProfile(): void {
+    this.showProfile = !this.showProfile;  // Toggle profile visibility
+  }
+
+  toggleChat(): void {
+    this.checkAuthState();
+
+    if (!this.isAuthenticated) {
+      this.router.navigateByUrl('/login');
+      return;
+    }
+
+    this.isChatOpen = !this.isChatOpen;
+  }
+
+  closeChat(): void {
+    this.isChatOpen = false;
+  }
+
+  onRespondToAlerts(): void {
+    console.log('Navigate to alerts');
+  }
+
+  onBrowseOpportunities(): void {
+    console.log('Navigate to opportunities');
+  }
+
+  logout(): void {
+    localStorage.clear();
+    this.isAuthenticated = false;
+    this.router.navigateByUrl('/landing');
+  }
+}
+
+=== FILE: \src\app\pages\login\login.component.ts ===
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
+
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterModule],
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.scss'],
+})
+export class LoginComponent {
+  email: string = '';
+  password: string = '';
+  showPassword: boolean = false;
+  isLoading: boolean = false;
+  errorMessage: string = '';
+
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  togglePassword(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  private redirectByRole(role: string): void {
+    const normalizedRole = (role || '').trim().toUpperCase();
+    const adminRoles = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN'];
+
+    if (adminRoles.includes(normalizedRole)) {
+      this.router.navigateByUrl('/dashboard');
+    } else {
+      this.router.navigateByUrl('/landing');
+    }
+  }
+
+  onLogin(): void {
+    this.errorMessage = '';
+
+    if (!this.email || !this.password) {
+      this.errorMessage = 'Please fill in all fields.';
+      return;
+    }
+
+    this.isLoading = true;
+
+    this.authService.login({
+      email: this.email,
+      password: this.password
+    }).subscribe({
+      next: (response) => {
+        this.isLoading = false;
+        this.redirectByRole(response.role);
+      },
+      error: (error) => {
+        this.isLoading = false;
+
+        if (error?.error?.message) {
+          this.errorMessage = error.error.message;
+        } else if (error?.status === 401) {
+          this.errorMessage = 'Invalid email or password.';
+        } else if (error?.status === 0) {
+          this.errorMessage = 'Cannot connect to the server.';
+        } else {
+          this.errorMessage = 'Login failed. Please try again.';
+        }
+      }
+    });
+  }
+
+  onGuestLogin(): void {
+    this.router.navigateByUrl('/landing');
+  }
+
+  loginWithGoogle(): void {
+    window.location.href = 'http://localhost:8089/oauth2/authorization/google';
+  }
+
+  loginWithFacebook(): void {
+    window.location.href = 'http://localhost:8089/oauth2/authorization/facebook';
+  }
+}
+
+=== FILE: \src\app\pages\opportunities\opportunities.component.ts ===
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-opportunities',
+  standalone: true,
+  imports: [],
+  templateUrl: './opportunities.component.html',
+  styleUrl: './opportunities.component.scss'
+})
+export class OpportunitiesComponent {
+
+}
+
+
+=== FILE: \src\app\pages\organisation-dashboard\organisation-dashboard.component.ts ===
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-organisation-dashboard',
+  standalone: true,
+  imports: [],
+  templateUrl: './organisation-dashboard.component.html',
+  styleUrl: './organisation-dashboard.component.scss'
+})
+export class OrganisationDashboardComponent {
+
+}
+
+
+=== FILE: \src\app\pages\profile\profile.component.ts ===
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { UserService } from '../../core/services/user.service';
+import { Subscription } from 'rxjs';
+import { environment } from '../../../environments/environment';
+
+@Component({
+  selector: 'app-profile',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './profile.component.html',
+  styleUrl: './profile.component.scss'
+})
+export class ProfileComponent implements OnInit, OnDestroy {
+  user: any = {};
+  editableUser: any = {};
+  loading = true;
+  saving = false;
+  editMode = false;
+
+  selectedFile: File | null = null;
+  previewUrl: string | null = null;
+
+  private subs: Subscription[] = [];
+
+  constructor(private userService: UserService) {}
+
+  ngOnInit(): void {
+    this.loadProfile();
+  }
+
+  ngOnDestroy(): void {
+    this.revokePreview();
+    this.subs.forEach(s => s.unsubscribe());
+  }
+
+  loadProfile(): void {
+    const s = this.userService.getMyProfile().subscribe({
+      next: (res) => {
+        this.user = { ...res };
+        this.editableUser = { ...res };
+        if (res?.profilePhoto) {
+          this.user.profilePhoto = this.buildPhotoUrl(res.profilePhoto);
+        }
+        this.loading = false;
+      },
+      error: () => { this.loading = false; }
+    });
+    this.subs.push(s);
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target.files?.[0];
+    if (file) {
+      this.selectedFile = file;
+      this.setPreview(file);
+    } else {
+      this.selectedFile = null;
+      this.revokePreview();
+      this.previewUrl = null;
+    }
+  }
+
+  private setPreview(file: File): void {
+    this.revokePreview();
+    this.previewUrl = URL.createObjectURL(file);
+  }
+
+  private revokePreview(): void {
+    if (this.previewUrl && this.previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(this.previewUrl);
+    }
+  }
+
+  private buildPhotoUrl(path: string): string {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const cleanPath = path.startsWith('/') ? path : '/' + path;
+    return environment.apiUrl + cleanPath;
+  }
+
+  enableEdit(): void {
+    this.editMode = true;
+    this.editableUser = { ...this.user };
+  }
+
+  cancelEdit(): void {
+    this.editMode = false;
+    this.editableUser = { ...this.user };
+    this.selectedFile = null;
+    this.revokePreview();
+    this.previewUrl = null;
+  }
+
+  updateProfile(): void {
+    this.saving = true;
+
+    const payload = {
+      firstName: this.editableUser.firstName,
+      lastName: this.editableUser.lastName,
+      phone: this.editableUser.phone,
+      location: this.editableUser.location
+    };
+
+    const formData = new FormData();
+    formData.append('request', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+
+    if (this.selectedFile) {
+      formData.append('profilePhoto', this.selectedFile, this.selectedFile.name);
+    }
+
+    const s = this.userService.updateMyProfile(formData).subscribe({
+      next: (res) => {
+        this.revokePreview();
+        this.previewUrl = null;
+        this.selectedFile = null;
+
+        this.user = { ...res };
+        this.editableUser = { ...res };
+
+        if (res?.profilePhoto) {
+          this.user.profilePhoto = this.buildPhotoUrl(res.profilePhoto);
+        }
+
+        this.editMode = false;
+        this.saving = false;
+        alert('Profile updated successfully');
+      },
+      error: (err) => {
+        console.error('Update profile error:', err);
+        this.saving = false;
+        alert(`Error updating profile: ${err.error?.message || 'Unknown error'}`);
+      }
+    });
+    this.subs.push(s);
+  }
+
+  getInitials(): string {
+    const first = this.user?.firstName?.charAt(0) || '';
+    const last = this.user?.lastName?.charAt(0) || '';
+    return (first + last).toUpperCase() || 'U';
+  }
+
+  getRoleLabel(role: string): string {
+    return role?.replaceAll('_', ' ') || 'USER';
+  }
+}
+
+=== FILE: \src\app\pages\register\register.component.ts ===
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router, RouterModule } from '@angular/router';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+  AbstractControl,
+  ValidationErrors,
+} from '@angular/forms';
+import { AuthService } from '../../core/services/auth.service';
+
+type ActiveTab = 'signin' | 'register';
+type UserRole = 'VOLUNTEER' | 'ORGANISATION' | 'RESPONDER';
+
+@Component({
+  selector: 'app-register',
+  standalone: true,
+  imports: [CommonModule, RouterModule, ReactiveFormsModule],
+  templateUrl: './register.component.html',
+  styleUrls: ['./register.component.scss'],
+})
+export class RegisterComponent implements OnInit {
+  activeTab: ActiveTab = 'signin';
+  isLoading = false;
+  showPassword = false;
+  showConfirm = false;
+  selectedRole: UserRole = 'VOLUNTEER';
+  errorMessage = '';
+  successMessage = '';
+
+  signInForm!: FormGroup;
+  registerForm!: FormGroup;
+
+  roles = [
+    {
+      id: 'VOLUNTEER' as UserRole,
+      label: 'Volunteer',
+      desc: 'Help the community grow',
+      icon: 'volunteer_activism',
+      accent: 'primary',
+      ringClass: 'ring-primary border-primary bg-primary/10',
+      iconClass: 'text-primary bg-primary/20',
+    },
+    {
+      id: 'ORGANISATION' as UserRole,
+      label: 'Organisation',
+      desc: 'Post opportunities & manage volunteers',
+      icon: 'corporate_fare',
+      accent: 'tertiary-dim',
+      ringClass: 'ring-tertiary-dim border-tertiary-dim bg-tertiary-dim/10',
+      iconClass: 'text-tertiary-dim bg-tertiary-dim/20',
+    },
+    {
+      id: 'RESPONDER' as UserRole,
+      label: 'Responder',
+      desc: 'Emergency field operations',
+      icon: 'emergency',
+      accent: 'error',
+      ringClass: 'ring-error border-error bg-error/10',
+      iconClass: 'text-error bg-error/20',
+    },
+  ];
+
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    this.signInForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+    });
+
+    this.registerForm = this.fb.group(
+      {
+        firstName: ['', [Validators.required, Validators.minLength(2)]],
+        lastName: ['', [Validators.required, Validators.minLength(2)]],
+        email: ['', [Validators.required, Validators.email]],
+        password: ['', [Validators.required, Validators.minLength(8)]],
+        confirmPassword: ['', Validators.required],
+        role: [this.selectedRole, Validators.required],
+      },
+      { validators: this.passwordMatchValidator }
+    );
+  }
+
+  passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
+    const pw = group.get('password')?.value;
+    const cpw = group.get('confirmPassword')?.value;
+    return pw === cpw ? null : { passwordMismatch: true };
+  }
+
+  get passwordStrength(): { score: number; label: string; color: string } {
+    const pw = this.registerForm?.get('password')?.value || '';
+    let score = 0;
+
+    if (pw.length >= 8) score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+    const levels = [
+      { score: 0, label: '', color: '' },
+      { score: 1, label: 'Weak', color: 'bg-error' },
+      { score: 2, label: 'Fair', color: 'bg-amber-400' },
+      { score: 3, label: 'Good', color: 'bg-secondary' },
+      { score: 4, label: 'Strong', color: 'bg-tertiary-dim' },
+    ];
+
+    return levels[score] || levels[0];
+  }
+
+  isInvalid(form: FormGroup, field: string): boolean {
+    const c = form.get(field);
+    return !!(c && c.invalid && (c.dirty || c.touched));
+  }
+
+  getError(form: FormGroup, field: string): string {
+    const c = form.get(field);
+    if (!c || !c.errors) return '';
+
+    if (c.errors['required']) return 'This field is required.';
+    if (c.errors['email']) return 'Enter a valid email address.';
+    if (c.errors['minlength']) {
+      return `Minimum ${c.errors['minlength'].requiredLength} characters.`;
+    }
+
+    return '';
+  }
+
+  get passwordMismatch(): boolean {
+    return !!(
+      this.registerForm.errors?.['passwordMismatch'] &&
+      this.registerForm.get('confirmPassword')?.touched
+    );
+  }
+
+  selectRole(role: UserRole): void {
+    this.selectedRole = role;
+    this.registerForm.patchValue({ role });
+  }
+
+  getRoleActive(roleId: UserRole): boolean {
+    return this.selectedRole === roleId;
+  }
+
+  switchTab(tab: ActiveTab): void {
+    this.activeTab = tab;
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
+
+private redirectByRole(role: string): void {
+  const normalizedRole = (role || '').trim().toUpperCase();
+  const adminRoles = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN'];
+
+  if (adminRoles.includes(normalizedRole)) {
+    this.router.navigate(['/dashboard']);
+  } else {
+    this.router.navigate(['/landing']);
+  }
+}
+
+  onSignIn(): void {
+    if (this.signInForm.invalid) {
+      this.signInForm.markAllAsTouched();
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const payload = {
+      email: this.signInForm.value.email,
+      password: this.signInForm.value.password,
+    };
+
+    this.authService.login(payload).subscribe({
+      next: (res) => {
+        console.log('LOGIN SUCCESS', res);
+        this.isLoading = false;
+        this.redirectByRole(res.role);
+      },
+      error: (err) => {
+        console.error('LOGIN ERROR', err);
+        this.isLoading = false;
+
+        if (err?.error?.message) {
+          this.errorMessage = err.error.message;
+        } else if (err?.status === 401) {
+          this.errorMessage = 'Invalid email or password.';
+        } else if (err?.status === 0) {
+          this.errorMessage = 'Cannot connect to the server.';
+        } else {
+          this.errorMessage = 'Login failed. Please try again.';
+        }
+      },
+    });
+  }
+
+  onRegister(): void {
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const formData = this.registerForm.value;
+
+    const payload = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      password: formData.password,
+      role: formData.role,
+    };
+
+    this.authService.register(payload).subscribe({
+      next: (res) => {
+        console.log('REGISTER SUCCESS', res);
+        this.isLoading = false;
+        this.successMessage = 'Account created successfully.';
+        this.redirectByRole(res.role);
+      },
+      error: (err) => {
+        console.error('REGISTER ERROR', err);
+        this.isLoading = false;
+
+        if (err?.error?.message) {
+          this.errorMessage = err.error.message;
+        } else if (err?.status === 400) {
+          this.errorMessage = 'Invalid registration data.';
+        } else if (err?.status === 0) {
+          this.errorMessage = 'Cannot connect to the server.';
+        } else {
+          this.errorMessage = 'Registration failed. Please try again.';
+        }
+      },
+    });
+  }
+
+  onGuestContinue(): void {
+    console.log('Guest continue');
+    this.router.navigate(['/landing']);
+  }
+}
+
+=== FILE: \src\app\pages\route-detail\route-detail.component.ts ===
+// src/app/pages/route-detail/route-detail.component.ts
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { EvacuationService } from '../../core/services/evacuation.service';
+import { EvacuationRoute, RouteCheckpoint } from '../../shared/models/evacuation.model';
+import { MapViewComponent } from '../../shared/components/map-view/map-view.component';
+import { MapPickerComponent } from '../../shared/components/map-picker/map-picker.component';
+import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
+
+@Component({
+  selector: 'app-route-detail',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterModule, MapViewComponent, MapPickerComponent, StatusBadgeComponent],
+  template: `
+    <div class="p-6 max-w-6xl mx-auto space-y-6">
+
+      <!-- ── CREATE MODE ─────────────────────────────────────── -->
+      <ng-container *ngIf="isNew">
+        <div class="flex items-center gap-3">
+          <a routerLink="/evacuation" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <span class="material-symbols-outlined">arrow_back</span>
+          </a>
+          <h1 class="text-3xl font-black">New Evacuation Route</h1>
+        </div>
+        <div class="glass-1 p-6 rounded-2xl border border-white/5 max-w-xl space-y-4">
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Alert</label>
+            <p class="text-xs text-on-surface-variant">Use the Evacuation Routes list page to create routes with full alert selection and dynamic routing.</p>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Duration (min)</label>
+              <input type="number" [(ngModel)]="formData.estimatedDurationMin"
+                     class="w-full p-3 rounded-xl bg-white/5 border border-white/10 outline-none focus:border-primary/50" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Capacity</label>
+              <input type="number" [(ngModel)]="formData.capacity"
+                     class="w-full p-3 rounded-xl bg-white/5 border border-white/10 outline-none focus:border-primary/50" />
+            </div>
+          </div>
+          <div class="flex gap-3 pt-2">
+            <button (click)="createRoute()"
+                    class="flex-1 bg-primary text-on-primary py-3 rounded-xl font-bold text-sm">Create Route</button>
+            <a routerLink="/evacuation"
+               class="px-5 py-3 rounded-xl border border-white/20 font-bold text-sm text-on-surface-variant hover:bg-white/5">Cancel</a>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ── VIEW MODE ─────────────────────────────────────── -->
+      <ng-container *ngIf="!isNew && route">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <a routerLink="/evacuation" class="text-on-surface-variant hover:text-on-surface">
+              <span class="material-symbols-outlined">arrow_back</span>
+            </a>
+            <div>
+              <h1 class="text-3xl font-black">Evacuation Route</h1>
+              <p class="text-sm text-on-surface-variant">{{ route.shelterName || (route.toShelterId ? "Shelter #" + route.toShelterId : "No shelter assigned") }}</p>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button *ngIf="route.status === 'PLANNED'" (click)="activate()"
+                    class="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 text-green-400 rounded-xl text-sm font-bold hover:bg-green-500/20">
+              <span class="material-symbols-outlined text-sm">play_arrow</span> Activate
+            </button>
+            <button *ngIf="route.status === 'ACTIVE'" (click)="close()"
+                    class="flex items-center gap-2 px-4 py-2 bg-error/10 border border-error/20 text-error rounded-xl text-sm font-bold hover:bg-error/20">
+              <span class="material-symbols-outlined text-sm">stop</span> Close Route
+            </button>
+            <button (click)="deleteRoute()"
+                    class="px-4 py-2 bg-error/10 border border-error/20 text-error rounded-xl text-sm font-bold hover:bg-error/20">
+              <span class="material-symbols-outlined text-sm">delete</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <!-- Info panel -->
+          <div class="lg:col-span-2 space-y-4">
+            <div class="glass-1 p-6 rounded-2xl border border-white/5 space-y-4">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-on-surface-variant font-bold uppercase tracking-widest">Status</span>
+                <app-status-badge [status]="route.status"></app-status-badge>
+              </div>
+              <div class="h-px bg-white/5"></div>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white/5 rounded-xl p-3 text-center">
+                  <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Duration</p>
+                  <p class="text-2xl font-black">{{ route.estimatedDurationMin ?? '—' }}<span class="text-xs ml-1">min</span></p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-3 text-center">
+                  <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Capacity</p>
+                  <p class="text-2xl font-black">{{ route.capacity ?? '—' }}<span class="text-xs ml-1">ppl</span></p>
+                </div>
+              </div>
+              <div class="text-sm space-y-2">
+                <div class="flex justify-between" *ngIf="route.activatedAt">
+                  <span class="text-on-surface-variant">Activated</span>
+                  <span class="text-green-400">{{ route.activatedAt | date:'dd MMM, HH:mm' }}</span>
+                </div>
+                <div class="flex justify-between" *ngIf="route.closedAt">
+                  <span class="text-on-surface-variant">Closed</span>
+                  <span class="text-error">{{ route.closedAt | date:'dd MMM, HH:mm' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Checkpoints -->
+            <div class="glass-1 p-6 rounded-2xl border border-white/5">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-on-surface-variant text-xs uppercase tracking-widest">Checkpoints</h3>
+                <button (click)="showAddCheckpoint = !showAddCheckpoint"
+                        class="text-primary text-xs font-bold hover:text-primary/70 transition-colors">
+                  + Add
+                </button>
+              </div>
+
+              <!-- Add checkpoint form with map picker -->
+              <div *ngIf="showAddCheckpoint" class="mb-4 p-4 bg-white/5 rounded-xl space-y-3">
+                <input [(ngModel)]="newCheckpoint.label" placeholder="Label (e.g. Assembly Point A)"
+                       class="w-full p-2 rounded-lg bg-white/5 border border-white/10 text-sm outline-none" />
+                <select [(ngModel)]="newCheckpoint.type"
+                        class="w-full p-2 rounded-lg bg-white/5 border border-white/10 text-sm outline-none">
+                  <option value="WAYPOINT">Waypoint</option>
+                  <option value="MEDICAL_STOP">Medical Stop</option>
+                  <option value="SUPPLY_POINT">Supply Point</option>
+                </select>
+                <app-map-picker (locationPicked)="onCheckpointLocationPicked($event)"></app-map-picker>
+                <button (click)="addCheckpoint()"
+                        class="w-full py-2 bg-primary text-on-primary rounded-lg text-sm font-bold">
+                  Add Checkpoint
+                </button>
+              </div>
+
+              <div class="space-y-2">
+                <div *ngFor="let cp of checkpoints"
+                     class="flex items-center gap-3 p-3 bg-white/5 rounded-xl text-sm">
+                  <span class="material-symbols-outlined text-primary text-sm">
+                    {{ cp.type === 'MEDICAL_STOP' ? 'local_hospital' : cp.type === 'SUPPLY_POINT' ? 'inventory' : 'place' }}
+                  </span>
+                  <div class="flex-1">
+                    <p class="font-medium">{{ cp.label }}</p>
+                    <p class="text-[10px] text-on-surface-variant font-mono">{{ cp.location }}</p>
+                  </div>
+                  <span class="text-[10px] px-2 py-0.5 rounded bg-white/5 text-on-surface-variant">{{ cp.type }}</span>
+                </div>
+                <p *ngIf="checkpoints.length === 0" class="text-xs text-on-surface-variant text-center py-4">
+                  No checkpoints yet
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Map showing route path + checkpoints -->
+          <div class="lg:col-span-3 glass-1 p-4 rounded-2xl border border-white/5" style="height: 520px;">
+            <app-map-view [geometries]="routeGeometries"></app-map-view>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  `
+})
+export class RouteDetailComponent implements OnInit {
+  route?: EvacuationRoute;
+  checkpoints: RouteCheckpoint[] = [];
+  isNew = false;
+  showAddCheckpoint = false;
+
+  formData: any = { alertId: null, toShelterId: null, estimatedDurationMin: null, capacity: null };
+  newCheckpoint: any = { label: '', type: 'WAYPOINT', location: '', isActive: true };
+
+  get routeGeometries() {
+    const geoms: any[] = [];
+    if (this.route?.path) geoms.push({ type: 'LineString', wkt: this.route.path, color: '#6C5CE7' });
+    this.checkpoints.forEach(cp => {
+      if (cp.location) geoms.push({ type: 'Point', wkt: cp.location, color: '#7DEFC0' });
+    });
+    return geoms;
+  }
+
+  constructor(
+    private route_: ActivatedRoute,
+    private router: Router,
+    private evacService: EvacuationService
+  ) {}
+
+  ngOnInit(): void {
+    const idParam = this.route_.snapshot.paramMap.get('id');
+    if (idParam === 'new') { this.isNew = true; return; }
+    const id = Number(idParam);
+    if (!isNaN(id)) {
+      this.evacService.getRouteById(id).subscribe(data => {
+        this.route = data;
+        this.evacService.getCheckpointsByRoute(id).subscribe(cps => this.checkpoints = cps);
+      });
+    }
+  }
+
+  onCheckpointLocationPicked(wkt: string): void { this.newCheckpoint.location = wkt; }
+
+  createRoute(): void {
+    this.evacService.createRoute(this.formData).subscribe(() => this.router.navigate(['/evacuation']));
+  }
+
+  addCheckpoint(): void {
+    if (!this.route || !this.newCheckpoint.location) return;
+    const payload = { ...this.newCheckpoint, routeId: this.route.id };
+    this.evacService.createCheckpoint(payload).subscribe(cp => {
+      this.checkpoints.push(cp);
+      this.newCheckpoint = { label: '', type: 'WAYPOINT', location: '', isActive: true };
+      this.showAddCheckpoint = false;
+    });
+  }
+
+  activate(): void { if (this.route) this.evacService.activateRoute(this.route.id).subscribe(r => this.route = r); }
+  close(): void    { if (this.route) this.evacService.closeRoute(this.route.id).subscribe(r => this.route = r); }
+
+  deleteRoute(): void {
+    if (!this.route) return;
+    if (confirm('Delete this evacuation route?')) {
+      this.evacService.deleteRoute(this.route.id).subscribe(() => this.router.navigate(['/evacuation']));
+    }
+  }
+}
+
+
+=== FILE: \src\app\pages\sensor-detail\sensor-detail.component.ts ===
+// src/app/pages/sensor-detail/sensor-detail.component.ts
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { SensorService } from '../../core/services/sensor.service';
+import { Sensor } from '../../shared/models/sensor.model';
+import { MapViewComponent } from '../../shared/components/map-view/map-view.component';
+import { MapPickerComponent } from '../../shared/components/map-picker/map-picker.component';
+import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
+
+@Component({
+  selector: 'app-sensor-detail',
+  standalone: true,
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, MapViewComponent, MapPickerComponent, StatusBadgeComponent],
+  template: `
+    <div class="p-6 max-w-5xl mx-auto space-y-6">
+
+      <!-- ── CREATE MODE ────────────────────────────────────────────── -->
+      <ng-container *ngIf="isNew">
+        <div class="flex items-center gap-3 mb-2">
+          <a routerLink="/sensors" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <span class="material-symbols-outlined">arrow_back</span>
+          </a>
+          <h1 class="text-3xl font-black">New Sensor</h1>
+        </div>
+
+        <form [formGroup]="sensorForm" (ngSubmit)="createSensor()"
+              class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Left: fields -->
+          <div class="glass-1 p-6 rounded-2xl border border-white/5 space-y-4">
+            <h2 class="font-bold text-on-surface-variant text-xs uppercase tracking-widest mb-4">Sensor Info</h2>
+
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Name *</label>
+              <input formControlName="name" placeholder="e.g. Sensor Nord-1"
+                     class="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-on-surface outline-none focus:border-primary/50 transition-colors" />
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Type *</label>
+              <select formControlName="type"
+                      class="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-on-surface outline-none focus:border-primary/50 transition-colors">
+                <option value="SEISMIC">Seismic</option>
+                <option value="FLOOD_GAUGE">Flood Gauge</option>
+                <option value="WEATHER">Weather</option>
+                <option value="AIR_QUALITY">Air Quality</option>
+                <option value="FIRE_SMOKE">Fire / Smoke</option>
+              </select>
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Manufacturer</label>
+              <input formControlName="manufacturer"
+                     class="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-on-surface outline-none focus:border-primary/50 transition-colors" />
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Owner ID</label>
+              <input type="number" formControlName="ownerId"
+                     class="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-on-surface outline-none focus:border-primary/50 transition-colors" />
+            </div>
+
+            <div *ngIf="sensorForm.get('location')?.value" class="p-3 bg-primary/10 border border-primary/20 rounded-xl text-xs">
+              <span class="text-on-surface-variant">Location: </span>
+              <span class="font-mono text-primary">{{ sensorForm.get('location')?.value }}</span>
+            </div>
+
+            <div class="flex gap-3 pt-2">
+              <button type="submit" [disabled]="sensorForm.invalid"
+                      class="flex-1 bg-primary text-on-primary py-3 rounded-xl font-bold text-sm hover:shadow-[0_0_20px_rgba(108,92,231,0.4)] transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                Create Sensor
+              </button>
+              <a routerLink="/sensors"
+                 class="px-5 py-3 rounded-xl border border-white/20 text-on-surface-variant hover:bg-white/5 transition-all font-bold text-sm">
+                Cancel
+              </a>
+            </div>
+          </div>
+
+          <!-- Right: map picker -->
+          <div class="glass-1 p-6 rounded-2xl border border-white/5">
+            <h2 class="font-bold text-on-surface-variant text-xs uppercase tracking-widest mb-4">Pin Location *</h2>
+            <app-map-picker
+              [initialWkt]="sensorForm.get('location')?.value"
+              (locationPicked)="onLocationPicked($event)">
+            </app-map-picker>
+          </div>
+        </form>
+      </ng-container>
+
+      <!-- ── VIEW MODE ──────────────────────────────────────────────── -->
+      <ng-container *ngIf="!isNew && !editMode && sensor">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <a routerLink="/sensors" class="text-on-surface-variant hover:text-on-surface transition-colors">
+              <span class="material-symbols-outlined">arrow_back</span>
+            </a>
+            <div>
+              <h1 class="text-3xl font-black">{{ sensor.name }}</h1>
+              <p class="text-on-surface-variant text-sm font-mono">{{ sensor.type }}</p>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button (click)="ping()"
+                    class="flex items-center gap-2 px-4 py-2 bg-secondary/10 border border-secondary/30 text-secondary rounded-xl text-sm font-bold hover:bg-secondary/20 transition-all">
+              <span class="material-symbols-outlined text-sm">refresh</span> Ping
+            </button>
+            <button (click)="enableEdit()"
+                    class="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-on-surface rounded-xl text-sm font-bold hover:bg-white/10 transition-all">
+              <span class="material-symbols-outlined text-sm">edit</span> Edit
+            </button>
+            <button (click)="deleteSensor()"
+                    class="flex items-center gap-2 px-4 py-2 bg-error/10 border border-error/20 text-error rounded-xl text-sm font-bold hover:bg-error/20 transition-all">
+              <span class="material-symbols-outlined text-sm">delete</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <!-- Info panel -->
+          <div class="lg:col-span-2 glass-1 p-6 rounded-2xl border border-white/5 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Status</span>
+              <app-status-badge [status]="sensor.status"></app-status-badge>
+            </div>
+            <div class="h-px bg-white/5"></div>
+            <div class="space-y-3 text-sm">
+              <div class="flex justify-between">
+                <span class="text-on-surface-variant">Manufacturer</span>
+                <span class="font-medium">{{ sensor.manufacturer || '—' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-on-surface-variant">Owner ID</span>
+                <span class="font-medium">{{ sensor.ownerId ?? '—' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-on-surface-variant">Last Ping</span>
+                <span class="font-medium">{{ sensor.lastPingAt | date:'dd MMM, HH:mm' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-on-surface-variant">Calibration</span>
+                <span class="font-medium">{{ sensor.calibrationDate | date:'dd MMM yyyy' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-on-surface-variant">Location (WKT)</span>
+                <span class="font-mono text-xs text-primary truncate max-w-[140px]">{{ sensor.location }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Map view -->
+          <div class="lg:col-span-3 glass-1 p-4 rounded-2xl border border-white/5" style="height: 360px;">
+            <app-map-view
+              [geometries]="[{ type: 'Point', wkt: sensor.location, color: '#6C5CE7' }]">
+            </app-map-view>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ── EDIT MODE ───────────────────────────────────────────────── -->
+      <ng-container *ngIf="!isNew && editMode && sensor">
+        <div class="flex items-center gap-3 mb-2">
+          <button (click)="cancelEdit()" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <span class="material-symbols-outlined">arrow_back</span>
+          </button>
+          <h1 class="text-3xl font-black">Edit — {{ sensor.name }}</h1>
+        </div>
+
+        <form [formGroup]="sensorForm" (ngSubmit)="updateSensor()"
+              class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="glass-1 p-6 rounded-2xl border border-white/5 space-y-4">
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Name *</label>
+              <input formControlName="name"
+                     class="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-on-surface outline-none focus:border-primary/50 transition-colors" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Type *</label>
+              <select formControlName="type"
+                      class="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-on-surface outline-none focus:border-primary/50">
+                <option value="SEISMIC">Seismic</option>
+                <option value="FLOOD_GAUGE">Flood Gauge</option>
+                <option value="WEATHER">Weather</option>
+                <option value="AIR_QUALITY">Air Quality</option>
+                <option value="FIRE_SMOKE">Fire / Smoke</option>
+              </select>
+            </div>
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wide">Manufacturer</label>
+              <input formControlName="manufacturer"
+                     class="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-on-surface outline-none focus:border-primary/50 transition-colors" />
+            </div>
+            <div *ngIf="sensorForm.get('location')?.value" class="p-3 bg-primary/10 border border-primary/20 rounded-xl text-xs">
+              <span class="font-mono text-primary">{{ sensorForm.get('location')?.value }}</span>
+            </div>
+            <div class="flex gap-3 pt-2">
+              <button type="submit" class="flex-1 bg-primary text-on-primary py-3 rounded-xl font-bold text-sm">Save Changes</button>
+              <button type="button" (click)="cancelEdit()"
+                      class="px-5 py-3 rounded-xl border border-white/20 font-bold text-sm">Cancel</button>
+            </div>
+          </div>
+          <div class="glass-1 p-6 rounded-2xl border border-white/5">
+            <h2 class="font-bold text-on-surface-variant text-xs uppercase tracking-widest mb-4">Update Location</h2>
+            <app-map-picker
+              [initialWkt]="sensorForm.get('location')?.value"
+              (locationPicked)="onLocationPicked($event)">
+            </app-map-picker>
+          </div>
+        </form>
+      </ng-container>
+    </div>
+  `
+})
+export class SensorDetailComponent implements OnInit {
+  sensor?: Sensor;
+  isNew     = false;
+  editMode  = false;
+  sensorForm: FormGroup;
+
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private fb: FormBuilder,
+    private sensorService: SensorService
+  ) {
+    this.sensorForm = this.fb.group({
+      name:         ['', Validators.required],
+      type:         ['SEISMIC', Validators.required],
+      location:     ['', Validators.required],
+      manufacturer: [''],
+      ownerId:      [null]
+    });
+  }
+
+  ngOnInit(): void {
+    const idParam = this.route.snapshot.paramMap.get('id');
+    if (idParam === 'new') { this.isNew = true; return; }
+    const id = Number(idParam);
+    if (!isNaN(id)) {
+      this.sensorService.getSensorById(id).subscribe(data => {
+        this.sensor = data;
+        this.sensorForm.patchValue(data);
+      });
+    }
+  }
+
+  onLocationPicked(wkt: string): void {
+    this.sensorForm.patchValue({ location: wkt });
+  }
+
+  createSensor(): void {
+    if (this.sensorForm.invalid) return;
+    this.sensorService.createSensor(this.sensorForm.value)
+      .subscribe(() => this.router.navigate(['/sensors']));
+  }
+
+  enableEdit(): void  { this.editMode = true; }
+  cancelEdit(): void  { this.editMode = false; if (this.sensor) this.sensorForm.patchValue(this.sensor); }
+
+  updateSensor(): void {
+    if (!this.sensor || this.sensorForm.invalid) return;
+    this.sensorService.updateSensor(this.sensor.id, this.sensorForm.value).subscribe(updated => {
+      this.sensor  = updated;
+      this.editMode = false;
+    });
+  }
+
+  deleteSensor(): void {
+    if (!this.sensor) return;
+    if (confirm('Delete this sensor permanently?')) {
+      this.sensorService.deleteSensor(this.sensor.id)
+        .subscribe(() => this.router.navigate(['/sensors']));
+    }
+  }
+
+  ping(): void {
+    if (this.sensor) {
+      this.sensorService.updateLastPing(this.sensor.id).subscribe(u => this.sensor = u);
+    }
+  }
+}
+
+
+=== FILE: \src\app\pages\sensor-list\sensor-list.component.ts ===
+// src/app/pages/sensor-list/sensor-list.component.ts
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { SensorService } from '../../core/services/sensor.service';
+import { Sensor } from '../../shared/models/sensor.model';
+import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
+
+@Component({
+  selector: 'app-sensor-list',
+  standalone: true,
+  imports: [CommonModule, RouterModule, FormsModule, StatusBadgeComponent],
+  template: `
+    <div class="p-6 space-y-6">
+
+      <!-- Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-black tracking-tight">Sensors</h1>
+          <p class="text-sm text-on-surface-variant mt-1">
+            {{ filtered.length }} sensor{{ filtered.length !== 1 ? 's' : '' }}
+            <span *ngIf="searchTerm || statusFilter"> matching your filters</span>
+          </p>
+        </div>
+        <a routerLink="/sensors/new"
+           class="flex items-center gap-2 bg-primary text-on-primary px-5 py-2.5 rounded-xl font-bold text-sm hover:shadow-[0_0_20px_rgba(108,92,231,0.4)] transition-all active:scale-95 self-start">
+          <span class="material-symbols-outlined text-sm">add</span> Add Sensor
+        </a>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="flex flex-wrap gap-3">
+        <div class="flex-1 min-w-[200px] flex items-center gap-2 glass-1 px-4 py-2 rounded-xl border border-white/10">
+          <span class="material-symbols-outlined text-sm text-on-surface-variant">search</span>
+          <input [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()"
+                 placeholder="Search by name or manufacturer…"
+                 class="bg-transparent text-sm outline-none flex-1 text-on-surface placeholder:text-on-surface-variant" />
+        </div>
+        <select [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()"
+                class="glass-1 px-4 py-2 rounded-xl border border-white/10 text-sm text-on-surface bg-transparent outline-none">
+          <option value="">All Statuses</option>
+          <option value="ACTIVE">Active</option>
+          <option value="OFFLINE">Offline</option>
+          <option value="FAULTY">Faulty</option>
+          <option value="MAINTENANCE">Maintenance</option>
+        </select>
+        <select [(ngModel)]="typeFilter" (ngModelChange)="applyFilters()"
+                class="glass-1 px-4 py-2 rounded-xl border border-white/10 text-sm text-on-surface bg-transparent outline-none">
+          <option value="">All Types</option>
+          <option value="SEISMIC">Seismic</option>
+          <option value="FLOOD_GAUGE">Flood Gauge</option>
+          <option value="WEATHER">Weather</option>
+          <option value="AIR_QUALITY">Air Quality</option>
+          <option value="FIRE_SMOKE">Fire / Smoke</option>
+        </select>
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-x-auto glass-1 rounded-2xl border border-white/5">
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-white/10 text-xs uppercase tracking-widest text-on-surface-variant">
+          <tr>
+            <th class="px-5 py-4">Name</th>
+            <th class="px-5 py-4">Type</th>
+            <th class="px-5 py-4">Manufacturer</th>
+            <th class="px-5 py-4">Status</th>
+            <th class="px-5 py-4">Last Ping</th>
+            <th class="px-5 py-4">Calibration</th>
+            <th class="px-5 py-4"></th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let s of filtered"
+              class="border-b border-white/5 hover:bg-white/5 transition-colors group">
+            <td class="px-5 py-4 font-semibold text-on-surface flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                   [ngClass]="typeIconBg(s.type)">
+                  <span class="material-symbols-outlined text-sm" [ngClass]="typeIconColor(s.type)">
+                    {{ typeIcon(s.type) }}
+                  </span>
+              </div>
+              {{ s.name }}
+            </td>
+            <td class="px-5 py-4 text-on-surface-variant font-mono text-xs">{{ s.type }}</td>
+            <td class="px-5 py-4 text-on-surface-variant">{{ s.manufacturer || '—' }}</td>
+            <td class="px-5 py-4">
+              <app-status-badge [status]="s.status"></app-status-badge>
+            </td>
+            <td class="px-5 py-4 text-on-surface-variant text-xs">
+              <span *ngIf="s.lastPingAt; else noPing">{{ s.lastPingAt | date:'dd MMM, HH:mm' }}</span>
+              <ng-template #noPing><span class="text-error/70">Never</span></ng-template>
+            </td>
+            <td class="px-5 py-4 text-on-surface-variant text-xs">{{ s.calibrationDate | date:'dd MMM yyyy' }}</td>
+            <td class="px-5 py-4">
+              <a [routerLink]="['/sensors', s.id]"
+                 class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-primary text-xs font-bold">
+                View <span class="material-symbols-outlined text-xs">arrow_forward</span>
+              </a>
+            </td>
+          </tr>
+          <tr *ngIf="filtered.length === 0">
+            <td colspan="7" class="px-5 py-12 text-center text-on-surface-variant">
+              <span class="material-symbols-outlined text-4xl block mb-2">sensors_off</span>
+              No sensors found
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `
+})
+export class SensorListComponent implements OnInit {
+  sensors: Sensor[]  = [];
+  filtered: Sensor[] = [];
+  searchTerm   = '';
+  statusFilter = '';
+  typeFilter   = '';
+
+  constructor(private sensorService: SensorService) {}
+
+  ngOnInit(): void {
+    this.sensorService.getAllSensors().subscribe(data => {
+      this.sensors  = data;
+      this.filtered = data;
+    });
+  }
+
+  applyFilters(): void {
+    this.filtered = this.sensors.filter(s => {
+      const matchSearch = !this.searchTerm ||
+        s.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        (s.manufacturer || '').toLowerCase().includes(this.searchTerm.toLowerCase());
+      const matchStatus = !this.statusFilter || s.status === this.statusFilter;
+      const matchType   = !this.typeFilter   || s.type   === this.typeFilter;
+      return matchSearch && matchStatus && matchType;
+    });
+  }
+
+  typeIcon(type: string): string {
+    const map: Record<string, string> = {
+      SEISMIC: 'earthquake', FLOOD_GAUGE: 'water', WEATHER: 'thunderstorm',
+      AIR_QUALITY: 'air', FIRE_SMOKE: 'local_fire_department'
+    };
+    return map[type] ?? 'sensors';
+  }
+  typeIconBg(type: string): string {
+    const map: Record<string, string> = {
+      SEISMIC: 'bg-orange-500/20', FLOOD_GAUGE: 'bg-blue-500/20', WEATHER: 'bg-sky-500/20',
+      AIR_QUALITY: 'bg-green-500/20', FIRE_SMOKE: 'bg-red-500/20'
+    };
+    return map[type] ?? 'bg-white/10';
+  }
+  typeIconColor(type: string): string {
+    const map: Record<string, string> = {
+      SEISMIC: 'text-orange-400', FLOOD_GAUGE: 'text-blue-400', WEATHER: 'text-sky-400',
+      AIR_QUALITY: 'text-green-400', FIRE_SMOKE: 'text-red-400'
+    };
+    return map[type] ?? 'text-white';
+  }
+}
+
+
+=== FILE: \src\app\pages\spatial-dashboard\spatial-dashboard.component.ts ===
+import { Component, OnInit, AfterViewInit, OnDestroy, ElementRef, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { SpatialService, SpatialSensor } from '../../core/services/spatial.service';
+import * as L from 'leaflet';
+import wkt from 'wkt';
+
+type QueryMode = 'inside-zone' | 'nearest';
+
+@Component({
+  selector: 'app-spatial-dashboard',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
+    <div class="p-6 space-y-6">
+
+      <!-- Header -->
+      <div>
+        <h1 class="text-3xl font-black tracking-tight">Spatial Intelligence</h1>
+        <p class="text-sm text-on-surface-variant mt-1">
+          PostGIS geographic queries running directly against sensor geometry columns
+        </p>
+      </div>
+
+      <!-- Mode selector — two cards filling full width -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+        <!-- Sensors in Zone -->
+        <button (click)="setMode('inside-zone')"
+                class="text-left p-6 rounded-2xl border transition-all hover:scale-[1.01] active:scale-[0.99]"
+                [ngClass]="mode==='inside-zone'
+                  ? 'border-primary bg-primary/10 shadow-[0_0_32px_rgba(108,92,231,0.25)]'
+                  : 'border-white/10 glass-1 hover:border-primary/30'">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                 [ngClass]="mode==='inside-zone' ? 'bg-primary' : 'bg-primary/20'">
+              <span class="material-symbols-outlined text-2xl"
+                    [ngClass]="mode==='inside-zone' ? 'text-white' : 'text-primary'">sensors</span>
+            </div>
+            <div>
+              <p class="font-bold text-base mb-1">Sensors in Zone</p>
+              <p class="text-xs text-on-surface-variant leading-relaxed">
+                Uses <span class="font-mono text-primary/80">ST_Contains(polygon, sensor.location)</span> to find every sensor
+                physically located inside a geographic boundary. Draw any polygon on the map or use the
+                visible map area as your query zone.
+              </p>
+              <div class="flex flex-wrap gap-2 mt-3">
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold border border-primary/20">PostGIS</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-on-surface-variant border border-white/10">Polygon query</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-on-surface-variant border border-white/10">Geofence</span>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="mode==='inside-zone'"
+               class="mt-4 pt-4 border-t border-primary/20 flex items-center gap-2 text-xs text-primary font-bold">
+            <span class="material-symbols-outlined text-sm">radio_button_checked</span>
+            Active — configure below
+          </div>
+        </button>
+
+        <!-- Nearest Sensors -->
+        <button (click)="setMode('nearest')"
+                class="text-left p-6 rounded-2xl border transition-all hover:scale-[1.01] active:scale-[0.99]"
+                [ngClass]="mode==='nearest'
+                  ? 'border-secondary bg-secondary/10 shadow-[0_0_32px_rgba(0,184,148,0.25)]'
+                  : 'border-white/10 glass-1 hover:border-secondary/30'">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                 [ngClass]="mode==='nearest' ? 'bg-secondary' : 'bg-secondary/20'">
+              <span class="material-symbols-outlined text-2xl"
+                    [ngClass]="mode==='nearest' ? 'text-white' : 'text-secondary'">near_me</span>
+            </div>
+            <div>
+              <p class="font-bold text-base mb-1">Nearest Sensors</p>
+              <p class="text-xs text-on-surface-variant leading-relaxed">
+                Uses <span class="font-mono text-secondary/80">ORDER BY ST_Distance(sensor.location, point)</span> to rank
+                every sensor by proximity to a GPS coordinate. Click anywhere on the map to set the origin,
+                or type coordinates manually.
+              </p>
+              <div class="flex flex-wrap gap-2 mt-3">
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-secondary/10 text-secondary font-bold border border-secondary/20">PostGIS</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-on-surface-variant border border-white/10">Distance sort</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-on-surface-variant border border-white/10">KNN</span>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="mode==='nearest'"
+               class="mt-4 pt-4 border-t border-secondary/20 flex items-center gap-2 text-xs text-secondary font-bold">
+            <span class="material-symbols-outlined text-sm">radio_button_checked</span>
+            Active — click map or enter coordinates below
+          </div>
+        </button>
+      </div>
+
+      <!-- Controls bar -->
+      <div class="glass-1 rounded-2xl border border-white/10 p-5">
+        <!-- No mode selected -->
+        <div *ngIf="!mode" class="flex items-center gap-3 text-on-surface-variant text-sm py-1">
+          <span class="material-symbols-outlined">travel_explore</span>
+          Select a query mode above to get started
+        </div>
+
+        <!-- Inside Zone controls -->
+        <div *ngIf="mode==='inside-zone'" class="space-y-3">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-primary"></span>
+            <p class="text-xs font-bold text-primary uppercase tracking-widest">Sensors in Zone — Query Parameters</p>
+          </div>
+          <div class="flex gap-3 flex-wrap items-center">
+            <input [(ngModel)]="polygonInput"
+                   placeholder="POLYGON((lng lat, lng lat, lng lat, lng lat, lng lat))"
+                   class="flex-1 min-w-64 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none focus:border-primary transition-colors" />
+            <button (click)="useMapBounds()"
+                    class="px-4 py-2.5 text-xs font-bold text-primary border border-primary/30 rounded-xl hover:bg-primary/10 transition-colors whitespace-nowrap flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">crop_free</span>
+              Use Map Bounds
+            </button>
+            <button (click)="runInsideZone()" [disabled]="running || !polygonInput.trim()"
+                    class="px-6 py-2.5 text-xs font-bold bg-primary text-on-primary rounded-xl disabled:opacity-40 hover:shadow-[0_0_16px_rgba(108,92,231,0.5)] transition-all flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">{{ running ? 'progress_activity' : 'search' }}</span>
+              {{ running ? 'Running…' : 'Run Query' }}
+            </button>
+          </div>
+          <p class="text-[11px] text-on-surface-variant">
+            💡 Tip: click <strong>Use Map Bounds</strong> to instantly query all sensors visible in the current map view.
+          </p>
+        </div>
+
+        <!-- Nearest Sensors controls -->
+        <div *ngIf="mode==='nearest'" class="space-y-3">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-secondary"></span>
+            <p class="text-xs font-bold text-secondary uppercase tracking-widest">Nearest Sensors — Query Parameters</p>
+          </div>
+          <div class="flex flex-wrap gap-3 items-end">
+            <div>
+              <label class="block text-[10px] uppercase tracking-widest text-on-surface-variant mb-1.5">Latitude</label>
+              <input type="number" step="0.0001" [(ngModel)]="nearLat"
+                     class="w-32 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-secondary transition-colors" />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase tracking-widest text-on-surface-variant mb-1.5">Longitude</label>
+              <input type="number" step="0.0001" [(ngModel)]="nearLng"
+                     class="w-32 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-secondary transition-colors" />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase tracking-widest text-on-surface-variant mb-1.5">Count</label>
+              <input type="number" [(ngModel)]="nearLimit" min="1" max="20"
+                     class="w-20 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-secondary transition-colors" />
+            </div>
+            <button (click)="runNearest()" [disabled]="running"
+                    class="px-6 py-2.5 text-xs font-bold bg-secondary text-white rounded-xl disabled:opacity-40 hover:shadow-[0_0_16px_rgba(0,184,148,0.5)] transition-all flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">{{ running ? 'progress_activity' : 'near_me' }}</span>
+              {{ running ? 'Running…' : 'Find Nearest' }}
+            </button>
+          </div>
+          <p class="text-[11px] text-on-surface-variant">
+            📍 Or simply <strong>click on the map</strong> to instantly set the origin point.
+          </p>
+        </div>
+      </div>
+
+      <!-- Map + Results -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        <!-- Map — takes 2/3 -->
+        <div class="lg:col-span-2 flex flex-col gap-0">
+          <div class="glass-1 rounded-2xl border border-white/10 overflow-hidden relative" style="height: 500px;">
+            <div #spatialMap style="height:100%;width:100%;"></div>
+
+            <!-- Floating hint overlays -->
+            <div *ngIf="mode==='nearest' && !ran"
+                 class="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none z-10">
+              <div class="bg-black/75 backdrop-blur-sm text-white text-xs px-4 py-2 rounded-full flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm text-amber-400">touch_app</span>
+                Click anywhere on the map to set origin
+              </div>
+            </div>
+            <div *ngIf="mode==='inside-zone' && !ran"
+                 class="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none z-10">
+              <div class="bg-black/75 backdrop-blur-sm text-white text-xs px-4 py-2 rounded-full flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm text-primary">crop_free</span>
+                Use "Map Bounds" or enter a WKT polygon above
+              </div>
+            </div>
+
+            <!-- Result count badge on map -->
+            <div *ngIf="ran && sensorResults.length > 0"
+                 class="absolute top-3 left-3 z-10 pointer-events-none">
+              <div class="text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5"
+                   [ngClass]="mode==='inside-zone' ? 'bg-primary/90 text-white' : 'bg-secondary/90 text-white'">
+                <span class="material-symbols-outlined text-sm">sensors</span>
+                {{ sensorResults.length }} sensor{{ sensorResults.length !== 1 ? 's' : '' }} found
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results panel — 1/3 -->
+        <div class="flex flex-col gap-3">
+
+          <!-- Summary bar -->
+          <div class="glass-1 rounded-2xl border border-white/10 p-4 flex items-center justify-between">
+            <div>
+              <p class="text-xs text-on-surface-variant uppercase tracking-widest font-bold">Results</p>
+              <p class="text-2xl font-black mt-0.5">{{ sensorResults.length }}<span class="text-sm font-normal text-on-surface-variant ml-1">sensors</span></p>
+            </div>
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center"
+                 [ngClass]="mode==='nearest' ? 'bg-secondary/20' : 'bg-primary/20'">
+              <span class="material-symbols-outlined"
+                    [ngClass]="mode==='nearest' ? 'text-secondary' : 'text-primary'">
+                {{ mode === 'nearest' ? 'near_me' : 'sensors' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Empty / idle states -->
+          <div *ngIf="!mode"
+               class="glass-1 rounded-2xl border border-white/10 p-8 flex flex-col items-center text-center text-on-surface-variant gap-3 flex-1">
+            <span class="material-symbols-outlined text-4xl opacity-40">travel_explore</span>
+            <p class="text-sm font-bold">No query running</p>
+            <p class="text-xs leading-relaxed">Pick a mode from the cards above to query your sensor network</p>
+          </div>
+
+          <div *ngIf="mode && ran && !running && sensorResults.length === 0"
+               class="glass-1 rounded-2xl border border-white/10 p-8 flex flex-col items-center text-center text-on-surface-variant gap-3">
+            <span class="material-symbols-outlined text-4xl opacity-40">search_off</span>
+            <p class="text-sm font-bold">No sensors found</p>
+            <p class="text-xs">{{ mode === 'inside-zone' ? 'No sensors are inside this zone' : 'No sensor data available' }}</p>
+          </div>
+
+          <div *ngIf="running" class="flex justify-center py-10">
+            <span class="material-symbols-outlined animate-spin text-4xl"
+                  [ngClass]="mode==='nearest' ? 'text-secondary' : 'text-primary'">progress_activity</span>
+          </div>
+
+          <!-- Sensor result cards -->
+          <div *ngIf="sensorResults.length > 0 && !running"
+               class="space-y-2 overflow-y-auto" style="max-height: 380px;">
+            <div *ngFor="let s of sensorResults; let i = index"
+                 (click)="focusSensor(s)"
+                 class="glass-1 rounded-xl border border-white/5 p-3.5 cursor-pointer hover:border-primary/30 transition-all hover:bg-white/5 group">
+
+              <!-- Top row -->
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <!-- Rank badge for nearest mode -->
+                  <div *ngIf="mode==='nearest'"
+                       class="w-6 h-6 rounded-lg bg-secondary/20 border border-secondary/30 flex items-center justify-center flex-shrink-0">
+                    <span class="text-[10px] font-black text-secondary">{{ i + 1 }}</span>
+                  </div>
+                  <p class="font-bold text-sm truncate">{{ s.name }}</p>
+                </div>
+                <span class="text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0"
+                      [ngClass]="s.status === 'ACTIVE'
+                        ? 'bg-green-500/15 text-green-400 border border-green-500/20'
+                        : s.status === 'OFFLINE'
+                        ? 'bg-red-500/15 text-red-400 border border-red-500/20'
+                        : 'bg-amber-500/15 text-amber-400 border border-amber-500/20'">
+                  {{ s.status }}
+                </span>
+              </div>
+
+              <!-- Type + location -->
+              <div class="flex items-center gap-3 text-[11px] text-on-surface-variant">
+                <span class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[12px]">device_hub</span>
+                  {{ s.type.replace('_', ' ') }}
+                </span>
+                <span *ngIf="s.manufacturer" class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[12px]">factory</span>
+                  {{ s.manufacturer }}
+                </span>
+              </div>
+
+              <!-- Focus hint -->
+              <p class="text-[10px] text-on-surface-variant/50 mt-2 group-hover:text-primary/60 transition-colors flex items-center gap-1">
+                <span class="material-symbols-outlined text-[11px]">center_focus_weak</span>
+                Click to focus on map
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+})
+export class SpatialDashboardComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('spatialMap') mapRef!: ElementRef;
+
+  mode: QueryMode | null = null;
+  polygonInput = '';
+  nearLat = 36.8065;
+  nearLng = 10.1815;
+  nearLimit = 5;
+  sensorResults: SpatialSensor[] = [];
+  running = false;
+  ran = false;
+
+  private map!: L.Map;
+  private resultLayers: L.Layer[] = [];
+  private originMarker: L.Marker | null = null;
+
+  constructor(
+    private spatialService: SpatialService,
+    private cdr: ChangeDetectorRef
+  ) {}
+
+  ngOnInit(): void {}
+
+  ngAfterViewInit(): void {
+    setTimeout(() => this.initMap(), 50);
+  }
+
+  ngOnDestroy(): void {
+    if (this.map) this.map.remove();
+  }
+
+  setMode(m: QueryMode): void {
+    this.mode = m;
+    this.sensorResults = [];
+    this.ran = false;
+    this.clearResultLayers();
+    if (this.map) {
+      this.map.getContainer().style.cursor = m === 'nearest' ? 'crosshair' : '';
+      setTimeout(() => this.map.invalidateSize(), 50);
+    }
+  }
+
+  useMapBounds(): void {
+    if (!this.map) return;
+    const b = this.map.getBounds();
+    const sw = b.getSouthWest(), ne = b.getNorthEast();
+    this.polygonInput = `POLYGON((${sw.lng.toFixed(6)} ${sw.lat.toFixed(6)}, ${ne.lng.toFixed(6)} ${sw.lat.toFixed(6)}, ${ne.lng.toFixed(6)} ${ne.lat.toFixed(6)}, ${sw.lng.toFixed(6)} ${ne.lat.toFixed(6)}, ${sw.lng.toFixed(6)} ${sw.lat.toFixed(6)}))`;
+  }
+
+  runInsideZone(): void {
+    if (!this.polygonInput.trim()) return;
+    this.running = true;
+    this.clearResultLayers();
+    this.spatialService.getSensorsInsideZone(this.polygonInput).subscribe({
+      next: s => {
+        this.sensorResults = s;
+        this.running = false;
+        this.ran = true;
+        this.renderPolygon(this.polygonInput);
+        this.renderSensorMarkers(s, '#6c5ce7');
+      },
+      error: () => { this.running = false; this.ran = true; }
+    });
+  }
+
+  runNearest(): void {
+    const point = `POINT(${this.nearLng} ${this.nearLat})`;
+    this.running = true;
+    this.clearResultLayers();
+    this.spatialService.getNearestSensors(point, this.nearLimit).subscribe({
+      next: s => {
+        this.sensorResults = s;
+        this.running = false;
+        this.ran = true;
+        this.renderOriginMarker(this.nearLat, this.nearLng);
+        this.renderSensorMarkers(s, '#00b894');
+        this.renderDistanceLines(s, this.nearLat, this.nearLng);
+      },
+      error: () => { this.running = false; this.ran = true; }
+    });
+  }
+
+  focusSensor(s: SpatialSensor): void {
+    if (!this.map || !s.location) return;
+    try {
+      const g = wkt.parse(s.location);
+      if (g?.type === 'Point') this.map.setView([g.coordinates[1], g.coordinates[0]], 15, { animate: true });
+    } catch {}
+  }
+
+  private initMap(): void {
+    if (!this.mapRef?.nativeElement || this.map) return;
+
+    this.map = L.map(this.mapRef.nativeElement, {
+      zoomControl: false,
+      scrollWheelZoom: true,
+      preferCanvas: true
+    }).setView([36.8065, 10.1815], 9);
+
+    L.control.zoom({ position: 'topright' }).addTo(this.map);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OSM © CartoDB',
+      subdomains: 'abcd',
+      maxZoom: 19
+    }).addTo(this.map);
+
+    this.map.on('click', (e: L.LeafletMouseEvent) => {
+      if (this.mode !== 'nearest') return;
+      this.nearLat = parseFloat(e.latlng.lat.toFixed(6));
+      this.nearLng = parseFloat(e.latlng.lng.toFixed(6));
+      this.cdr.detectChanges();
+
+      if (this.originMarker) this.map.removeLayer(this.originMarker);
+      const icon = L.divIcon({
+        html: `<div style="width:18px;height:18px;background:#f59e0b;border:3px solid white;border-radius:50%;box-shadow:0 0 14px rgba(245,158,11,0.9)"></div>`,
+        iconSize: [18, 18], iconAnchor: [9, 9], className: ''
+      });
+      this.originMarker = L.marker([this.nearLat, this.nearLng], { icon })
+        .bindPopup(`<b>Origin</b><br>${this.nearLat.toFixed(5)}, ${this.nearLng.toFixed(5)}`)
+        .addTo(this.map);
+    });
+
+    setTimeout(() => this.map.invalidateSize(), 200);
+  }
+
+  private clearResultLayers(): void {
+    this.resultLayers.forEach(l => this.map?.removeLayer(l));
+    this.resultLayers = [];
+    if (this.originMarker) {
+      this.map?.removeLayer(this.originMarker);
+      this.originMarker = null;
+    }
+  }
+
+  private renderSensorMarkers(sensors: SpatialSensor[], color: string): void {
+    sensors.forEach(s => {
+      if (!s.location) return;
+      try {
+        const g = wkt.parse(s.location);
+        if (g?.type === 'Point') {
+          const m = L.circleMarker([g.coordinates[1], g.coordinates[0]], {
+            radius: 10,
+            color,
+            fillColor: color,
+            fillOpacity: 0.85,
+            weight: 2
+          }).bindPopup(`<b>${s.name}</b><br><i>${s.type.replace('_', ' ')}</i><br>Status: ${s.status}`);
+          m.addTo(this.map);
+          this.resultLayers.push(m);
+        }
+      } catch {}
+    });
+
+    if (this.resultLayers.filter(l => l instanceof L.CircleMarker).length > 0) {
+      const markers = this.resultLayers.filter(l => l instanceof L.CircleMarker);
+      const grp = L.featureGroup(markers);
+      const b = grp.getBounds();
+      if (b.isValid()) this.map.fitBounds(b, { padding: [60, 60], maxZoom: 13 });
+    }
+  }
+
+  private renderOriginMarker(lat: number, lng: number): void {
+    if (this.originMarker) this.map.removeLayer(this.originMarker);
+    const icon = L.divIcon({
+      html: `<div style="width:18px;height:18px;background:#f59e0b;border:3px solid white;border-radius:50%;box-shadow:0 0 14px rgba(245,158,11,0.9)"></div>`,
+      iconSize: [18, 18], iconAnchor: [9, 9], className: ''
+    });
+    this.originMarker = L.marker([lat, lng], { icon })
+      .bindPopup(`<b>Origin</b><br>${lat.toFixed(5)}, ${lng.toFixed(5)}`)
+      .addTo(this.map);
+  }
+
+  private renderDistanceLines(sensors: SpatialSensor[], lat: number, lng: number): void {
+    sensors.forEach(s => {
+      if (!s.location) return;
+      try {
+        const g = wkt.parse(s.location);
+        if (g?.type === 'Point') {
+          const l = L.polyline(
+            [[lat, lng], [g.coordinates[1], g.coordinates[0]]],
+            { color: '#00b894', weight: 1.5, dashArray: '6,5', opacity: 0.5 }
+          ).addTo(this.map);
+          this.resultLayers.push(l);
+        }
+      } catch {}
+    });
+  }
+
+  private renderPolygon(polygonWkt: string): void {
+    try {
+      const g = wkt.parse(polygonWkt);
+      if (g?.type === 'Polygon') {
+        const latLngs = g.coordinates[0].map((c: number[]) => [c[1], c[0]]) as [number, number][];
+        const p = L.polygon(latLngs, {
+          color: '#6c5ce7',
+          fillColor: '#6c5ce7',
+          fillOpacity: 0.10,
+          weight: 2,
+          dashArray: '8,5'
+        }).addTo(this.map);
+        this.resultLayers.push(p);
+        this.map.fitBounds(p.getBounds(), { padding: [30, 30] });
+      }
+    } catch {}
+  }
+}
+
+
+=== FILE: \src\app\pages\users-management\users-management.component.ts ===
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { UserService } from '../../core/services/user.service';
+import { User, UserRequest } from '../../modules/identity/models/user.model';
+
+@Component({
+  selector: 'app-users-management',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './users-management.component.html',
+  styleUrls: ['./users-management.component.scss']
+})
+export class UsersManagementComponent implements OnInit {
+  users: User[] = [];
+  filteredUsers: User[] = [];
+  loading = false;
+  errorMessage = '';
+  successMessage = '';
+  searchTerm = '';
+
+  showModal = false;
+  isEditMode = false;
+  selectedUserId: number | null = null;
+  saving = false;
+
+  formData: UserRequest = {
+    email: '',
+    password: '',
+    role: 'CITIZEN',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    location: '',
+    profilePhoto: '',
+    emailVerified: false,
+    phoneVerified: false,
+    mfaEnabled: false,
+    status: 'ACTIVE'
+  };
+
+  constructor(private userService: UserService) {}
+
+  ngOnInit(): void {
+    this.loadUsers();
+  }
+
+  loadUsers(): void {
+    this.loading = true;
+    this.errorMessage = '';
+
+    this.userService.getAllUsers().subscribe({
+      next: (data) => {
+        this.users = data;
+        this.applyFilter();
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Load users error:', err);
+        this.errorMessage = `Failed to load users (${err.status || 'unknown error'})`;
+        this.loading = false;
+      }
+    });
+  }
+
+  applyFilter(): void {
+    const term = this.searchTerm.trim().toLowerCase();
+
+    if (!term) {
+      this.filteredUsers = [...this.users];
+      return;
+    }
+
+    this.filteredUsers = this.users.filter((user) =>
+      user.firstName.toLowerCase().includes(term) ||
+      user.lastName.toLowerCase().includes(term) ||
+      user.email.toLowerCase().includes(term) ||
+      user.role.toLowerCase().includes(term) ||
+      (user.status || '').toLowerCase().includes(term)
+    );
+  }
+
+  openAddModal(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.isEditMode = false;
+    this.selectedUserId = null;
+
+    this.formData = {
+      email: '',
+      password: '',
+      role: 'CITIZEN',
+      firstName: '',
+      lastName: '',
+      phone: '',
+      location: '',
+      profilePhoto: '',
+      emailVerified: false,
+      phoneVerified: false,
+      mfaEnabled: false,
+      status: 'ACTIVE'
+    };
+
+    this.showModal = true;
+  }
+
+  openEditModal(user: User): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.isEditMode = true;
+    this.selectedUserId = user.userId;
+
+    this.formData = {
+      email: user.email,
+      password: '',
+      role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone || '',
+      location: user.location || '',
+      profilePhoto: user.profilePhoto || '',
+      emailVerified: user.emailVerified ?? false,
+      phoneVerified: user.phoneVerified ?? false,
+      mfaEnabled: user.mfaEnabled ?? false,
+      status: user.status || 'ACTIVE'
+    };
+
+    this.showModal = true;
+  }
+
+  closeModal(): void {
+    this.showModal = false;
+    this.saving = false;
+  }
+
+  submitForm(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    if (!this.formData.firstName || !this.formData.lastName || !this.formData.email || !this.formData.role) {
+      this.errorMessage = 'Please fill in the required fields.';
+      return;
+    }
+
+    if (!this.isEditMode && !this.formData.password) {
+      this.errorMessage = 'Password is required when creating a user.';
+      return;
+    }
+
+    this.saving = true;
+
+    if (this.isEditMode && this.selectedUserId !== null) {
+      this.userService.updateUser(this.selectedUserId, this.formData).subscribe({
+        next: () => {
+          this.successMessage = 'User updated successfully.';
+          this.saving = false;
+          this.closeModal();
+          this.loadUsers();
+        },
+        error: (err) => {
+          console.error('Update user error:', err);
+          this.errorMessage = err?.error?.message || 'Failed to update user.';
+          this.saving = false;
+        }
+      });
+    } else {
+      this.userService.createUser(this.formData).subscribe({
+        next: () => {
+          this.successMessage = 'User created successfully.';
+          this.saving = false;
+          this.closeModal();
+          this.loadUsers();
+        },
+        error: (err) => {
+          console.error('Create user error:', err);
+          this.errorMessage = err?.error?.message || 'Failed to create user.';
+          this.saving = false;
+        }
+      });
+    }
+  }
+
+  deleteUser(id: number): void {
+    if (!confirm('Are you sure you want to delete this user?')) {
+      return;
+    }
+
+    this.userService.deleteUser(id).subscribe({
+      next: () => {
+        this.loadUsers();
+      },
+      error: (err) => {
+        console.error('Delete user error:', err);
+        this.errorMessage = err?.error?.message || `Failed to delete user (${err.status || 'unknown error'})`;
+      }
+    });
+  }
+
+  getRoleClass(role?: string): string {
+    switch ((role || '').toUpperCase()) {
+      case 'PLATFORM_ADMIN':
+        return 'role-admin';
+      case 'ORG_ADMIN':
+      case 'AGENCY_ADMIN':
+        return 'role-manager';
+      case 'RESPONDER':
+        return 'role-responder';
+      case 'VOLUNTEER':
+        return 'role-volunteer';
+      default:
+        return 'role-citizen';
+    }
+  }
+
+  getStatusClass(status?: string): string {
+    switch ((status || '').toUpperCase()) {
+      case 'ACTIVE':
+        return 'status-active';
+      case 'PENDING':
+        return 'status-pending';
+      case 'SUSPENDED':
+        return 'status-suspended';
+      default:
+        return 'status-default';
+    }
+  }
+}
+
+=== FILE: \src\app\shared\components\header\header.component.ts ===
+import { Component, Input } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+
+@Component({
+  selector: 'app-header',
+  standalone: true,
+  imports: [CommonModule, RouterModule, FormsModule],
+  templateUrl: './header.component.html',
+})
+export class HeaderComponent {
+  @Input() pageTitle: string = 'Dashboard';
+  @Input() breadcrumb: string = '';
+  @Input() userName: string = 'User';
+  @Input() userRole: string = 'Volunteer';
+  @Input() userAvatar: string = '';
+
+  searchQuery: string = '';
+  showNotifications: boolean = false;
+
+  notifications = [
+    {
+      type: 'secondary',
+      time: '2h ago',
+      message: 'Certification "Emergency First Aid" successfully verified.',
+    },
+    {
+      type: 'primary',
+      time: '5h ago',
+      message: 'New request from Hope Shelter matching your skills.',
+    },
+    {
+      type: 'error',
+      time: '1d ago',
+      message: 'Flash Flood alert issued for Greater Tunis area.',
+    },
+  ];
+
+  dotColor(type: string): string {
+    const map: Record<string, string> = {
+      primary: 'bg-primary',
+      secondary: 'bg-secondary',
+      error: 'bg-error',
+      amber: 'bg-amber-400',
+    };
+    return map[type] || 'bg-primary';
+  }
+
+  toggleNotifications(): void {
+    this.showNotifications = !this.showNotifications;
+  }
+}
+
+
+=== FILE: \src\app\shared\components\map-picker\map-picker.component.ts ===
+// src/app/shared/components/map-picker/map-picker.component.ts
+import {
+  Component, Input, Output, EventEmitter,
+  AfterViewInit, OnDestroy, ElementRef, ViewChild
+} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import * as L from 'leaflet';
+
+/**
+ * Interactive map picker.
+ * The user clicks anywhere on the map → emits a WKT POINT string.
+ *
+ * Usage:
+ *   <app-map-picker
+ *     [initialWkt]="sensorForm.get('location')?.value"
+ *     (locationPicked)="onLocationPicked($event)">
+ *   </app-map-picker>
+ */
+@Component({
+  selector: 'app-map-picker',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <div class="space-y-2">
+      <div class="flex items-center gap-2 text-xs text-on-surface-variant font-medium">
+        <span class="material-symbols-outlined text-sm text-primary">touch_app</span>
+        Click on the map to pin the location
+      </div>
+      <div #mapEl style="height:320px; width:100%; border-radius:12px; overflow:hidden;"
+           class="border border-white/10"></div>
+      <div *ngIf="pickedWkt" class="flex items-center gap-2 p-2 bg-primary/10 border border-primary/20 rounded-lg text-xs">
+        <span class="material-symbols-outlined text-primary text-sm">location_on</span>
+        <span class="font-mono text-primary">{{ pickedWkt }}</span>
+        <button type="button" (click)="clearPin()"
+                class="ml-auto text-error hover:text-error/70 transition-colors">
+          <span class="material-symbols-outlined text-sm">close</span>
+        </button>
+      </div>
+      <div *ngIf="!pickedWkt" class="text-xs text-on-surface-variant/60 italic">
+        No location selected — click the map above
+      </div>
+    </div>
+  `
+})
+export class MapPickerComponent implements AfterViewInit, OnDestroy {
+  @ViewChild('mapEl', { static: true }) mapEl!: ElementRef;
+
+  /** Pre-populate from an existing WKT point, e.g. "POINT(10.5 36.8)" */
+  @Input() set initialWkt(wkt: string | null | undefined) {
+    if (wkt) {
+      this._initialWkt = wkt;
+      this.pickedWkt   = wkt;
+      this._tryShowPin(wkt);
+    }
+  }
+
+  /** Emits a WKT string every time the user picks a point */
+  @Output() locationPicked = new EventEmitter<string>();
+
+  pickedWkt: string | null = null;
+  private _initialWkt: string | null = null;
+  private map!: L.Map;
+  private marker?: L.Marker;
+
+  // Default center: Tunis
+  private center: [number, number] = [36.8065, 10.1815];
+
+  ngAfterViewInit(): void {
+    this.map = L.map(this.mapEl.nativeElement, {
+      zoomControl: false,
+      scrollWheelZoom: true,
+      doubleClickZoom: false,
+    }).setView(this.center, 9);
+
+    L.control.zoom({ position: 'topright' }).addTo(this.map);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OSM © CartoDB',
+      subdomains: 'abcd',
+      maxZoom: 19,
+    }).addTo(this.map);
+
+    // Click → place / move pin
+    this.map.on('click', (e: L.LeafletMouseEvent) => {
+      const { lat, lng } = e.latlng;
+      this._placePin(lat, lng);
+      const wkt = `POINT(${lng.toFixed(6)} ${lat.toFixed(6)})`;
+      this.pickedWkt = wkt;
+      this.locationPicked.emit(wkt);
+    });
+
+    // If initial WKT was provided before map was ready, show pin now
+    if (this._initialWkt) this._tryShowPin(this._initialWkt);
+
+    setTimeout(() => this.map?.invalidateSize(), 100);
+  }
+
+  clearPin(): void {
+    if (this.marker) { this.map.removeLayer(this.marker); this.marker = undefined; }
+    this.pickedWkt = null;
+    this.locationPicked.emit('');
+  }
+
+  ngOnDestroy(): void { this.map?.remove(); }
+
+  private _placePin(lat: number, lng: number): void {
+    if (this.marker) this.map.removeLayer(this.marker);
+    this.marker = L.marker([lat, lng], {
+      icon: L.divIcon({
+        className: '',
+        html: `<div style="
+          width:28px;height:28px;border-radius:50% 50% 50% 0;
+          background:#6C5CE7;border:3px solid #fff;
+          transform:rotate(-45deg);
+          box-shadow:0 2px 10px rgba(108,92,231,0.6)">
+        </div>`,
+        iconSize:   [28, 28],
+        iconAnchor: [14, 28],
+      })
+    }).addTo(this.map);
+  }
+
+  private _tryShowPin(wkt: string): void {
+    if (!this.map) return;
+    const m = wkt.match(/POINT\(([^ ]+) ([^ )]+)\)/i);
+    if (m) {
+      const lng = parseFloat(m[1]);
+      const lat = parseFloat(m[2]);
+      this._placePin(lat, lng);
+      this.map.setView([lat, lng], 13);
+    }
+  }
+}
+
+
+=== FILE: \src\app\shared\components\map-view\map-view.component.ts ===
+// src/app/shared/components/map-view/map-view.component.ts
+import { Component, Input, AfterViewInit, OnChanges, OnDestroy, SimpleChanges, ElementRef, ViewChild } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import * as L from 'leaflet';
+import wkt from "wkt";
+
+@Component({
+  selector: 'app-map-view',
+  standalone: true,
+  imports: [CommonModule],
+  template: `<div #mapContainer style="height: 100%; width: 100%;"></div>`,
+  styles: [`:host { display: block; height: 100%; width: 100%; }`]
+})
+export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
+  @ViewChild('mapContainer', { static: true }) mapContainer!: ElementRef;
+  @Input() center: [number, number] = [36.8065, 10.1815];
+  @Input() zoom: number = 8;
+  @Input() geometries: Array<{ type: string; wkt: string; color?: string }> = [];
+
+  private map!: L.Map;
+  private layers: L.Layer[] = [];
+  private lastGeometriesHash: string = '';
+
+  ngAfterViewInit(): void {
+    this.initMap();
+    this.updateGeometries();
+    setTimeout(() => this.map?.invalidateSize(), 100);
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['geometries'] && this.map) {
+      const newHash = JSON.stringify(this.geometries);
+      if (newHash !== this.lastGeometriesHash) {
+        this.lastGeometriesHash = newHash;
+        this.updateGeometries();
+      }
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.map) this.map.remove();
+  }
+
+  private initMap(): void {
+    this.map = L.map(this.mapContainer.nativeElement, {
+      zoomControl: true,
+      scrollWheelZoom: true,
+      doubleClickZoom: true,
+      dragging: true,
+      touchZoom: true,
+      boxZoom: true,
+      keyboard: true
+    }).setView(this.center, this.zoom);
+
+    L.control.zoom({ position: 'topright' }).addTo(this.map);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CartoDB',
+      subdomains: 'abcd',
+      maxZoom: 19,
+      minZoom: 1
+    }).addTo(this.map);
+  }
+
+  private updateGeometries(): void {
+    if (!this.map) return;
+    this.clearLayers();
+    this.addGeometries();
+  }
+
+  private clearLayers(): void {
+    this.layers.forEach(layer => this.map?.removeLayer(layer));
+    this.layers = [];
+  }
+
+  private addGeometries(): void {
+    if (!this.map) return;
+
+    this.geometries.forEach(geo => {
+      try {
+        const geom = wkt.parse(geo.wkt);
+        let layer: L.Layer | null = null;
+        if (geom.type === 'Point') {
+          layer = L.marker([geom.coordinates[1], geom.coordinates[0]]);
+        } else if (geom.type === 'LineString') {
+          const latLngs = geom.coordinates.map((coord: number[]) => [coord[1], coord[0]]);
+          layer = L.polyline(latLngs, { color: geo.color || '#3388ff', weight: 4 });
+        } else if (geom.type === 'Polygon') {
+          const latLngs = geom.coordinates[0].map((coord: number[]) => [coord[1], coord[0]]);
+          layer = L.polygon(latLngs, { color: geo.color || '#ff3388', fillOpacity: 0.3 });
+        }
+        if (layer) {
+          layer.addTo(this.map);
+          this.layers.push(layer);
+        }
+      } catch (e) {
+        console.error('Invalid WKT:', geo.wkt, e);
+      }
+    });
+
+    // Fit bounds only on initial load, not on every update
+    if (this.layers.length && this.map && !this.lastGeometriesHash) {
+      const group = L.featureGroup(this.layers);
+      const bounds = group.getBounds();
+      if (bounds.isValid()) {
+        this.map.fitBounds(bounds);
+      }
+    }
+  }
+}
+
+
+=== FILE: \src\app\shared\components\mobile-nav\mobile-nav.component.ts ===
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule, RouterLinkActive } from '@angular/router';
+
+@Component({
+  selector: 'app-mobile-nav',
+  standalone: true,
+  imports: [CommonModule, RouterModule, RouterLinkActive],
+  templateUrl: './mobile-nav.component.html',
+})
+export class MobileNavComponent {
+  items = [
+    { label: 'Home', icon: 'dashboard', route: '/dashboard' },
+    { label: 'Alerts', icon: 'emergency', route: '/alerts' },
+    { label: 'Browse', icon: 'explore', route: '/opportunities' },
+    { label: 'Profile', icon: 'person', route: '/profile' },
+  ];
+}
+
+
+=== FILE: \src\app\shared\components\sidebar\sidebar.component.ts ===
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule, RouterLinkActive } from '@angular/router';
+import { NavItem } from '../../models/nav-item.model';
+
+@Component({
+  selector: 'app-sidebar',
+  standalone: true,
+  imports: [CommonModule, RouterModule, RouterLinkActive],
+  templateUrl: './sidebar.component.html',
+})
+export class SidebarComponent {
+  @Input() accentColor: string = '#6C5CE7';
+  @Output() logoutClicked = new EventEmitter<void>();
+  @Input() ctaLabel: string = 'Report Incident';
+  @Input() ctaRoute: string = '/incidents';
+
+  navItems: NavItem[] = [
+    { label: 'Overview',        icon: 'dashboard',      route: '/dashboard'    },
+    { label: 'Sensors',         icon: 'sensors',        route: '/sensors'      },
+    { label: 'Alerts',          icon: 'emergency',      route: '/alerts'       },
+    { label: 'Geofence Zones',  icon: 'map',            route: '/geofence'     },
+    { label: 'Evacuation',      icon: 'directions',     route: '/evacuation'   },
+    { label: 'Spatial Queries', icon: 'travel_explore', route: '/spatial'      },
+    { label: 'Statistics',      icon: 'bar_chart',      route: '/statistics'   },
+    { label: 'Incidents',       icon: 'report_problem', route: '/incidents'    },
+    { label: 'Opportunities',   icon: 'explore',        route: '/opportunities'},
+    { label: 'My Profile',      icon: 'person',         route: '/profile'      },
+    { label: 'Overview', icon: 'dashboard', route: '/dashboard' },
+    { label: 'Alerts', icon: 'emergency', route: '/alerts' },
+    { label: 'Incidents', icon: 'report_problem', route: '/incidents' },
+    { label: 'Help Requests', icon: 'volunteer_activism', route: '/help' },
+    { label: 'Opportunities', icon: 'explore', route: '/opportunities' },
+    { label: 'My Profile', icon: 'person', route: '/profile' },
+    { label: 'Settings', icon: 'settings', route: '/settings' },
+    { label: 'Users', icon: 'people', route: '/users-management' },
+    { label: 'Communication', icon: 'forum', route: '/communication' }
+  ];
+
+  onLogout(): void {
+    this.logoutClicked.emit();
+  }
+}
+
+
+=== FILE: \src\app\shared\components\stat-card\stat-card.component.ts ===
+import { Component, Input } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+@Component({
+  selector: 'app-stat-card',
+  standalone: true,
+  imports: [CommonModule],
+  templateUrl: './stat-card.component.html',
+})
+export class StatCardComponent {
+  @Input() label: string = '';
+  @Input() value: string | number = '';
+  @Input() icon: string = '';
+  @Input() iconBg: string = 'bg-primary';
+  @Input() iconColor: string = 'text-on-primary';
+  @Input() trend: string = '';
+  @Input() trendColor: string = 'text-secondary';
+}
+
+
+=== FILE: \src\app\shared\components\status-badge\status-badge.component.ts ===
+// src/app/shared/components/status-badge/status-badge.component.ts
+import { Component, Input } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+export type StatusType =
+// Existing ones
+  | 'ACTIVE' | 'APPROVED' | 'VERIFIED' | 'PENDING' | 'IN_PROGRESS' | 'ASSIGNED'
+  | 'REJECTED' | 'CANCELLED' | 'BANNED' | 'DRAFT' | 'INACTIVE'
+  | 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'OPEN' | 'COMPLETED' | 'RESOLVED'
+  // New ones from backend
+  | 'OFFLINE' | 'FAULTY' | 'MAINTENANCE'          // Sensor status
+  | 'MONITORING' | 'FALSE_ALARM'                  // Alert status
+  | 'PLANNED' | 'BLOCKED' | 'CLOSED'              // Route status
+  | 'MODERATE'                                    // Severity (used in alerts)
+  | 'WAYPOINT' | 'MEDICAL_STOP' | 'SUPPLY_POINT'; // Checkpoint types (if needed)
+
+@Component({
+  selector: 'app-status-badge',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <span
+      class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+      [ngClass]="badgeClasses"
+    >
+      <span
+        *ngIf="showDot"
+        class="w-1.5 h-1.5 rounded-full"
+        [ngClass]="dotClass"
+        [class.animate-pulse]="status === 'CRITICAL'"
+      >
+      </span>
+      {{ label || status }}
+    </span>
+  `,
+})
+export class StatusBadgeComponent {
+  @Input() status: StatusType = 'PENDING';
+  @Input() label: string = '';
+  @Input() showDot: boolean = false;
+
+  get badgeClasses(): string {
+    const map: Record<string, string> = {
+      // Positive / active
+      ACTIVE: 'bg-secondary/10 text-secondary border border-secondary/20',
+      APPROVED: 'bg-secondary/10 text-secondary border border-secondary/20',
+      VERIFIED: 'bg-secondary/10 text-secondary border border-secondary/20',
+      RESOLVED: 'bg-secondary/10 text-secondary border border-secondary/20',
+      COMPLETED: 'bg-secondary/10 text-secondary border border-secondary/20',
+      OPEN: 'bg-secondary/10 text-secondary border border-secondary/20',
+      // Warning / pending
+      PENDING: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+      IN_PROGRESS: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+      ASSIGNED: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+      MONITORING: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+      PLANNED: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+      // Negative / error
+      REJECTED: 'bg-error/10 text-error border border-error/20',
+      CANCELLED: 'bg-error/10 text-error border border-error/20',
+      BANNED: 'bg-error/10 text-error border border-error/20',
+      CLOSED: 'bg-error/10 text-error border border-error/20',
+      BLOCKED: 'bg-error/10 text-error border border-error/20',
+      FALSE_ALARM: 'bg-error/10 text-error border border-error/20',
+      OFFLINE: 'bg-error/10 text-error border border-error/20',
+      FAULTY: 'bg-error/10 text-error border border-error/20',
+      // Neutral / inactive
+      DRAFT: 'bg-white/5 text-on-surface-variant border border-white/10',
+      INACTIVE: 'bg-white/5 text-on-surface-variant border border-white/10',
+      MAINTENANCE: 'bg-white/5 text-on-surface-variant border border-white/10',
+      // Severity levels
+      CRITICAL: 'bg-error/20 text-error border border-error/30',
+      HIGH: 'bg-orange-500/10 text-orange-400 border border-orange-500/20',
+      MEDIUM: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+      MODERATE: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+      LOW: 'bg-secondary/10 text-secondary border border-secondary/20',
+    };
+    return map[this.status] || 'bg-white/5 text-on-surface-variant border border-white/10';
+  }
+
+  get dotClass(): string {
+    const map: Record<string, string> = {
+      ACTIVE: 'bg-secondary',
+      APPROVED: 'bg-secondary',
+      VERIFIED: 'bg-secondary',
+      PENDING: 'bg-amber-400',
+      IN_PROGRESS: 'bg-amber-400',
+      REJECTED: 'bg-error',
+      CANCELLED: 'bg-error',
+      CRITICAL: 'bg-error',
+      HIGH: 'bg-orange-400',
+      MEDIUM: 'bg-amber-400',
+      MODERATE: 'bg-amber-400',
+      LOW: 'bg-secondary',
+      DRAFT: 'bg-on-surface-variant',
+      MONITORING: 'bg-amber-400',
+      PLANNED: 'bg-amber-400',
+      CLOSED: 'bg-error',
+      BLOCKED: 'bg-error',
+      OFFLINE: 'bg-error',
+      FAULTY: 'bg-error',
+      MAINTENANCE: 'bg-on-surface-variant',
+      FALSE_ALARM: 'bg-error',
+    };
+    return map[this.status] || 'bg-on-surface-variant';
+  }
+}
+
+
+=== FILE: \src\app\core\guards\auth.guard.spec.ts ===
+import { TestBed } from '@angular/core/testing';
+import { CanActivateFn } from '@angular/router';
+
+import { authGuard } from './auth.guard';
+
+describe('authGuard', () => {
+  const executeGuard: CanActivateFn = (...guardParameters) => 
+      TestBed.runInInjectionContext(() => authGuard(...guardParameters));
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+  });
+
+  it('should be created', () => {
+    expect(executeGuard).toBeTruthy();
+  });
+});
+
+
+=== FILE: \src\app\core\guards\auth.guard.ts ===
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+
+export const authGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  const token = authService.getToken();
+
+  if (token) {
+    return true;
+  }
+
+  router.navigateByUrl('/login');
+  return false;
+};
+
+=== FILE: \src\app\core\interceptors\auth.interceptor.spec.ts ===
+import { TestBed } from '@angular/core/testing';
+import { HttpInterceptorFn } from '@angular/common/http';
+
+import { authInterceptor } from './auth.interceptor';
+
+describe('authInterceptor', () => {
+  const interceptor: HttpInterceptorFn = (req, next) => 
+    TestBed.runInInjectionContext(() => authInterceptor(req, next));
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+  });
+
+  it('should be created', () => {
+    expect(interceptor).toBeTruthy();
+  });
+});
+
+
+=== FILE: \src\app\core\interceptors\auth.interceptor.ts ===
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { inject } from '@angular/core';
+import { catchError, throwError } from 'rxjs';
+
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const router = inject(Router);
+  const token = localStorage.getItem('token');
+
+  const isAuthRequest =
+    req.url.includes('/auth/login') || req.url.includes('/auth/register');
+
+  const authReq = token && !isAuthRequest
+    ? req.clone({
+        setHeaders: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+    : req;
+
+  return next(authReq).pipe(
+    catchError((error: HttpErrorResponse) => {
+      if (error.status === 401) {
+        localStorage.clear();
+        router.navigate(['/login']);
+      }
+      return throwError(() => error);
+    })
+  );
+};
+
+
+=== FILE: \src\app\core\models\auth.model.ts ===
+export interface AuthResponse {
+  token: string;
+  tokenType: string;
+  userId: number;
+  email: string;
+  role: string;
+  message: string;
+}
+
+=== FILE: \src\app\core\services\alert.service.ts ===
+// src/app/core/services/alert.service.ts
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { HttpService } from './http.service';
+import { Alert, GeofenceZone } from '../../shared/models/sensor.model';
+
+@Injectable({ providedIn: 'root' })
+export class AlertService {
+  constructor(private http: HttpService) {}
+
+  // Alerts
+  getAllAlerts(): Observable<Alert[]> {
+    return this.http.get<Alert[]>('/alerts');
+  }
+
+  getAlertById(id: number): Observable<Alert> {
+    return this.http.get<Alert>(`/alerts/${id}`);
+  }
+
+  createAlert(alert: Partial<Alert>): Observable<Alert> {
+    return this.http.post<Alert>('/alerts', alert);
+  }
+
+  updateAlert(id: number, alert: Partial<Alert>): Observable<Alert> {
+    return this.http.put<Alert>(`/alerts/${id}`, alert);
+  }
+
+  deleteAlert(id: number): Observable<void> {
+    return this.http.delete<void>(`/alerts/${id}`);
+  }
+
+  resolveAlert(id: number): Observable<Alert> {
+    return this.http.patch<Alert>(`/alerts/${id}/resolve`, {});
+  }
+
+  // Geofence Zones
+  getAllZones(): Observable<GeofenceZone[]> {
+    return this.http.get<GeofenceZone[]>('/geofence-zones');
+  }
+
+  getZoneById(id: number): Observable<GeofenceZone> {
+    return this.http.get<GeofenceZone>(`/geofence-zones/${id}`);
+  }
+
+  getZonesByAlert(alertId: number): Observable<GeofenceZone[]> {
+    return this.http.get<GeofenceZone[]>(`/geofence-zones/alert/${alertId}`);
+  }
+
+  createZone(zone: Partial<GeofenceZone>): Observable<GeofenceZone> {
+    return this.http.post<GeofenceZone>('/geofence-zones', zone);
+  }
+
+  updateZone(id: number, zone: Partial<GeofenceZone>): Observable<GeofenceZone> {
+    return this.http.put<GeofenceZone>(`/geofence-zones/${id}`, zone);
+  }
+
+  deleteZone(id: number): Observable<void> {
+    return this.http.delete<void>(`/geofence-zones/${id}`);
+  }
+}
+
+
+=== FILE: \src\app\core\services\auth.service.spec.ts ===
+import { TestBed } from '@angular/core/testing';
+
+import { AuthService } from './auth.service';
+
+describe('AuthService', () => {
+  let service: AuthService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(AuthService);
+  });
+
+  it('should be created', () => {
+    expect(service).toBeTruthy();
+  });
+});
+
+
+=== FILE: \src\app\core\services\auth.service.ts ===
+// src/app/core/services/auth.service.ts
+import { Injectable } from '@angular/core';
+import { Observable, tap, catchError, throwError } from 'rxjs';
+import { HttpService } from './http.service';
+
+export interface AuthResponse {
+  token: string;
+  tokenType: string;
+  userId: number;
+  email: string;
+  role: string;
+  message: string;
+}
+
+export interface LogoutResponse {
+  message: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}
+
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+
+  constructor(private httpService: HttpService) {}
+
+  register(data: RegisterRequest): Observable<AuthResponse> {
+    return this.httpService.post<AuthResponse>('/auth/register', data).pipe(
+      tap(res => this.storeAuthData(res))
+    );
+  }
+
+  login(data: LoginRequest): Observable<AuthResponse> {
+    return this.httpService.post<AuthResponse>('/auth/login', data).pipe(
+      tap(res => this.storeAuthData(res))
+    );
+  }
+
+  logout(): Observable<LogoutResponse> {
+    return this.httpService.post<LogoutResponse>('/auth/logout', {}).pipe(
+      tap(() => this.clearAuthData()),
+      catchError((error) => {
+        this.clearAuthData();
+        return throwError(() => error);
+      })
+    );
+  }
+
+  private storeAuthData(res: AuthResponse): void {
+    localStorage.setItem('token', res.token);
+    localStorage.setItem('userId', res.userId.toString());
+    localStorage.setItem('email', res.email);
+    localStorage.setItem('role', res.role);
+  }
+
+  clearAuthData(): void {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('email');
+    localStorage.removeItem('role');
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem('token');
+  }
+
+  getUserId(): string | null {
+    return localStorage.getItem('userId');
+  }
+
+  getRole(): string | null {
+    return localStorage.getItem('role');
+  }
+
+  isLoggedIn(): boolean {
+    return !!this.getToken();
+  }
+}
+
+
+=== FILE: \src\app\core\services\chat.service.ts ===
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
+import { Observable, Subject } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { Message, MessageRequest } from '../../modules/communication/models/message.model';
+import { Conversation } from '../../modules/communication/models/conversation.model';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ChatService {
+  private apiUrl = environment.apiUrl;
+  private stompClient: Client | null = null;
+  private messageSubject = new Subject<Message>();
+
+  constructor(private http: HttpClient) {}
+
+  private getAuthHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token');
+    return new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+  }
+
+  getMyConversations(): Observable<Conversation[]> {
+    return this.http.get<Conversation[]>(
+      `${this.apiUrl}/communication/conversations/me`,
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  getMessagesByConversation(conversationId: number): Observable<Message[]> {
+    return this.http.get<Message[]>(
+      `${this.apiUrl}/communication/messages/conversation/${conversationId}`,
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  sendMessage(payload: MessageRequest): Observable<Message> {
+    return this.http.post<Message>(
+      `${this.apiUrl}/communication/messages/add`,
+      payload,
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  connectToConversation(conversationId: number): void {
+    if (this.stompClient?.active) {
+      this.stompClient.deactivate();
+    }
+
+    this.stompClient = new Client({
+      webSocketFactory: () => new SockJS(`${this.apiUrl}/ws-chat`),
+      reconnectDelay: 5000,
+      debug: (str) => console.log('STOMP:', str)
+    });
+
+    this.stompClient.onConnect = () => {
+      this.stompClient?.subscribe(
+        `/topic/conversations/${conversationId}`,
+        (message: IMessage) => {
+          const chatMessage: Message = JSON.parse(message.body);
+          this.messageSubject.next(chatMessage);
+        }
+      );
+    };
+
+    this.stompClient.onStompError = (frame) => {
+      console.error('Broker error:', frame);
+    };
+
+    this.stompClient.activate();
+  }
+
+  sendTyping(conversationId: number): void {
+    if (!this.stompClient || !this.stompClient.active) {
+      return;
+    }
+
+    this.stompClient.publish({
+      destination: '/app/typing',
+      body: JSON.stringify({
+        conversationId,
+        userId: Number(localStorage.getItem('userId')),
+        email: localStorage.getItem('email')
+      })
+    });
+  }
+
+  onTyping(conversationId: number): Observable<any> {
+    return new Observable<any>((observer) => {
+      let subscription: StompSubscription | null = null;
+
+      const waitForConnection = setInterval(() => {
+        if (this.stompClient && this.stompClient.active) {
+          clearInterval(waitForConnection);
+
+          subscription = this.stompClient.subscribe(
+            `/topic/typing/${conversationId}`,
+            (msg: IMessage) => {
+              observer.next(JSON.parse(msg.body));
+            }
+          );
+        }
+      }, 200);
+
+      return () => {
+        clearInterval(waitForConnection);
+        if (subscription) {
+          subscription.unsubscribe();
+        }
+      };
+    });
+  }
+
+  onMessageReceived(): Observable<Message> {
+    return this.messageSubject.asObservable();
+  }
+
+  disconnect(): void {
+    if (this.stompClient?.active) {
+      this.stompClient.deactivate();
+    }
+  }
+}
+
+=== FILE: \src\app\core\services\conversation.service.ts ===
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { HttpService } from './http.service';
+import {
+  Conversation,
+  ConversationRequest
+} from '../../modules/communication/models/conversation.model';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ConversationService {
+  constructor(private httpService: HttpService) {}
+
+  getAllConversations(): Observable<Conversation[]> {
+    return this.httpService.get<Conversation[]>('/communication/conversations/retrieve-all');
+  }
+
+  getMyConversations(): Observable<Conversation[]> {
+    return this.httpService.get<Conversation[]>('/communication/conversations/me');
+  }
+
+  getConversationById(id: number): Observable<Conversation> {
+    return this.httpService.get<Conversation>(`/communication/conversations/${id}`);
+  }
+
+  createConversation(data: ConversationRequest): Observable<Conversation> {
+    return this.httpService.post<Conversation>('/communication/conversations/add', data);
+  }
+
+  updateConversation(id: number, data: ConversationRequest): Observable<Conversation> {
+    return this.httpService.put<Conversation>(`/communication/conversations/update/${id}`, data);
+  }
+
+  deleteConversation(id: number): Observable<void> {
+    return this.httpService.delete<void>(`/communication/conversations/delete/${id}`);
+  }
+}
+
+=== FILE: \src\app\core\services\discussion-request.service.ts ===
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import {
+  AiPrediction,
+  DiscussionRequest,
+  DiscussionRequestCreate
+} from '../../modules/communication/models/discussion-request.model';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class DiscussionRequestService {
+  private apiUrl = `${environment.apiUrl}/api/conversation-requests`;
+
+  constructor(private http: HttpClient) {}
+
+  private getAuthHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token');
+    return new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+  }
+
+  createRequest(citizenId: number, payload: DiscussionRequestCreate): Observable<DiscussionRequest> {
+    return this.http.post<DiscussionRequest>(
+      `${this.apiUrl}/citizen/${citizenId}`,
+      payload,
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  getPendingRequests(): Observable<DiscussionRequest[]> {
+    return this.http.get<DiscussionRequest[]>(
+      `${this.apiUrl}/pending`,
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  getRequestsByCitizen(citizenId: number): Observable<DiscussionRequest[]> {
+    return this.http.get<DiscussionRequest[]>(
+      `${this.apiUrl}/citizen/${citizenId}`,
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  getRequestsByAdmin(adminId: number): Observable<DiscussionRequest[]> {
+    return this.http.get<DiscussionRequest[]>(
+      `${this.apiUrl}/admin/${adminId}`,
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  acceptRequest(requestId: number, adminId: number): Observable<DiscussionRequest> {
+    return this.http.put<DiscussionRequest>(
+      `${this.apiUrl}/${requestId}/accept/admin/${adminId}`,
+      {},
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  rejectRequest(requestId: number, adminId: number): Observable<DiscussionRequest> {
+    return this.http.put<DiscussionRequest>(
+      `${this.apiUrl}/${requestId}/reject/admin/${adminId}`,
+      {},
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  predictRequest(data: { subject: string; description: string }): Observable<AiPrediction> {
+    return this.http.post<AiPrediction>(
+      `${this.apiUrl}/predict`,
+      data,
+      { headers: this.getAuthHeaders() }
+    );
+  }
+}
+
+=== FILE: \src\app\core\services\evacuation.service.ts ===
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { HttpService } from './http.service';
+import { EvacuationRoute, RouteCheckpoint, ZoneShelterAssignment } from '../../shared/models/evacuation.model';
+
+@Injectable({ providedIn: 'root' })
+export class EvacuationService {
+  constructor(private http: HttpService) {}
+
+  getAllRoutes(): Observable<EvacuationRoute[]> {
+    return this.http.get<EvacuationRoute[]>('/evacuation-routes');
+  }
+
+  getRouteById(id: number): Observable<EvacuationRoute> {
+    return this.http.get<EvacuationRoute>(`/evacuation-routes/${id}`);
+  }
+
+  getRoutesByAlert(alertId: number): Observable<EvacuationRoute[]> {
+    return this.http.get<EvacuationRoute[]>(`/evacuation-routes/alert/${alertId}`);
+  }
+
+  getRoutesByStatus(status: string): Observable<EvacuationRoute[]> {
+    return this.http.get<EvacuationRoute[]>(`/evacuation-routes/status/${status}`);
+  }
+
+  createRoute(route: Partial<EvacuationRoute>): Observable<EvacuationRoute> {
+    return this.http.post<EvacuationRoute>('/evacuation-routes', route);
+  }
+
+  updateRoute(id: number, route: Partial<EvacuationRoute>): Observable<EvacuationRoute> {
+    return this.http.put<EvacuationRoute>(`/evacuation-routes/${id}`, route);
+  }
+
+  recomputeRoute(id: number): Observable<EvacuationRoute> {
+    return this.http.patch<EvacuationRoute>(`/evacuation-routes/${id}/recompute`, {});
+  }
+
+  activateRoute(id: number): Observable<EvacuationRoute> {
+    return this.http.patch<EvacuationRoute>(`/evacuation-routes/${id}/activate`, {});
+  }
+
+  closeRoute(id: number): Observable<EvacuationRoute> {
+    return this.http.patch<EvacuationRoute>(`/evacuation-routes/${id}/close`, {});
+  }
+
+  deleteRoute(id: number): Observable<void> {
+    return this.http.delete<void>(`/evacuation-routes/${id}`);
+  }
+
+  getAllCheckpoints(): Observable<RouteCheckpoint[]> {
+    return this.http.get<RouteCheckpoint[]>('/route-checkpoints');
+  }
+
+  getCheckpointById(id: number): Observable<RouteCheckpoint> {
+    return this.http.get<RouteCheckpoint>(`/route-checkpoints/${id}`);
+  }
+
+  getCheckpointsByRoute(routeId: number): Observable<RouteCheckpoint[]> {
+    return this.http.get<RouteCheckpoint[]>(`/route-checkpoints/route/${routeId}`);
+  }
+
+  createCheckpoint(checkpoint: Partial<RouteCheckpoint>): Observable<RouteCheckpoint> {
+    return this.http.post<RouteCheckpoint>('/route-checkpoints', checkpoint);
+  }
+
+  updateCheckpoint(id: number, checkpoint: Partial<RouteCheckpoint>): Observable<RouteCheckpoint> {
+    return this.http.put<RouteCheckpoint>(`/route-checkpoints/${id}`, checkpoint);
+  }
+
+  deleteCheckpoint(id: number): Observable<void> {
+    return this.http.delete<void>(`/route-checkpoints/${id}`);
+  }
+
+  getAllAssignments(): Observable<ZoneShelterAssignment[]> {
+    return this.http.get<ZoneShelterAssignment[]>('/zone-shelter-assignments');
+  }
+
+  getAssignmentById(id: number): Observable<ZoneShelterAssignment> {
+    return this.http.get<ZoneShelterAssignment>(`/zone-shelter-assignments/${id}`);
+  }
+
+  getAssignmentsByZone(zoneId: number): Observable<ZoneShelterAssignment[]> {
+    return this.http.get<ZoneShelterAssignment[]>(`/zone-shelter-assignments/zone/${zoneId}`);
+  }
+
+  getAssignmentsByShelter(shelterId: number): Observable<ZoneShelterAssignment[]> {
+    return this.http.get<ZoneShelterAssignment[]>(`/zone-shelter-assignments/shelter/${shelterId}`);
+  }
+
+  createAssignment(assignment: Partial<ZoneShelterAssignment>): Observable<ZoneShelterAssignment> {
+    return this.http.post<ZoneShelterAssignment>('/zone-shelter-assignments', assignment);
+  }
+
+  updateAssignment(id: number, assignment: Partial<ZoneShelterAssignment>): Observable<ZoneShelterAssignment> {
+    return this.http.put<ZoneShelterAssignment>(`/zone-shelter-assignments/${id}`, assignment);
+  }
+
+  deleteAssignment(id: number): Observable<void> {
+    return this.http.delete<void>(`/zone-shelter-assignments/${id}`);
+  }
+}
+
+
+=== FILE: \src\app\core\services\http.service.ts ===
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import {T} from '@angular/cdk/keycodes';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class HttpService {
+  private readonly apiUrl = environment.apiUrl;
+
+  constructor(private http: HttpClient) {}
+
+  private buildHeaders(additional?: HttpHeaders, isFormData = false): HttpHeaders {
+    const token = localStorage.getItem('token');
+    let headers = new HttpHeaders();
+
+    // Only set JSON content-type when NOT sending FormData
+    if (!isFormData) {
+      headers = headers.set('Content-Type', 'application/json');
+      headers = headers.set('Accept', 'application/json');
+    }
+
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    if (additional) {
+      additional.keys().forEach(key => {
+        const val = additional.get(key);
+        if (val !== null) {
+          headers = headers.set(key, val);
+        }
+      });
+    }
+
+    return headers;
+  }
+
+  get<T>(endpoint: string, params?: { polygon: string }, customHeaders?: HttpHeaders): Observable<T> {
+    const options = {
+      headers: this.buildHeaders(customHeaders, false),
+      params
+    };
+    return this.http.get<T>(`${this.apiUrl}${endpoint}`, options);
+  }
+
+  post<T>(endpoint: string, body: unknown, params?: HttpParams, customHeaders?: HttpHeaders): Observable<T> {
+    const isFormData = body instanceof FormData;
+    const options = {
+      headers: this.buildHeaders(customHeaders, isFormData),
+      params
+    };
+    return this.http.post<T>(`${this.apiUrl}${endpoint}`, body as any, options);
+  }
+
+  put<T>(endpoint: string, body: unknown, params?: HttpParams, customHeaders?: HttpHeaders): Observable<T> {
+    const isFormData = body instanceof FormData;
+    const options = {
+      headers: this.buildHeaders(customHeaders, isFormData),
+      params
+    };
+    return this.http.put<T>(`${this.apiUrl}${endpoint}`, body as any, options);
+  }
+  patch<T>(endpoint: string, body: unknown, params?: HttpParams, customHeaders?: HttpHeaders): Observable<T> {
+    const isFormData = body instanceof FormData;
+    const options = {
+      headers: this.buildHeaders(customHeaders, isFormData),
+      params
+    };
+    return this.http.patch<T>(`${this.apiUrl}${endpoint}`, body as any, options);
+  }
+  delete<T>(endpoint: string, params?: HttpParams, customHeaders?: HttpHeaders): Observable<T> {
+    const options = {
+      headers: this.buildHeaders(customHeaders, false),
+      params
+    };
+    return this.http.delete<T>(`${this.apiUrl}${endpoint}`, options);
+  }
+}
+
+
+=== FILE: \src\app\core\services\message.service.ts ===
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { HttpService } from './http.service';
+import { Message, MessageRequest } from '../../modules/communication/models/message.model';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class MessageService {
+  constructor(private httpService: HttpService) {}
+
+  getAllMessages(): Observable<Message[]> {
+    return this.httpService.get<Message[]>('/communication/messages/retrieve-all');
+  }
+
+  getMyMessages(): Observable<Message[]> {
+    return this.httpService.get<Message[]>('/communication/messages/me');
+  }
+
+  getMessageById(id: number): Observable<Message> {
+    return this.httpService.get<Message>(`/communication/messages/${id}`);
+  }
+
+  createMessage(data: MessageRequest): Observable<Message> {
+    return this.httpService.post<Message>('/communication/messages/add', data);
+  }
+
+  updateMessage(id: number, data: MessageRequest): Observable<Message> {
+    return this.httpService.put<Message>(`/communication/messages/update/${id}`, data);
+  }
+
+  deleteMessage(id: number): Observable<void> {
+    return this.httpService.delete<void>(`/communication/messages/delete/${id}`);
+  }
+  getMessagesByConversation(conversationId: number): Observable<Message[]> {
+    return this.httpService.get<Message[]>(`/communication/messages/conversation/${conversationId}`);
+  }
+}
+
+=== FILE: \src\app\core\services\notification-preference.service.ts ===
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { HttpService } from './http.service';
+import {
+  NotificationPreference,
+  NotificationPreferenceRequest
+} from '../../modules/communication/models/notification-preference.model';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class NotificationPreferenceService {
+  constructor(private httpService: HttpService) {}
+
+  getAllPreferences(): Observable<NotificationPreference[]> {
+    return this.httpService.get<NotificationPreference[]>('/communication/preferences/retrieve-all');
+  }
+
+  getMyPreferences(): Observable<NotificationPreference[]> {
+    return this.httpService.get<NotificationPreference[]>('/communication/preferences/me');
+  }
+
+  getPreferenceById(id: number): Observable<NotificationPreference> {
+    return this.httpService.get<NotificationPreference>(`/communication/preferences/${id}`);
+  }
+
+  createPreference(data: NotificationPreferenceRequest): Observable<NotificationPreference> {
+    return this.httpService.post<NotificationPreference>('/communication/preferences/add', data);
+  }
+
+  updatePreference(id: number, data: NotificationPreferenceRequest): Observable<NotificationPreference> {
+    return this.httpService.put<NotificationPreference>(`/communication/preferences/update/${id}`, data);
+  }
+
+  deletePreference(id: number): Observable<void> {
+    return this.httpService.delete<void>(`/communication/preferences/delete/${id}`);
+  }
+}
+
+=== FILE: \src\app\core\services\notification.service.ts ===
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { HttpService } from './http.service';
+import { Notification, NotificationRequest } from '../../modules/communication/models/notification.model';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class NotificationService {
+  constructor(private httpService: HttpService) {}
+
+  getAllNotifications(): Observable<Notification[]> {
+    return this.httpService.get<Notification[]>('/communication/notifications/retrieve-all-notifications');
+  }
+
+  getMyNotifications(): Observable<Notification[]> {
+    return this.httpService.get<Notification[]>('/communication/notifications/my-notifications');
+  }
+
+  getNotificationById(id: number): Observable<Notification> {
+    return this.httpService.get<Notification>(`/communication/notifications/retrieve-notification/${id}`);
+  }
+
+  createNotification(data: NotificationRequest): Observable<Notification> {
+    return this.httpService.post<Notification>('/communication/notifications/add-notification', data);
+  }
+
+  updateNotification(id: number, data: NotificationRequest): Observable<Notification> {
+    return this.httpService.put<Notification>(`/communication/notifications/update-notification/${id}`, data);
+  }
+
+  deleteNotification(id: number): Observable<void> {
+    return this.httpService.delete<void>(`/communication/notifications/remove-notification/${id}`);
+  }
+}
+
+=== FILE: \src\app\core\services\sensor.service.ts ===
+// src/app/core/services/sensor.service.ts
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { HttpService } from './http.service';
+import { Sensor, SensorData, AlertThreshold } from '../../shared/models/sensor.model';
+
+@Injectable({ providedIn: 'root' })
+export class SensorService {
+  constructor(private http: HttpService) {}
+
+  // Sensors
+  getAllSensors(): Observable<Sensor[]> {
+    return this.http.get<Sensor[]>('/sensors');
+  }
+
+  getSensorById(id: number): Observable<Sensor> {
+    return this.http.get<Sensor>(`/sensors/${id}`);
+  }
+
+  createSensor(sensor: Partial<Sensor>): Observable<Sensor> {
+    return this.http.post<Sensor>('/sensors', sensor);
+  }
+
+  updateSensor(id: number, sensor: Partial<Sensor>): Observable<Sensor> {
+    return this.http.put<Sensor>(`/sensors/${id}`, sensor);
+  }
+
+  deleteSensor(id: number): Observable<void> {
+    return this.http.delete<void>(`/sensors/${id}`);
+  }
+
+  updateLastPing(id: number): Observable<Sensor> {
+    return this.http.patch<Sensor>(`/sensors/${id}/ping`, {});
+  }
+
+  // Sensor Data
+  getReadingsBySensor(sensorId: number): Observable<SensorData[]> {
+    return this.http.get<SensorData[]>(`/sensor-data/sensor/${sensorId}`);
+  }
+
+  getReadingsBetweenDates(sensorId: number, start: string, end: string): Observable<SensorData[]> {
+    return this.http.get<SensorData[]>(`/sensor-data/sensor/${sensorId}/between?start=${start}&end=${end}`);
+  }
+
+  getAnomalies(): Observable<SensorData[]> {
+    return this.http.get<SensorData[]>('/sensor-data/anomalies');
+  }
+
+  recordReading(reading: Partial<SensorData>): Observable<SensorData> {
+    return this.http.post<SensorData>('/sensor-data', reading);
+  }
+
+  // Alert Thresholds
+  getAllThresholds(): Observable<AlertThreshold[]> {
+    return this.http.get<AlertThreshold[]>('/alert-thresholds');
+  }
+
+  getThresholdById(id: number): Observable<AlertThreshold> {
+    return this.http.get<AlertThreshold>(`/alert-thresholds/${id}`);
+  }
+
+  createThreshold(threshold: Partial<AlertThreshold>): Observable<AlertThreshold> {
+    return this.http.post<AlertThreshold>('/alert-thresholds', threshold);
+  }
+
+  updateThreshold(id: number, threshold: Partial<AlertThreshold>): Observable<AlertThreshold> {
+    return this.http.put<AlertThreshold>(`/alert-thresholds/${id}`, threshold);
+  }
+
+  deleteThreshold(id: number): Observable<void> {
+    return this.http.delete<void>(`/alert-thresholds/${id}`);
+  }
+}
+
+
+=== FILE: \src\app\core\services\spatial.service.ts ===
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpService } from './http.service';
+import { environment } from '../../../environments/environment';
+
+export interface SpatialSensor {
+  id: number;
+  name: string;
+  type: string;
+  location: string;
+  status: string;
+  manufacturer: string | null;
+}
+
+@Injectable({ providedIn: 'root' })
+export class SpatialService {
+  private readonly apiUrl = environment.apiUrl;
+
+  constructor(
+    private http: HttpService,      // keep for other endpoints if needed
+    private httpClient: HttpClient  // add this
+  ) {}
+
+  getSensorsInsideZone(polygonWkt: string): Observable<SpatialSensor[]> {
+    const params = new HttpParams().set('polygon', polygonWkt);
+    // Use httpClient directly to bypass restrictive HttpService
+    return this.httpClient.get<SpatialSensor[]>(
+      `${this.apiUrl}/spatial/sensors/inside-zone`,
+      { params }
+    );
+  }
+
+  getNearestSensors(pointWkt: string, limit: number = 5): Observable<SpatialSensor[]> {
+    let params = new HttpParams()
+      .set('point', pointWkt)
+      .set('limit', limit.toString());
+    // Use httpClient directly
+    return this.httpClient.get<SpatialSensor[]>(
+      `${this.apiUrl}/spatial/sensors/nearest`,
+      { params }
+    );
+  }
+}
+
+
+=== FILE: \src\app\core\services\user.service.ts ===
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { HttpService } from './http.service';
+import { User, UserRequest } from '../../modules/identity/models/user.model';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class UserService {
+  constructor(private httpService: HttpService) {}
+
+  // Get all users
+  getAllUsers(): Observable<User[]> {
+    return this.httpService.get<User[]>('/identity-access/users');
+  }
+
+  // Get user by ID
+  getUserById(id: number): Observable<User> {
+    return this.httpService.get<User>(`/identity-access/users/${id}`);
+  }
+
+  // Create a new user
+  createUser(user: UserRequest): Observable<User> {
+    return this.httpService.post<User>('/identity-access/users', user);
+  }
+
+  // Update an existing user
+  updateUser(id: number, user: UserRequest): Observable<User> {
+    return this.httpService.put<User>(`/identity-access/users/${id}`, user);
+  }
+
+  // Delete user by ID
+  deleteUser(id: number): Observable<void> {
+    return this.httpService.delete<void>(`/identity-access/users/${id}`);
+  }
+
+  // Get the current authenticated user's profile
+  getMyProfile(): Observable<any> {
+    return this.httpService.get<any>('/identity-access/users/me');
+  }
+
+  updateMyProfile(formData: FormData): Observable<any> {
+    // Ne pas définir headers Content-Type ici ; le navigateur fixe le boundary
+    return this.httpService.put<any>('/identity-access/users/me', formData);
+  }
+}
+
+=== FILE: \src\app\layouts\authenticated-layout\authenticated-layout.component.html ===
+<div class="flex min-h-screen">
+  <app-sidebar (logoutClicked)="logout()"></app-sidebar>
+
+  <div class="flex-1 flex flex-col min-w-0">
+    <app-header></app-header>
+
+    <main class="flex-1 px-8 pb-6 pt-10 overflow-auto">      <router-outlet></router-outlet>
+    </main>
+
+    <app-mobile-nav></app-mobile-nav>
+  </div>
+</div>
+
+
+=== FILE: \src\app\layouts\authenticated-layout\authenticated-layout.component.scss ===
+
+
+=== FILE: \src\app\layouts\authenticated-layout\authenticated-layout.component.ts ===
+import { Component } from '@angular/core';
+import { Router, RouterOutlet } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
+
+import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
+import { HeaderComponent } from '../../shared/components/header/header.component';
+import { MobileNavComponent } from '../../shared/components/mobile-nav/mobile-nav.component';
+@Component({
+  selector: 'app-authenticated-layout',
+  standalone: true,
+  imports: [
+    RouterOutlet,
+    SidebarComponent,
+    HeaderComponent,       // ✅ AJOUTÉ
+    MobileNavComponent     // ✅ AJOUTÉ
+  ],
+  templateUrl: './authenticated-layout.component.html',
+  styleUrl: './authenticated-layout.component.scss'
+})
+export class AuthenticatedLayoutComponent {
+
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  logout(): void {
+    this.authService.logout().subscribe({
+      next: () => this.router.navigate(['/login']),
+      error: () => this.router.navigate(['/login'])
+    });
+  }
+}
+
+=== FILE: \src\app\modules\identity\social-auth-success\social-auth-success.component.html ===
+<p>social-auth-success works!</p>
+
+
+=== FILE: \src\app\modules\identity\social-auth-success\social-auth-success.component.scss ===
+
+
+=== FILE: \src\app\modules\identity\social-auth-success\social-auth-success.component.spec.ts ===
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { SocialAuthSuccessComponent } from './social-auth-success.component';
+
+describe('SocialAuthSuccessComponent', () => {
+  let component: SocialAuthSuccessComponent;
+  let fixture: ComponentFixture<SocialAuthSuccessComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [SocialAuthSuccessComponent]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(SocialAuthSuccessComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+
+=== FILE: \src\app\modules\identity\social-auth-success\social-auth-success.component.ts ===
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+
+@Component({
+  selector: 'app-social-auth-success',
+  standalone: true,
+  template: `<p>Connexion en cours...</p>`
+})
+export class SocialAuthSuccessComponent implements OnInit {
+  constructor(private router: Router) {}
+
+  ngOnInit(): void {
+    const params = new URLSearchParams(window.location.search);
+
+    const token = params.get('token');
+    const userId = params.get('userId');
+    const email = params.get('email');
+    const role = params.get('role');
+    const error = params.get('error');
+
+    if (error) {
+      this.router.navigateByUrl('/login');
+      return;
+    }
+
+    if (token && userId && email && role) {
+      localStorage.setItem('token', token);
+      localStorage.setItem('userId', userId);
+      localStorage.setItem('email', email);
+      localStorage.setItem('role', role);
+
+      const normalizedRole = role.trim().toUpperCase();
+      const adminRoles = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN'];
+
+      if (adminRoles.includes(normalizedRole)) {
+        this.router.navigateByUrl('/dashboard');
+      } else {
+        this.router.navigateByUrl('/landing');
+      }
+    } else {
+      this.router.navigateByUrl('/login');
+    }
+  }
+}

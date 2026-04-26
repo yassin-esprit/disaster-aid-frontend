@@ -2,10 +2,8 @@ import { Routes } from '@angular/router';
 import { LandingComponent }     from './pages/landing/landing.component';
 import { LoginComponent }       from './pages/login/login.component';
 import { RegisterComponent }    from './pages/register/register.component';
-import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password.component';
 import { AuthenticatedLayoutComponent } from './layouts/authenticated-layout/authenticated-layout.component';
 import { PublicLayoutComponent }        from './layouts/public-layout/public-layout.component';
-import { authGuard }            from './core/guards/auth.guard';
 import { roleGuard }            from './core/guards/role.guard';
 
 import { SensorListComponent } from './pages/sensor-list/sensor-list.component';
@@ -73,11 +71,11 @@ export const routes: Routes = [
       },
 
       // ── Other admin sections ──
-      {
-        path: 'alerts',
-        loadComponent: () => import('./pages/alerts-map/alerts-map.component')
-          .then(m => m.AlertsMapComponent),
-      },
+      // {
+      //   path: 'alerts',
+      //   loadComponent: () => import('./pages/alerts-map/alerts-map.component')
+      //     .then(m => m.AlertsMapComponent),
+      // },
       {
         path: 'opportunities',
         loadComponent: () => import('./pages/opportunities/opportunities.component')
@@ -109,7 +107,6 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/users-management/users-management.component')
           .then(m => m.UsersManagementComponent),
         canActivate: [adminGuard],
-        loadComponent: () => import('./pages/users-management/users-management.component').then(m => m.UsersManagementComponent)
       },
       {
         path: 'communication',

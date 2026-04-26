@@ -1,14 +1,14 @@
 // src/app/pages/dashboard/dashboard.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AuthenticatedLayoutComponent } from '../../layouts/authenticated-layout/authenticated-layout.component';
+import { RouterModule, ActivatedRoute } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { forkJoin, interval, Subscription } from 'rxjs';
+import { startWith, switchMap } from 'rxjs/operators';
+
 import { SensorService } from '../../core/services/sensor.service';
 import { AlertService } from '../../core/services/alert.service';
 import { EvacuationService } from '../../core/services/evacuation.service';
-import { forkJoin, interval, Subscription } from 'rxjs';
-import { startWith, switchMap } from 'rxjs/operators';
-import { RouterModule, ActivatedRoute } from '@angular/router';   // ← import ActivatedRoute
-import { FormsModule } from '@angular/forms';
 import { IncidentService, IncidentReport, StatusHistory } from '../../core/services/incident.service';
 import { CoordinationService, HelpRequest, TaskAssignment,
   CoordinationStats, VolunteerMatch } from '../../core/services/coordination.service';
@@ -20,9 +20,9 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
   imports: [CommonModule, RouterModule, FormsModule, StatusBadgeComponent],
   templateUrl: './dashboard.component.html'
 })
-export class DashboardComponent implements OnInit, OnDestroy{
+export class DashboardComponent implements OnInit, OnDestroy {
 
-  // ── Stats ────────────────────────────────────────────
+  // ── Stats from coordination service ──────────────────
   stats: CoordinationStats | null = null;
 
   // ── Incidents ─────────────────────────────────────────
@@ -42,82 +42,51 @@ export class DashboardComponent implements OnInit, OnDestroy{
   expandedRequestId: number | null = null;
   assignmentsMap: Record<number, TaskAssignment[] | undefined> = {};
   requestLoading = true;
-  // ── Live stats ──────────────────────────────────────────────────────────────
-  totalSensors  = 0;
+
+  // ── Live sensor/alert/routes data ────────────────────
+  totalSensors = 0;
   activeSensors = 0;
   offlineSensors = 0;
-  activeAlerts  = 0;
+  activeAlerts = 0;
   criticalAlerts = 0;
-  activeRoutes  = 0;
+  activeRoutes = 0;
   anomaliesCount = 0;
 
-  // ── Live alerts feed ────────────────────────────────────────────────────────
+  // ── Live alerts feed ─────────────────────────────────
   recentAlerts: any[] = [];
 
-  // ── Stat cards ───────────────────────────────────────────────────────────────
-  get stats() {
-    return [
-      {
-        label: 'Active Sensors',
-        value: this.activeSensors,
-        subLabel: `${this.offlineSensors} offline`,
-        icon: 'sensors',
-        iconBg: 'bg-secondary/20',
-        iconColor: 'text-secondary',
-        trend: this.offlineSensors > 0 ? `⚠ ${this.offlineSensors} need attention` : '✓ All sensors online',
-        trendColor: this.offlineSensors > 0 ? 'text-amber-400' : 'text-green-400',
-      },
-      {
-        label: 'Active Alerts',
-        value: this.activeAlerts,
-        subLabel: `${this.criticalAlerts} critical`,
-        icon: 'emergency',
-        iconBg: 'bg-error/20',
-        iconColor: 'text-error',
-        trend: this.criticalAlerts > 0 ? `🔴 ${this.criticalAlerts} critical active` : '✓ No critical alerts',
-        trendColor: this.criticalAlerts > 0 ? 'text-error' : 'text-green-400',
-      },
-      {
-        label: 'Active Routes',
-        value: this.activeRoutes,
-        subLabel: 'evacuation routes',
-        icon: 'directions',
-        iconBg: 'bg-primary/20',
-        iconColor: 'text-primary',
-        trend: this.activeRoutes > 0 ? `${this.activeRoutes} route(s) operational` : 'No active evacuations',
-        trendColor: this.activeRoutes > 0 ? 'text-primary' : 'text-on-surface-variant',
-      },
-      {
-        label: 'Anomalies',
-        value: this.anomaliesCount,
-        subLabel: 'detected readings',
-        icon: 'troubleshoot',
-        iconBg: 'bg-amber-500/20',
-        iconColor: 'text-amber-400',
-        trend: this.anomaliesCount > 0 ? `${this.anomaliesCount} anomalous readings` : '✓ All readings normal',
-        trendColor: this.anomaliesCount > 0 ? 'text-amber-400' : 'text-green-400',
-      },
-    ];
-  }
-
-  // ── Active tab ────────────────────────────────────────
-  activeTab: 'overview' | 'incidents' | 'coordination' = 'overview';
-  // ── Static dashboard data (UX items kept from original) ──────────────────
+  // ── Static dashboard data (kept from original) ───────
   readonly notifications = [
     { color: 'bg-secondary', time: '2 min ago',  message: 'Scheduler: 3 geofence zones expired and were flagged.' },
     { color: 'bg-primary',   time: '8 min ago',  message: 'New evacuation route activated for alert #12.' },
     { color: 'bg-amber-500', time: '15 min ago', message: 'Sensor SEISMIC-04 has gone offline (no ping).' },
-    { color: 'bg-error',     time: '1 hr ago',   message: 'CRITICAL alert auto-triggered — Flood Gauge threshold exceeded.' },
+    { color: 'bg-error',     time: '1 hr ago',   message: 'CRITICAL alert auto-triggered — Flood Gauge threshold exceeded.' }
   ];
 
-  // ── Delete confirm ────────────────────────────────────
-  deleteTarget: { type: 'incident' | 'request'; id: number } | null = null;
+  readonly systemStatus = [
+    { label: 'JWT Auth',         status: 'Online',   color: 'text-green-400' },
+    { label: 'WebSocket',        status: 'Live',     color: 'text-green-400' },
+    { label: 'Cache (Caffeine)', status: 'Active',   color: 'text-green-400' },
+    { label: 'Scheduler',        status: 'Running',  color: 'text-green-400' },
+    { label: 'PostGIS Spatial',  status: 'Ready',    color: 'text-green-400' }
+  ];
+
+  readonly impactBars = [
+    { label: 'Civic Engagement', value: 82 },
+    { label: 'Crisis Response',  value: 45 },
+    { label: 'Social Support',   value: 67 }
+  ];
+
+  // ── Quick links ──────────────────────────────────────
   readonly quickLinks = [
     { label: 'Add Sensor',     icon: 'sensors',     route: '/sensors/new',    color: 'text-secondary' },
     { label: 'Create Alert',   icon: 'add_alert',   route: '/alerts/new',     color: 'text-error' },
     { label: 'New Route',      icon: 'add_road',    route: '/evacuation/new', color: 'text-primary' },
-    { label: 'Geofence Zones', icon: 'map',         route: '/geofence',       color: 'text-amber-400' },
+    { label: 'Geofence Zones', icon: 'map',         route: '/geofence',       color: 'text-amber-400' }
   ];
+
+  // ── Delete confirm ────────────────────────────────────
+  deleteTarget: { type: 'incident' | 'request'; id: number } | null = null;
 
   // ── Assign modal ──────────────────────────────────────
   assigningToRequestId: number | null = null;
@@ -127,40 +96,55 @@ export class DashboardComponent implements OnInit, OnDestroy{
   assignNotes = '';
   assignError = '';
 
-  // ── Misc ──────────────────────────────────────────────
-  notifications = [
-    { color: 'bg-secondary', time: '2h ago', msg: 'Certification "Emergency First Aid" verified.'          },
-    { color: 'bg-primary',   time: '5h ago', msg: 'New request from Hope Shelter matching skills.'         },
-    { color: 'bg-error',     time: '1d ago', msg: 'Flash Flood alert issued for Greater Tunis.'            },
-  readonly systemStatus = [
-    { label: 'JWT Auth',         status: 'Online',   color: 'text-green-400' },
-    { label: 'WebSocket',        status: 'Live',     color: 'text-green-400' },
-    { label: 'Cache (Caffeine)', status: 'Active',   color: 'text-green-400' },
-    { label: 'Scheduler',        status: 'Running',  color: 'text-green-400' },
-    { label: 'PostGIS Spatial',  status: 'Ready',    color: 'text-green-400' },
-  ];
+  // ── Active tab ────────────────────────────────────────
+  activeTab: string = 'overview';
 
-  impactBars = [
-    { label: 'Civic Engagement', value: 82 },
-    { label: 'Crisis Response',  value: 45 },
-    { label: 'Social Support',   value: 67 },
-  ];
-  private sub?: Subscription;
+  // ── Status/urgency helpers ───────────────────────────
+  incidentStatuses = ['ALL', 'PENDING', 'VERIFIED', 'REJECTED', 'ESCALATED'];
+  requestStatuses  = ['ALL', 'OPEN', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CANCELLED'];
 
+  severityBadge: Record<string, string> = {
+    LOW:      'bg-secondary/10 text-secondary border-secondary/20',
+    MEDIUM:   'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    HIGH:     'bg-orange-500/10 text-orange-400 border-orange-500/20',
+    CRITICAL: 'bg-error/20 text-error border-error/30'
+  };
+
+  urgencyColors = ['', 'bg-secondary', 'bg-secondary', 'bg-amber-400', 'bg-orange-400', 'bg-error'];
+
+  // ── Private subscriptions ────────────────────────────
+  private liveDataSub?: Subscription;
+
+  // ── Single constructor ────────────────────────────────
   constructor(
     private sensorService: SensorService,
     private alertService: AlertService,
-    private evacuationService: EvacuationService
+    private evacuationService: EvacuationService,
+    private incSvc: IncidentService,
+    private coordSvc: CoordinationService,
+    private route: ActivatedRoute
   ) {}
 
+  // ── Lifecycle hooks ───────────────────────────────────
   ngOnInit(): void {
-    // Auto-refresh every 30 seconds
-    this.sub = interval(30_000).pipe(
+    // Read optional tab from route data
+    const routeTab = this.route.snapshot.data['tab'];
+    if (routeTab && ['overview', 'incidents', 'coordination'].includes(routeTab)) {
+      this.activeTab = routeTab;
+    }
+
+    // Load data from coordination/incident services
+    this.loadStats();
+    this.loadIncidents();
+    this.loadRequests();
+
+    // Auto-refresh live sensor/alert/routes every 30 seconds
+    this.liveDataSub = interval(30_000).pipe(
       startWith(0),
       switchMap(() => forkJoin({
-        sensors:    this.sensorService.getAllSensors(),
-        alerts:     this.alertService.getAllAlerts(),
-        routes:     this.evacuationService.getAllRoutes(),
+        sensors: this.sensorService.getAllSensors(),
+        alerts:  this.alertService.getAllAlerts(),
+        routes:  this.evacuationService.getAllRoutes()
       }))
     ).subscribe(({ sensors, alerts, routes }) => {
       this.totalSensors   = sensors.length;
@@ -181,41 +165,62 @@ export class DashboardComponent implements OnInit, OnDestroy{
           icon:          this.alertIcon(a.disasterType),
           iconBg:        this.alertIconBg(a.severity),
           severityClass: this.severityClass(a.severity),
-          borderClass:   this.borderClass(a.severity),
+          borderClass:   this.borderClass(a.severity)
         }));
     });
   }
 
-  incidentStatuses = ['ALL','PENDING','VERIFIED','REJECTED','ESCALATED'];
-  requestStatuses  = ['ALL','OPEN','ASSIGNED','IN_PROGRESS','RESOLVED','CANCELLED'];
-
-  severityBadge: Record<string,string> = {
-    LOW:      'bg-secondary/10 text-secondary border-secondary/20',
-    MEDIUM:   'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    HIGH:     'bg-orange-500/10 text-orange-400 border-orange-500/20',
-    CRITICAL: 'bg-error/20 text-error border-error/30',
-  };
-
-  urgencyColors: string[] = ['','bg-secondary','bg-secondary','bg-amber-400','bg-orange-400','bg-error'];
-
-  constructor(
-    private incSvc: IncidentService,
-    private coordSvc: CoordinationService,
-    private route: ActivatedRoute   // ← inject
-  ) {}
-
-  ngOnInit(): void {
-    // Read optional tab from route data
-    const routeTab = this.route.snapshot.data['tab'];
-    if (routeTab && ['overview','incidents','coordination'].includes(routeTab)) {
-      this.activeTab = routeTab;
-    }
-    this.loadStats();
-    this.loadIncidents();
-    this.loadRequests();
+  ngOnDestroy(): void {
+    this.liveDataSub?.unsubscribe();
   }
 
-  // ── Loaders ───────────────────────────────────────────
+  // ── Getter for stat cards (avoid name conflict with `stats`) ──
+  get statsCards() {
+    return [
+      {
+        label: 'Active Sensors',
+        value: this.activeSensors,
+        subLabel: `${this.offlineSensors} offline`,
+        icon: 'sensors',
+        iconBg: 'bg-secondary/20',
+        iconColor: 'text-secondary',
+        trend: this.offlineSensors > 0 ? `⚠ ${this.offlineSensors} need attention` : '✓ All sensors online',
+        trendColor: this.offlineSensors > 0 ? 'text-amber-400' : 'text-green-400'
+      },
+      {
+        label: 'Active Alerts',
+        value: this.activeAlerts,
+        subLabel: `${this.criticalAlerts} critical`,
+        icon: 'emergency',
+        iconBg: 'bg-error/20',
+        iconColor: 'text-error',
+        trend: this.criticalAlerts > 0 ? `🔴 ${this.criticalAlerts} critical active` : '✓ No critical alerts',
+        trendColor: this.criticalAlerts > 0 ? 'text-error' : 'text-green-400'
+      },
+      {
+        label: 'Active Routes',
+        value: this.activeRoutes,
+        subLabel: 'evacuation routes',
+        icon: 'directions',
+        iconBg: 'bg-primary/20',
+        iconColor: 'text-primary',
+        trend: this.activeRoutes > 0 ? `${this.activeRoutes} route(s) operational` : 'No active evacuations',
+        trendColor: this.activeRoutes > 0 ? 'text-primary' : 'text-on-surface-variant'
+      },
+      {
+        label: 'Anomalies',
+        value: this.anomaliesCount,
+        subLabel: 'detected readings',
+        icon: 'troubleshoot',
+        iconBg: 'bg-amber-500/20',
+        iconColor: 'text-amber-400',
+        trend: this.anomaliesCount > 0 ? `${this.anomaliesCount} anomalous readings` : '✓ All readings normal',
+        trendColor: this.anomaliesCount > 0 ? 'text-amber-400' : 'text-green-400'
+      }
+    ];
+  }
+
+  // ── Data loading methods ──────────────────────────────
   loadStats(): void {
     this.coordSvc.getStats().subscribe({ next: s => this.stats = s });
   }
@@ -236,24 +241,24 @@ export class DashboardComponent implements OnInit, OnDestroy{
     });
   }
 
-  // ── Filters ───────────────────────────────────────────
+  // ── Filter methods ────────────────────────────────────
   applyIncidentFilters(): void {
     this.filteredIncidents = this.incidents.filter(r => {
-      const s = this.incidentFilter === 'ALL' || r.status === this.incidentFilter;
-      const q = !this.incidentSearch ||
+      const statusMatch = this.incidentFilter === 'ALL' || r.status === this.incidentFilter;
+      const searchMatch = !this.incidentSearch ||
         r.disasterType?.toLowerCase().includes(this.incidentSearch.toLowerCase()) ||
         r.location?.toLowerCase().includes(this.incidentSearch.toLowerCase());
-      return s && q;
+      return statusMatch && searchMatch;
     });
   }
 
   applyRequestFilters(): void {
     this.filteredRequests = this.requests.filter(r => {
-      const s = this.requestFilter === 'ALL' || r.status === this.requestFilter;
-      const q = !this.requestSearch ||
+      const statusMatch = this.requestFilter === 'ALL' || r.status === this.requestFilter;
+      const searchMatch = !this.requestSearch ||
         r.type?.toLowerCase().includes(this.requestSearch.toLowerCase()) ||
         r.location?.toLowerCase().includes(this.requestSearch.toLowerCase());
-      return s && q;
+      return statusMatch && searchMatch;
     });
   }
 
@@ -261,8 +266,8 @@ export class DashboardComponent implements OnInit, OnDestroy{
   updateIncidentStatus(id: number, status: string): void {
     this.incSvc.updateStatus(id, status).subscribe({
       next: updated => {
-        const i = this.incidents.findIndex(x => x.id === id);
-        if (i !== -1) this.incidents[i] = updated as any;
+        const idx = this.incidents.findIndex(x => x.id === id);
+        if (idx !== -1) this.incidents[idx] = updated as IncidentReport;
         this.applyIncidentFilters();
         this.incSvc.getHistory(id).subscribe(h => this.historyMap[id] = h);
       }
@@ -278,12 +283,12 @@ export class DashboardComponent implements OnInit, OnDestroy{
 
   // ── Request actions ───────────────────────────────────
   updateRequestStatus(id: number, status: string): void {
-    const r = this.requests.find(x => x.id === id);
-    if (!r) return;
-    this.coordSvc.updateRequest(id, { ...r, status }).subscribe({
+    const req = this.requests.find(x => x.id === id);
+    if (!req) return;
+    this.coordSvc.updateRequest(id, { ...req, status }).subscribe({
       next: updated => {
-        const i = this.requests.findIndex(x => x.id === id);
-        if (i !== -1) this.requests[i] = updated;
+        const idx = this.requests.findIndex(x => x.id === id);
+        if (idx !== -1) this.requests[idx] = updated;
         this.applyRequestFilters();
       }
     });
@@ -317,7 +322,9 @@ export class DashboardComponent implements OnInit, OnDestroy{
     });
   }
 
-  closeAssignModal(): void { this.assigningToRequestId = null; }
+  closeAssignModal(): void {
+    this.assigningToRequestId = null;
+  }
 
   submitAssignment(): void {
     if (!this.assigningToRequestId || !this.assignResponderId) {
@@ -389,47 +396,68 @@ export class DashboardComponent implements OnInit, OnDestroy{
   }
 
   getTimelineIcon(status: string): string {
-    const m: Record<string,string> = {
+    const map: Record<string, string> = {
       PENDING: 'schedule', VERIFIED: 'check', REJECTED: 'close', ESCALATED: 'arrow_upward'
     };
-    return m[status] || 'circle';
+    return map[status] || 'circle';
   }
 
   getTimelineDotStyle(status: string): string {
-    const m: Record<string,string> = {
+    const map: Record<string, string> = {
       PENDING:   'background:rgba(245,158,11,0.8)',
       VERIFIED:  'background:rgba(105,156,255,0.8)',
       REJECTED:  'background:rgba(255,110,132,0.8)',
       ESCALATED: 'background:rgba(249,115,22,0.8)'
     };
-    return m[status] || 'background:rgba(255,255,255,0.2)';
+    return map[status] || 'background:rgba(255,255,255,0.2)';
   }
 
   getStatusPill(status: string): string {
-    const m: Record<string,string> = {
+    const map: Record<string, string> = {
       PENDING:   'background:rgba(245,158,11,0.15);color:#fbbf24',
       VERIFIED:  'background:rgba(105,156,255,0.15);color:#699cff',
       REJECTED:  'background:rgba(255,110,132,0.15);color:#ff6e84',
-      ESCALATED: 'background:rgba(249,115,22,0.15);color:#fb923c',
+      ESCALATED: 'background:rgba(249,115,22,0.15);color:#fb923c'
     };
-    return m[status] || 'background:rgba(255,255,255,0.05);color:#94a3b8';
+    return map[status] || 'background:rgba(255,255,255,0.05);color:#94a3b8';
   }
-  ngOnDestroy(): void { this.sub?.unsubscribe(); }
 
+  // ── Alert icons and styling ───────────────────────────
   alertIcon(type: string): string {
-    return { FLOOD: 'water', EARTHQUAKE: 'earthquake', WILDFIRE: 'local_fire_department',
-      LANDSLIDE: 'landslide', STORM: 'thunderstorm', CHEMICAL: 'science' }[type] ?? 'emergency';
+    const map: Record<string, string> = {
+      FLOOD: 'water', EARTHQUAKE: 'earthquake', WILDFIRE: 'local_fire_department',
+      LANDSLIDE: 'landslide', STORM: 'thunderstorm', CHEMICAL: 'science'
+    };
+    return map[type] ?? 'emergency';
   }
+
   alertIconBg(severity: string): string {
-    return { CRITICAL: 'bg-error/20 text-error', HIGH: 'bg-orange-500/20 text-orange-400',
-      MODERATE: 'bg-amber-500/20 text-amber-400', LOW: 'bg-green-500/20 text-green-400' }[severity] ?? 'bg-white/10 text-white';
+    const map: Record<string, string> = {
+      CRITICAL: 'bg-error/20 text-error',
+      HIGH: 'bg-orange-500/20 text-orange-400',
+      MODERATE: 'bg-amber-500/20 text-amber-400',
+      LOW: 'bg-green-500/20 text-green-400'
+    };
+    return map[severity] ?? 'bg-white/10 text-white';
   }
+
   severityClass(severity: string): string {
-    return { CRITICAL: 'bg-error text-white', HIGH: 'bg-orange-500/20 text-orange-400 border border-orange-500/30',
-      MODERATE: 'bg-amber-500/20 text-amber-400', LOW: 'bg-green-500/20 text-green-400' }[severity] ?? '';
+    const map: Record<string, string> = {
+      CRITICAL: 'bg-error text-white',
+      HIGH: 'bg-orange-500/20 text-orange-400 border border-orange-500/30',
+      MODERATE: 'bg-amber-500/20 text-amber-400',
+      LOW: 'bg-green-500/20 text-green-400'
+    };
+    return map[severity] ?? '';
   }
+
   borderClass(severity: string): string {
-    return { CRITICAL: 'border-error', HIGH: 'border-orange-500',
-      MODERATE: 'border-amber-500', LOW: 'border-green-500' }[severity] ?? 'border-white/10';
+    const map: Record<string, string> = {
+      CRITICAL: 'border-error',
+      HIGH: 'border-orange-500',
+      MODERATE: 'border-amber-500',
+      LOW: 'border-green-500'
+    };
+    return map[severity] ?? 'border-white/10';
   }
 }
