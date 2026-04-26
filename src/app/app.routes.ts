@@ -4,12 +4,15 @@ import { LoginComponent } from './pages/login/login.component';
 import { RegisterComponent } from './pages/register/register.component';
 import { AuthenticatedLayoutComponent } from './layouts/authenticated-layout/authenticated-layout.component';
 
+
 export const routes: Routes = [
   { path: '', component: LandingComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
+  { path: 'my-hours', loadComponent: () => import('./pages/my-hours/my-hours.component').then(m => m.MyHoursComponent) },
 
   {
+
     path: '',
     component: AuthenticatedLayoutComponent,
     children: [
@@ -62,6 +65,14 @@ export const routes: Routes = [
           import('./modules/gamification/gamification/gamification.component')
             .then(m => m.GamificationComponent),
       },
+
+      {
+        path: 'my-hours',
+        loadComponent: () =>
+          import('./pages/my-hours/my-hours.component')
+            .then(m => m.MyHoursComponent),
+      },
+
     ],
   },
 

@@ -1,0 +1,181 @@
+<div class="font-body text-on-surface antialiased min-h-screen bg-[#020d27] flex flex-col">
+  <!-- ── Nav (same as landing page) ─────────────── -->
+  <nav class="fixed top-0 w-full h-16 z-50 bg-white/10 backdrop-blur-md shadow-[0_0_40px_rgba(108,92,231,0.12)]">
+    <div class="flex justify-between items-center px-8 w-full max-w-screen-2xl mx-auto h-full relative">
+      <!-- Logo -->
+      <a routerLink="/" class="text-2xl font-black text-white tracking-tighter flex items-center gap-2 hover:opacity-90 transition-opacity">
+        CPS
+        <span class="text-xs font-mono text-primary px-2 py-0.5 bg-primary/10 rounded-full tracking-normal">HUB</span>
+      </a>
+
+      <!-- Nav links -->
+      <div class="hidden md:flex items-center space-x-8 font-medium text-sm tracking-tight">
+        <a routerLink="/" class="text-slate-300 hover:text-white transition-colors pb-1">Home</a>
+        <a href="#" class="text-slate-300 hover:text-white transition-colors pb-1">Alerts</a>
+        <a href="#" class="text-slate-300 hover:text-white transition-colors pb-1">Opportunities</a>
+        <a href="#" class="text-slate-300 hover:text-white transition-colors pb-1">About</a>
+        <a routerLink="/my-hours" class="text-violet-400 border-b-2 border-violet-500 pb-1 font-semibold">Hours</a>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-4">
+        <div class="h-6 w-[1px] bg-white/10 mx-2 hidden sm:block"></div>
+        <a routerLink="/login" class="text-slate-300 text-sm font-medium hover:text-white transition-colors hidden sm:block">Sign In</a>
+        <a routerLink="/register" class="bg-primary text-on-primary px-5 py-2 rounded-full text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+          Get Started
+        </a>
+      </div>
+
+      <div class="bg-gradient-to-r from-violet-500/20 to-transparent h-[1px] bottom-0 absolute left-0 right-0"></div>
+    </div>
+  </nav>
+
+  <!-- ── My Hours Content ───────────────────────── -->
+  <main class="pt-20 px-4 flex-1">
+    <div class="my-hours-page">
+      <div class="page-header">
+        <h1>My Hours</h1>
+        <p>Track your volunteering hours, certificates, and impact</p>
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-btn" [class.active]="activeTab === 'timesheets'" (click)="switchTab('timesheets')">
+          <span class="material-symbols-outlined">schedule</span> My Timesheets
+        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'certificates'" (click)="switchTab('certificates')">
+          <span class="material-symbols-outlined">workspace_premium</span> My Certificates
+        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'impact'" (click)="switchTab('impact')">
+          <span class="material-symbols-outlined">insights</span> My Impact
+        </button>
+      </div>
+
+      <!-- ═══ TIMESHEETS ═══ -->
+      <div *ngIf="activeTab === 'timesheets'" class="section-page">
+        <div class="section-header">
+          <div>
+            <h2>My Timesheets</h2>
+            <p>Log your volunteer hours for approval</p>
+          </div>
+          <button class="add-btn" (click)="openCreateTs()">+ Log Hours</button>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-mini"><span class="stat-mini-value">{{ totalHours }}h</span><span class="stat-mini-label">Approved</span></div>
+          <div class="stat-mini"><span class="stat-mini-value">{{ pendingCount }}</span><span class="stat-mini-label">Pending</span></div>
+          <div class="stat-mini"><span class="stat-mini-value">{{ approvedCount }}</span><span class="stat-mini-label">Approved Entries</span></div>
+        </div>
+
+        <div class="table-card">
+          <div *ngIf="loading" class="loading-state">Loading…</div>
+          <div *ngIf="!loading" class="table-wrapper">
+            <table>
+              <thead>
+              <tr><th>Date</th><th>Hours</th><th>Org</th><th>Description</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+              <tr *ngFor="let t of timesheets">
+                <td>{{ t.workDate }}</td>
+                <td><strong>{{ t.loggedHours }}h</strong></td>
+                <td>#{{ t.orgId }}</td>
+                <td class="desc-cell">{{ t.taskDescription }}</td>
+                <td><span class="badge" [ngClass]="statusClass(t.status)">{{ t.status }}</span></td>
+              </tr>
+              </tbody>
+            </table>
+            <div *ngIf="timesheets.length === 0" class="empty-state">
+              <span class="material-symbols-outlined empty-icon">schedule</span>
+              <p>No timesheets yet</p>
+              <button class="add-btn" (click)="openCreateTs()">Log Your First Hours</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal -->
+        <div class="modal-backdrop" *ngIf="showModal">
+          <div class="modal-card">
+            <div class="modal-header">
+              <h2>{{ editMode ? 'Edit Timesheet' : 'Log Hours' }}</h2>
+              <button class="close-btn" (click)="closeModal()">&times;</button>
+            </div>
+            <div class="modal-form">
+              <div class="form-group"><label>Organization ID</label><input type="number" [(ngModel)]="tsForm.orgId" /></div>
+              <div class="form-group"><label>Hours Worked</label><input type="number" step="0.5" min="0.5" [(ngModel)]="tsForm.loggedHours" /></div>
+              <div class="form-group"><label>Work Date</label><input type="date" [(ngModel)]="tsForm.workDate" /></div>
+              <div class="form-group full"><label>Task Description</label><textarea rows="4" [(ngModel)]="tsForm.taskDescription" placeholder="Describe what you did…"></textarea></div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+              <button class="btn-primary" [disabled]="saving" (click)="submitTs()">{{ saving ? 'Saving…' : (editMode ? 'Update' : 'Submit') }}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ CERTIFICATES ═══ -->
+      <div *ngIf="activeTab === 'certificates'" class="section-page">
+        <div class="section-header">
+          <div><h2>My Certificates</h2><p>Your earned credentials</p></div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-mini"><span class="stat-mini-value">{{ certificates.length }}</span><span class="stat-mini-label">Total</span></div>
+          <div class="stat-mini"><span class="stat-mini-value">{{ totalCertifiedHours }}h</span><span class="stat-mini-label">Certified Hours</span></div>
+        </div>
+
+        <div class="certs-grid" *ngIf="!loading && certificates.length > 0">
+          <div class="cert-card" *ngFor="let c of certificates">
+            <div class="cert-icon"><span class="material-symbols-outlined">workspace_premium</span></div>
+            <div class="cert-body">
+              <h3>Certificate #{{ c.certificateId }}</h3>
+              <p class="cert-period">{{ c.periodFrom }} → {{ c.periodTo }}</p>
+              <p class="cert-hours">{{ c.totalHours }} certified hours</p>
+              <p class="cert-org">Org #{{ c.orgId }}</p>
+              <a *ngIf="c.pdfUrl" [href]="c.pdfUrl" target="_blank" class="cert-link"><span class="material-symbols-outlined">download</span> Download PDF</a>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="!loading && certificates.length === 0" class="empty-state">
+          <span class="material-symbols-outlined empty-icon">workspace_premium</span>
+          <p>No certificates yet</p>
+        </div>
+        <div *ngIf="loading" class="loading-state">Loading…</div>
+      </div>
+
+      <!-- ═══ IMPACT ═══ -->
+      <div *ngIf="activeTab === 'impact'" class="section-page">
+        <div class="section-header">
+          <div><h2>My Impact</h2><p>Your real-world contribution</p></div>
+        </div>
+
+        <div *ngIf="!loading && impactRecords.length > 0">
+          <div class="impact-card" *ngFor="let r of impactRecords">
+            <div class="impact-grid">
+              <div class="impact-item"><span class="impact-value">{{ r.totalApprovedHours }}h</span><span class="impact-label">Approved Hours</span></div>
+              <div class="impact-item"><span class="impact-value">{{ r.peopleHelped || 0 }}</span><span class="impact-label">People Helped</span></div>
+              <div class="impact-item"><span class="impact-value">{{ r.mealsServed || 0 }}</span><span class="impact-label">Meals Served</span></div>
+              <div class="impact-item"><span class="impact-value">{{ r.co2OffsetKg || 0 }} kg</span><span class="impact-label">CO₂ Offset</span></div>
+              <div class="impact-item"><span class="impact-value">{{ r.wasteRemovedKg || 0 }} kg</span><span class="impact-label">Waste Removed</span></div>
+              <div class="impact-item"><span class="impact-value">{{ r.hoursOfTutoring || 0 }}h</span><span class="impact-label">Tutoring</span></div>
+            </div>
+            <div class="impact-footer">
+              <span class="badge" [ngClass]="confidenceClass(r.confidenceLevel)">{{ r.confidenceLevel }}</span>
+              <span class="impact-date" *ngIf="r.lastCalculatedAt">Updated {{ r.lastCalculatedAt | date:'mediumDate' }}</span>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="!loading && impactRecords.length === 0" class="empty-state">
+          <span class="material-symbols-outlined empty-icon">insights</span>
+          <p>No impact records yet</p>
+        </div>
+        <div *ngIf="loading" class="loading-state">Loading…</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ── Footer ────────────────────────────────── -->
+  <footer class="w-full border-t border-white/5 bg-slate-950/80 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-8 py-8 text-center">
+      <p class="text-slate-500 text-xs">Powered by DisasterAid ⊕ VolunteerHub © 2025. All rights reserved.</p>
+    </div>
+  </footer>
+</div>
