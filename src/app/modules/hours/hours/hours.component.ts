@@ -6,7 +6,7 @@ import { environment } from '../../../../environments/environment';
 
 type HoursTab = 'timesheets' | 'certificates' | 'impact';
 type TimesheetStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'DISPUTED';
-type ConfidenceLevel = 'ESTIMATED' | 'CALIBRATED' | 'VERIFIED';
+type ConfidenceLevel = 'ESTIMATED' | 'UNVERIFIED' | 'VERIFIED';
 
 @Component({
   selector: 'app-hours',
@@ -171,7 +171,7 @@ export class HoursComponent implements OnInit {
   // ════════════════════════════════════════════════════════════════════════════
   impactRecords: any[] = [];
   filteredImpact: any[] = [];
-  confidenceLevels: ConfidenceLevel[] = ['ESTIMATED', 'CALIBRATED', 'VERIFIED'];
+  confidenceLevels: ConfidenceLevel[] = ['ESTIMATED', 'UNVERIFIED', 'VERIFIED'];
   impactForm: any = this.emptyImpactForm();
 
   loadImpact(): void {
@@ -214,7 +214,7 @@ export class HoursComponent implements OnInit {
   }
 
   confidenceClass(level: string): string {
-    return ({ VERIFIED: 'badge-green', CALIBRATED: 'badge-blue', ESTIMATED: 'badge-yellow' } as any)[level] || '';
+    return ({ VERIFIED: 'badge-green', UNVERIFIED: 'badge-blue', ESTIMATED: 'badge-yellow' } as any)[level] || '';
   }
 
   private emptyImpactForm() {
