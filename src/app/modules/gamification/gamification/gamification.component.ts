@@ -221,8 +221,8 @@ export class GamificationComponent implements OnInit {
   submitBoard(): void {
     this.saving = true;
     const url = this.editMode && this.selectedId
-      ? `${environment.apiUrl}/api/leaderboards/${this.selectedId}`
-      : `${environment.apiUrl}/api/leaderboards`;
+      ? `${environment.apiUrl}/leaderboards/${this.selectedId}`
+      : `${environment.apiUrl}/leaderboards`;
     const req$ = this.editMode && this.selectedId
       ? this.http.put<any>(url, this.boardForm, { headers: this.headers })
       : this.http.post<any>(url, this.boardForm, { headers: this.headers });
@@ -234,7 +234,7 @@ export class GamificationComponent implements OnInit {
 
   refreshBoard(id: number): void {
     this.http.put<any>(
-      `${environment.apiUrl}/api/leaderboards/${id}/refresh`,
+      `${environment.apiUrl}/leaderboards/${id}/refresh`,
       '[]',
       { headers: this.headers }
     ).subscribe({ next: () => this.loadLeaderboards() });
@@ -249,7 +249,7 @@ export class GamificationComponent implements OnInit {
 
   deleteBoard(id: number): void {
     if (!confirm('Delete this leaderboard?')) return;
-    this.http.delete<void>(`${environment.apiUrl}/api/leaderboards/${id}`, { headers: this.headers })
+    this.http.delete<void>(`${environment.apiUrl}/leaderboards/${id}`, { headers: this.headers })
       .subscribe({ next: () => this.loadLeaderboards() });
   }
 
@@ -273,7 +273,7 @@ export class GamificationComponent implements OnInit {
 
   loadChallenges(): void {
     this.loading = true;
-    this.http.get<any[]>(`${environment.apiUrl}/api/challenges`, { headers: this.headers }).subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/challenges`, { headers: this.headers }).subscribe({
       next: (res) => { this.challenges = res; this.filterChallenges(); this.loading = false; },
       error: (e) => { console.error('Challenges error', e); this.loading = false; }
     });
@@ -306,8 +306,8 @@ export class GamificationComponent implements OnInit {
   submitChallenge(): void {
     this.saving = true;
     const url = this.editMode && this.selectedId
-      ? `${environment.apiUrl}/api/challenges/${this.selectedId}`
-      : `${environment.apiUrl}/api/challenges`;
+      ? `${environment.apiUrl}/challenges/${this.selectedId}`
+      : `${environment.apiUrl}/challenges`;
     const req$ = this.editMode && this.selectedId
       ? this.http.put<any>(url, this.challengeForm, { headers: this.headers })
       : this.http.post<any>(url, this.challengeForm, { headers: this.headers });
@@ -326,7 +326,7 @@ export class GamificationComponent implements OnInit {
 
   confirmJoin(): void {
     if (!this.joinChallengeId || !this.joinVolunteerId) return;
-    const endpoint = `${environment.apiUrl}/api/challenges/${this.joinChallengeId}/${this.joinAction}?volunteerId=${this.joinVolunteerId}`;
+    const endpoint = `${environment.apiUrl}/challenges/${this.joinChallengeId}/${this.joinAction}?volunteerId=${this.joinVolunteerId}`;
     this.http.post<any>(endpoint, {}, { headers: this.headers }).subscribe({
       next: () => { this.showJoinModal = false; this.loadChallenges(); },
       error: (err) => alert(err?.error?.message || 'Operation failed.')
@@ -335,7 +335,7 @@ export class GamificationComponent implements OnInit {
 
   deleteChallenge(id: number): void {
     if (!confirm('Delete this challenge?')) return;
-    this.http.delete<void>(`${environment.apiUrl}/api/challenges/${id}`, { headers: this.headers })
+    this.http.delete<void>(`${environment.apiUrl}/challenges/${id}`, { headers: this.headers })
       .subscribe({ next: () => this.loadChallenges() });
   }
 

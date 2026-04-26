@@ -55,7 +55,7 @@ export class HoursComponent implements OnInit {
 
   loadTimesheets(): void {
     this.loading = true;
-    this.http.get<any[]>(`${environment.apiUrl}/api/timesheets`, { headers: this.headers }).subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/timesheets`, { headers: this.headers }).subscribe({
       next: (res) => { this.timesheets = res; this.filterTimesheets(); this.loading = false; },
       error: (e) => { console.error('Timesheets error', e); this.loading = false; }
     });
@@ -82,8 +82,8 @@ export class HoursComponent implements OnInit {
   submitTs(): void {
     this.saving = true;
     const url = this.editMode && this.selectedId
-      ? `${environment.apiUrl}/api/timesheets/${this.selectedId}`
-      : `${environment.apiUrl}/api/timesheets`;
+      ? `${environment.apiUrl}/timesheets/${this.selectedId}`
+      : `${environment.apiUrl}/timesheets`;
     const req$ = this.editMode && this.selectedId
       ? this.http.put<any>(url, this.tsForm, { headers: this.headers })
       : this.http.post<any>(url, this.tsForm, { headers: this.headers });
@@ -91,20 +91,20 @@ export class HoursComponent implements OnInit {
   }
 
   approveTs(id: number): void {
-    this.http.put<any>(`${environment.apiUrl}/api/timesheets/${id}/approve?supervisorId=${this.supervisorId}`, {}, { headers: this.headers })
+    this.http.put<any>(`${environment.apiUrl}/timesheets/${id}/approve?supervisorId=${this.supervisorId}`, {}, { headers: this.headers })
       .subscribe({ next: () => this.loadTimesheets() });
   }
 
   openReject(id: number): void { this.rejectTargetId = id; this.rejectReason = ''; this.showRejectModal = true; }
   confirmReject(): void {
     if (!this.rejectTargetId || !this.rejectReason.trim()) return;
-    this.http.put<any>(`${environment.apiUrl}/api/timesheets/${this.rejectTargetId}/reject?supervisorId=${this.supervisorId}&reason=${encodeURIComponent(this.rejectReason)}`, {}, { headers: this.headers })
+    this.http.put<any>(`${environment.apiUrl}/timesheets/${this.rejectTargetId}/reject?supervisorId=${this.supervisorId}&reason=${encodeURIComponent(this.rejectReason)}`, {}, { headers: this.headers })
       .subscribe({ next: () => { this.showRejectModal = false; this.loadTimesheets(); } });
   }
 
   deleteTs(id: number): void {
     if (!confirm('Delete this timesheet?')) return;
-    this.http.delete<void>(`${environment.apiUrl}/api/timesheets/${id}`, { headers: this.headers })
+    this.http.delete<void>(`${environment.apiUrl}/timesheets/${id}`, { headers: this.headers })
       .subscribe({ next: () => this.loadTimesheets() });
   }
 
@@ -125,7 +125,7 @@ export class HoursComponent implements OnInit {
 
   loadCertificates(): void {
     this.loading = true;
-    this.http.get<any[]>(`${environment.apiUrl}/api/certificates`, { headers: this.headers }).subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/certificates`, { headers: this.headers }).subscribe({
       next: (res) => { this.certificates = res; this.filterCerts(); this.loading = false; },
       error: (e) => { console.error('Certificates error', e); this.loading = false; }
     });
@@ -148,8 +148,8 @@ export class HoursComponent implements OnInit {
   submitCert(): void {
     this.saving = true;
     const url = this.editMode && this.selectedId
-      ? `${environment.apiUrl}/api/certificates/${this.selectedId}`
-      : `${environment.apiUrl}/api/certificates`;
+      ? `${environment.apiUrl}/certificates/${this.selectedId}`
+      : `${environment.apiUrl}/certificates`;
     const req$ = this.editMode && this.selectedId
       ? this.http.put<any>(url, this.certForm, { headers: this.headers })
       : this.http.post<any>(url, this.certForm, { headers: this.headers });
@@ -158,7 +158,7 @@ export class HoursComponent implements OnInit {
 
   deleteCert(id: number): void {
     if (!confirm('Delete this certificate?')) return;
-    this.http.delete<void>(`${environment.apiUrl}/api/certificates/${id}`, { headers: this.headers })
+    this.http.delete<void>(`${environment.apiUrl}/certificates/${id}`, { headers: this.headers })
       .subscribe({ next: () => this.loadCertificates() });
   }
 
@@ -176,7 +176,7 @@ export class HoursComponent implements OnInit {
 
   loadImpact(): void {
     this.loading = true;
-    this.http.get<any[]>(`${environment.apiUrl}/api/impact-records`, { headers: this.headers }).subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/impact-records`, { headers: this.headers }).subscribe({
       next: (res) => { this.impactRecords = res; this.filterImpact(); this.loading = false; },
       error: (e) => { console.error('Impact records error', e); this.loading = false; }
     });
@@ -199,8 +199,8 @@ export class HoursComponent implements OnInit {
   submitImpact(): void {
     this.saving = true;
     const url = this.editMode && this.selectedId
-      ? `${environment.apiUrl}/api/impact-records/${this.selectedId}`
-      : `${environment.apiUrl}/api/impact-records`;
+      ? `${environment.apiUrl}/impact-records/${this.selectedId}`
+      : `${environment.apiUrl}/impact-records`;
     const req$ = this.editMode && this.selectedId
       ? this.http.put<any>(url, this.impactForm, { headers: this.headers })
       : this.http.post<any>(url, this.impactForm, { headers: this.headers });
@@ -209,7 +209,7 @@ export class HoursComponent implements OnInit {
 
   deleteImpact(id: number): void {
     if (!confirm('Delete this impact record?')) return;
-    this.http.delete<void>(`${environment.apiUrl}/api/impact-records/${id}`, { headers: this.headers })
+    this.http.delete<void>(`${environment.apiUrl}/impact-records/${id}`, { headers: this.headers })
       .subscribe({ next: () => this.loadImpact() });
   }
 
@@ -230,4 +230,195 @@ export class HoursComponent implements OnInit {
     if (tab === 'certificates') this.loadCertificates();
     if (tab === 'impact')       this.loadImpact();
   }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // CSV EXPORT
+  // ════════════════════════════════════════════════════════════════════════════
+
+  exportTimesheetsCsv(): void {
+    const headers = [
+      'ID', 'Volunteer ID', 'Org ID', 'Application ID',
+      'Logged Hours', 'Work Date', 'Task Description',
+      'Status', 'Supervisor ID', 'Approved At', 'Rejection Reason'
+    ];
+
+    const rows = this.filteredTimesheets.map(t => [
+      t.timesheetId,
+      t.volunteerId,
+      t.orgId,
+      t.applicationId,
+      t.loggedHours,
+      t.workDate,
+      `"${(t.taskDescription || '').replace(/"/g, '""')}"`,  // escape quotes
+      t.status,
+      t.supervisorId || '',
+      t.approvedAt || '',
+      `"${(t.rejectionReason || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `timesheets_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  exportCertificatesCsv(): void {
+    const headers = [
+      'ID', 'Volunteer ID', 'Org ID', 'Total Hours',
+      'Period From', 'Period To', 'Issued At', 'Expires At',
+      'PDF URL', 'Credential Hash'
+    ];
+
+    const rows = this.filteredCerts.map(c => [
+      c.certificateId,
+      c.volunteerId,
+      c.orgId,
+      c.totalHours,
+      c.periodFrom,
+      c.periodTo,
+      c.issuedAt || '',
+      c.expiresAt || '',
+      `"${(c.pdfUrl || '').replace(/"/g, '""')}"`,
+      `"${(c.credentialHash || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `certificates_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  exportImpactCsv(): void {
+    const headers = [
+      'ID', 'Volunteer ID', 'Total Approved Hours', 'CO2 Offset (kg)',
+      'Meals Served', 'People Helped', 'Waste Removed (kg)',
+      'Hours of Tutoring', 'Confidence Level', 'Last Calculated At'
+    ];
+
+    const rows = this.filteredImpact.map(r => [
+      r.impactId,
+      r.volunteerId,
+      r.totalApprovedHours,
+      r.co2OffsetKg,
+      r.mealsServed,
+      r.peopleHelped,
+      r.wasteRemovedKg,
+      r.hoursOfTutoring,
+      r.confidenceLevel,
+      r.lastCalculatedAt || ''
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `impact_records_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // STATS — TIMESHEETS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  get totalApprovedHours(): number {
+    return this.timesheets
+        .filter(t => t.status === 'APPROVED')
+        .reduce((sum, t) => sum + (t.loggedHours || 0), 0);
+  }
+
+  get pendingCount(): number {
+    return this.timesheets.filter(t => t.status === 'PENDING').length;
+  }
+
+  get approvedCount(): number {
+    return this.timesheets.filter(t => t.status === 'APPROVED').length;
+  }
+
+  get rejectedCount(): number {
+    return this.timesheets.filter(t => t.status === 'REJECTED').length;
+  }
+
+  get avgHoursPerEntry(): string {
+    if (!this.timesheets.length) return '0';
+    const total = this.timesheets.reduce((sum, t) => sum + (t.loggedHours || 0), 0);
+    return (total / this.timesheets.length).toFixed(1);
+  }
+
+  get approvalRate(): string {
+    if (!this.timesheets.length) return '0';
+    return ((this.approvedCount / this.timesheets.length) * 100).toFixed(0);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // STATS — CERTIFICATES
+  // ════════════════════════════════════════════════════════════════════════════
+
+  get totalCertifiedHours(): number {
+    return this.certificates.reduce((sum, c) => sum + (c.totalHours || 0), 0);
+  }
+
+  get activeCertificates(): number {
+    const today = new Date().toISOString().slice(0, 10);
+    return this.certificates.filter(c => !c.expiresAt || c.expiresAt >= today).length;
+  }
+
+  get expiredCertificates(): number {
+    const today = new Date().toISOString().slice(0, 10);
+    return this.certificates.filter(c => c.expiresAt && c.expiresAt < today).length;
+  }
+
+  get uniqueOrgsWithCerts(): number {
+    return new Set(this.certificates.map(c => c.orgId)).size;
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // STATS — IMPACT RECORDS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  get totalPeopleHelped(): number {
+    return this.impactRecords.reduce((sum, r) => sum + (r.peopleHelped || 0), 0);
+  }
+
+  get totalMealsServed(): number {
+    return this.impactRecords.reduce((sum, r) => sum + (r.mealsServed || 0), 0);
+  }
+
+  get totalCo2Offset(): string {
+    return this.impactRecords
+        .reduce((sum, r) => sum + (r.co2OffsetKg || 0), 0)
+        .toFixed(1);
+  }
+
+  get totalWasteRemoved(): string {
+    return this.impactRecords
+        .reduce((sum, r) => sum + (r.wasteRemovedKg || 0), 0)
+        .toFixed(1);
+  }
+
+  get verifiedImpactCount(): number {
+    return this.impactRecords.filter(r => r.confidenceLevel === 'VERIFIED').length;
+  }
+
 }

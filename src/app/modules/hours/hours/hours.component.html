@@ -39,11 +39,56 @@
       </div>
     </div>
 
-    <div class="table-card">
-      <div class="toolbar">
-        <input type="text" [(ngModel)]="searchTerm" (input)="filterTimesheets()"
-          placeholder="Search by description, status, volunteer ID…" class="search-input" />
+      <div class="stats-dashboard">
+          <div class="stat-tile">
+              <span class="material-symbols-outlined stat-icon" style="color:#8ef0b1">check_circle</span>
+              <div class="stat-body">
+                  <span class="stat-number">{{ totalApprovedHours }}h</span>
+                  <span class="stat-label">Total Approved Hours</span>
+              </div>
+          </div>
+          <div class="stat-tile">
+              <span class="material-symbols-outlined stat-icon" style="color:#ccc0ff">hourglass_empty</span>
+              <div class="stat-body">
+                  <span class="stat-number">{{ pendingCount }}</span>
+                  <span class="stat-label">Pending Review</span>
+              </div>
+          </div>
+          <div class="stat-tile">
+              <span class="material-symbols-outlined stat-icon" style="color:#ffb4c2">cancel</span>
+              <div class="stat-body">
+                  <span class="stat-number">{{ rejectedCount }}</span>
+                  <span class="stat-label">Rejected</span>
+              </div>
+          </div>
+          <div class="stat-tile">
+              <span class="material-symbols-outlined stat-icon" style="color:#b3c6ff">avg_pace</span>
+              <div class="stat-body">
+                  <span class="stat-number">{{ avgHoursPerEntry }}h</span>
+                  <span class="stat-label">Avg Hours / Entry</span>
+              </div>
+          </div>
+          <div class="stat-tile wide">
+              <span class="material-symbols-outlined stat-icon" style="color:#ffd86b">percent</span>
+              <div class="stat-body">
+                  <span class="stat-number">{{ approvalRate }}%</span>
+                  <span class="stat-label">Approval Rate</span>
+              </div>
+              <div class="progress-bar-wrap">
+                  <div class="progress-bar-fill" [style.width]="approvalRate + '%'"></div>
+              </div>
+          </div>
       </div>
+
+    <div class="table-card">
+        <div class="toolbar">
+            <input type="text" [(ngModel)]="searchTerm" (input)="filterTimesheets()"
+                   placeholder="Search by description, status, volunteer ID…" class="search-input" />
+            <button class="export-btn" (click)="exportTimesheetsCsv()" title="Export current view to CSV">
+                <span class="material-symbols-outlined">download</span>
+                Export CSV
+            </button>
+        </div>
       <div *ngIf="loading" class="loading-state">Loading timesheets…</div>
       <div *ngIf="!loading" class="table-wrapper">
         <table>
@@ -131,11 +176,53 @@
       </div>
     </div>
 
-    <div class="table-card">
-      <div class="toolbar">
-        <input type="text" [(ngModel)]="searchTerm" (input)="filterCerts()"
-          placeholder="Search by volunteer or org ID…" class="search-input" />
+      <div class="stats-dashboard">
+          <div class="stat-tile">
+              <span class="material-symbols-outlined stat-icon" style="color:#8ef0b1">workspace_premium</span>
+              <div class="stat-body">
+                  <span class="stat-number">{{ certificates.length }}</span>
+                  <span class="stat-label">Total Certificates</span>
+              </div>
+          </div>
+          <div class="stat-tile">
+              <span class="material-symbols-outlined stat-icon" style="color:#ccc0ff">schedule</span>
+              <div class="stat-body">
+                  <span class="stat-number">{{ totalCertifiedHours }}h</span>
+                  <span class="stat-label">Total Certified Hours</span>
+              </div>
+          </div>
+          <div class="stat-tile">
+              <span class="material-symbols-outlined stat-icon" style="color:#b3c6ff">verified</span>
+              <div class="stat-body">
+                  <span class="stat-number">{{ activeCertificates }}</span>
+                  <span class="stat-label">Active Certificates</span>
+              </div>
+          </div>
+          <div class="stat-tile">
+              <span class="material-symbols-outlined stat-icon" style="color:#ffb4c2">event_busy</span>
+              <div class="stat-body">
+                  <span class="stat-number">{{ expiredCertificates }}</span>
+                  <span class="stat-label">Expired</span>
+              </div>
+          </div>
+          <div class="stat-tile">
+              <span class="material-symbols-outlined stat-icon" style="color:#ffd86b">corporate_fare</span>
+              <div class="stat-body">
+                  <span class="stat-number">{{ uniqueOrgsWithCerts }}</span>
+                  <span class="stat-label">Organisations</span>
+              </div>
+          </div>
       </div>
+
+    <div class="table-card">
+        <div class="toolbar">
+            <input type="text" [(ngModel)]="searchTerm" (input)="filterCerts()"
+                   placeholder="Search by volunteer or org ID…" class="search-input" />
+            <button class="export-btn" (click)="exportCertificatesCsv()" title="Export current view to CSV">
+                <span class="material-symbols-outlined">download</span>
+                Export CSV
+            </button>
+        </div>
       <div *ngIf="loading" class="loading-state">Loading certificates…</div>
       <div *ngIf="!loading" class="table-wrapper">
         <table>
@@ -206,11 +293,53 @@
       </div>
     </div>
 
-    <div class="table-card">
-      <div class="toolbar">
-        <input type="text" [(ngModel)]="searchTerm" (input)="filterImpact()"
-          placeholder="Search by volunteer ID or confidence…" class="search-input" />
+      <div class="stats-dashboard">
+          <div class="stat-tile">
+              <span class="material-symbols-outlined stat-icon" style="color:#8ef0b1">groups</span>
+              <div class="stat-body">
+                  <span class="stat-number">{{ totalPeopleHelped }}</span>
+                  <span class="stat-label">People Helped</span>
+              </div>
+          </div>
+          <div class="stat-tile">
+              <span class="material-symbols-outlined stat-icon" style="color:#ccc0ff">restaurant</span>
+              <div class="stat-body">
+                  <span class="stat-number">{{ totalMealsServed }}</span>
+                  <span class="stat-label">Meals Served</span>
+              </div>
+          </div>
+          <div class="stat-tile">
+              <span class="material-symbols-outlined stat-icon" style="color:#b3c6ff">eco</span>
+              <div class="stat-body">
+                  <span class="stat-number">{{ totalCo2Offset }} kg</span>
+                  <span class="stat-label">CO₂ Offset</span>
+              </div>
+          </div>
+          <div class="stat-tile">
+              <span class="material-symbols-outlined stat-icon" style="color:#ffd86b">delete_sweep</span>
+              <div class="stat-body">
+                  <span class="stat-number">{{ totalWasteRemoved }} kg</span>
+                  <span class="stat-label">Waste Removed</span>
+              </div>
+          </div>
+          <div class="stat-tile">
+              <span class="material-symbols-outlined stat-icon" style="color:#ffb4c2">verified_user</span>
+              <div class="stat-body">
+                  <span class="stat-number">{{ verifiedImpactCount }}</span>
+                  <span class="stat-label">Verified Records</span>
+              </div>
+          </div>
       </div>
+
+    <div class="table-card">
+        <div class="toolbar">
+            <input type="text" [(ngModel)]="searchTerm" (input)="filterImpact()"
+                   placeholder="Search by volunteer ID or confidence…" class="search-input" />
+            <button class="export-btn" (click)="exportImpactCsv()" title="Export current view to CSV">
+                <span class="material-symbols-outlined">download</span>
+                Export CSV
+            </button>
+        </div>
       <div *ngIf="loading" class="loading-state">Loading impact records…</div>
       <div *ngIf="!loading" class="table-wrapper">
         <table>
