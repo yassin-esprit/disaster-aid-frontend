@@ -4,7 +4,7 @@ import { Router, RouterModule, RouterLinkActive } from '@angular/router';
 import { NavItem } from '../../models/nav-item.model';
 import { AuthService } from '../../../core/services/auth.service';
 
-const ADMIN_ROLES = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN'];
+const ADMIN_ROLES = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN', 'ADMIN'];
 
 @Component({
   selector: 'app-sidebar',
@@ -16,43 +16,38 @@ export class SidebarComponent implements OnInit, OnChanges {
   @Input() role: string = 'PLATFORM_ADMIN';
   @Output() logoutClicked = new EventEmitter<void>();
 
-  // Declare missing properties
   userName: string = 'User';
   userRole: string = '';
-
   navItems: NavItem[] = [];
 
-  // Unified admin navigation (using the correct dashboard routes)
   private adminNav: NavItem[] = [
-    { label: 'Overview',      icon: 'dashboard',          route: '/dashboard'              },
-    { label: 'Communication', icon: 'forum',              route: '/communication'          },
-    { label: 'Sensors',         icon: 'sensors',        route: '/sensors'      },
-    { label: 'Alerts',          icon: 'emergency',      route: '/alerts'       },
-    { label: 'Geofence Zones',  icon: 'map',            route: '/geofence'     },
-    { label: 'Evacuation',      icon: 'directions',     route: '/evacuation'   },
-    { label: 'Spatial Queries', icon: 'travel_explore', route: '/spatial'      },
-    { label: 'Incidents',     icon: 'report_problem',     route: '/dashboard/incidents'    },
-    { label: 'Coordination',  icon: 'volunteer_activism', route: '/dashboard/coordination' },
-    { label: 'Opportunities', icon: 'explore',            route: '/opportunities'          },
-    { label: 'Users',         icon: 'people',             route: '/users-management'       },
-    { label: 'My Profile',    icon: 'person',             route: '/profile'                },
-
-
+    { label: 'Overview',        icon: 'dashboard',          route: '/admin/dashboard'              },
+    { label: 'Incidents',       icon: 'report_problem',     route: '/admin/dashboard/incidents'    },
+    { label: 'Coordination',    icon: 'volunteer_activism', route: '/admin/dashboard/coordination' },
+    { label: 'Alerts',          icon: 'emergency',          route: '/admin/alerts'                 },
+    { label: 'Sensors',         icon: 'sensors',            route: '/admin/sensors'                },
+    { label: 'Geofence Zones',  icon: 'map',                route: '/admin/geofence'               },
+    { label: 'Evacuation',      icon: 'directions',         route: '/admin/evacuation'             },
+    { label: 'Spatial Queries', icon: 'travel_explore',     route: '/admin/spatial'                },
+    { label: 'Communication',   icon: 'forum',              route: '/admin/communication'          },
+    { label: 'Opportunities',   icon: 'explore',            route: '/admin/opportunities'          },
+    { label: 'Users',           icon: 'people',             route: '/admin/users-management'       },
+    { label: 'My Profile',      icon: 'person',             route: '/admin/profile'                },
   ];
 
   private userNav: NavItem[] = [
-    { label: 'Home',          icon: 'home',               route: '/home'               },
-    { label: 'Report',        icon: 'report_problem',     route: '/report'             },
-    { label: 'Get Help',      icon: 'sos',                route: '/help'               },
-    { label: 'Missions',      icon: 'explore',            route: '/missions'           },
-    { label: 'My Reports',    icon: 'list_alt',           route: '/incidents'          },
-    { label: 'Communication', icon: 'forum',              route: '/communication'      },
-    { label: 'My Profile',    icon: 'person',             route: '/frontoffice-profile'},
+    { label: 'Home',          icon: 'home',           route: '/home'                },
+    { label: 'Report',        icon: 'report_problem', route: '/report'              },
+    { label: 'Get Help',      icon: 'sos',            route: '/help'                },
+    { label: 'Missions',      icon: 'explore',        route: '/missions'            },
+    { label: 'My Reports',    icon: 'list_alt',       route: '/incidents'           },
+    { label: 'Alerts',        icon: 'emergency',      route: '/alerts'              },
+    { label: 'Communication', icon: 'forum',          route: '/communication/chat'  },
+    { label: 'My Profile',    icon: 'person',         route: '/frontoffice-profile' },
   ];
 
-  // Read-only getter – do NOT assign to it
   get isAdmin(): boolean {
-    return ADMIN_ROLES.includes((this.role || '').toUpperCase());
+    return ADMIN_ROLES.includes((this.role || '').trim().toUpperCase());
   }
 
   get accentColor(): string {
@@ -71,7 +66,6 @@ export class SidebarComponent implements OnInit, OnChanges {
 
   ngOnInit(): void {
     const roleFromService = (this.authService.getRole() || '').trim().toUpperCase();
-    // If @Input role is not provided, fallback to service role
     if (!this.role || this.role === 'PLATFORM_ADMIN') {
       this.role = roleFromService;
     }
@@ -90,7 +84,7 @@ export class SidebarComponent implements OnInit, OnChanges {
 
   onLogout(): void {
     localStorage.clear();
-    this.authService.logout(); // if your service has a logout method
+    this.authService.logout();
     this.router.navigateByUrl('/landing');
   }
 }
