@@ -1,4 +1,3 @@
-// Create file: src/app/core/guards/role.guard.ts
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -8,12 +7,13 @@ export const roleGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
 
   const requiredRoles = route.data?.['roles'] as Array<string>;
-  const userRole = authService.getRole();
+  const userRole = (authService.getRole() || '').trim().toUpperCase();
 
-  if (requiredRoles && userRole && requiredRoles.includes(userRole)) {
+  if (requiredRoles && requiredRoles.includes(userRole)) {
     return true;
   }
 
-  router.navigate(['/unauthorized']);
+  // Non-admin users go to the citizen home, not a broken /unauthorized route
+  router.navigate(['/home']);
   return false;
 };

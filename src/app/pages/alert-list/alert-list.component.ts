@@ -1,4 +1,3 @@
-// src/app/pages/alert-list/alert-list.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -8,7 +7,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { Alert } from '../../shared/models/sensor.model';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 
-const ADMIN_ROLES = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN'];
+const ADMIN_ROLES = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN', 'ADMIN'];
 
 @Component({
   selector: 'app-alert-list',
@@ -25,8 +24,7 @@ const ADMIN_ROLES = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN'];
             {{ filtered.length }} alert{{ filtered.length !== 1 ? 's' : '' }}
           </p>
         </div>
-        <!-- Create Alert button — admins only -->
-        <a *ngIf="isAdmin" routerLink="/alerts/new"
+        <a *ngIf="isAdmin" [routerLink]="basePath + '/new'"
            class="flex items-center gap-2 bg-error/20 border border-error/30 text-error px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-error/30 transition-all active:scale-95 self-start">
           <span class="material-symbols-outlined text-sm">add_alert</span> Create Alert
         </a>
@@ -104,7 +102,7 @@ const ADMIN_ROLES = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN'];
               <span *ngIf="a.confidenceScore == null">—</span>
             </td>
             <td class="px-5 py-4">
-              <a [routerLink]="['/alerts', a.id]"
+              <a [routerLink]="[basePath, a.id]"
                  class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-primary text-xs font-bold">
                 View <span class="material-symbols-outlined text-xs">arrow_forward</span>
               </a>
@@ -123,12 +121,13 @@ const ADMIN_ROLES = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN'];
   `
 })
 export class AlertListComponent implements OnInit {
-  alerts: Alert[]  = [];
+  alerts: Alert[]   = [];
   filtered: Alert[] = [];
-  searchTerm     = '';
-  severityFilter = '';
-  statusFilter   = '';
-  isAdmin        = false;
+  searchTerm      = '';
+  severityFilter  = '';
+  statusFilter    = '';
+  isAdmin         = false;
+  basePath        = '/alerts'; // dynamically set based on role
 
   constructor(
     private alertService: AlertService,
@@ -138,6 +137,7 @@ export class AlertListComponent implements OnInit {
   ngOnInit(): void {
     const role = (this.authService.getRole() || '').trim().toUpperCase();
     this.isAdmin = ADMIN_ROLES.includes(role);
+    this.basePath = this.isAdmin ? '/admin/alerts' : '/alerts';
 
     this.alertService.getAllAlerts().subscribe(data => {
       this.alerts   = data;
@@ -147,11 +147,11 @@ export class AlertListComponent implements OnInit {
 
   applyFilters(): void {
     this.filtered = this.alerts.filter(a => {
-      const matchSearch   = !this.searchTerm     ||
+      const matchSearch   = !this.searchTerm ||
         (a.title || '').toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         a.disasterType.toLowerCase().includes(this.searchTerm.toLowerCase());
-      const matchSeverity = !this.severityFilter || a.severity     === this.severityFilter;
-      const matchStatus   = !this.statusFilter   || a.status       === this.statusFilter;
+      const matchSeverity = !this.severityFilter || a.severity === this.severityFilter;
+      const matchStatus   = !this.statusFilter   || a.status   === this.statusFilter;
       return matchSearch && matchSeverity && matchStatus;
     });
   }
@@ -167,25 +167,25 @@ export class AlertListComponent implements OnInit {
       HIGH:     'bg-orange-500/20 text-orange-400 border border-orange-500/30',
       MODERATE: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
       LOW:      'bg-green-500/20 text-green-400 border border-green-500/30',
-    } as Record<string,string>)[severity] ?? 'bg-white/10 text-white';
+    } as Record<string, string>)[severity] ?? 'bg-white/10 text-white';
   }
 
   disasterIcon(type: string): string {
-    const m: Record<string,string> = {
+    const m: Record<string, string> = {
       FLOOD: 'water', EARTHQUAKE: 'earthquake', WILDFIRE: 'local_fire_department',
       LANDSLIDE: 'landslide', STORM: 'thunderstorm', CHEMICAL: 'science'
     };
     return m[type] ?? 'emergency';
   }
   disasterIconBg(type: string): string {
-    const m: Record<string,string> = {
+    const m: Record<string, string> = {
       FLOOD: 'bg-blue-500/20', EARTHQUAKE: 'bg-orange-500/20', WILDFIRE: 'bg-red-500/20',
       LANDSLIDE: 'bg-amber-500/20', STORM: 'bg-sky-500/20', CHEMICAL: 'bg-purple-500/20'
     };
     return m[type] ?? 'bg-white/10';
   }
   disasterIconColor(type: string): string {
-    const m: Record<string,string> = {
+    const m: Record<string, string> = {
       FLOOD: 'text-blue-400', EARTHQUAKE: 'text-orange-400', WILDFIRE: 'text-red-400',
       LANDSLIDE: 'text-amber-400', STORM: 'text-sky-400', CHEMICAL: 'text-purple-400'
     };

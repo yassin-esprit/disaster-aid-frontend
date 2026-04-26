@@ -1,12 +1,14 @@
-// src/app/pages/alert-detail/alert-detail.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AlertService } from '../../core/services/alert.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Alert } from '../../shared/models/sensor.model';
 import { MapViewComponent } from '../../shared/components/map-view/map-view.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
+
+const ADMIN_ROLES = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN', 'ADMIN'];
 
 @Component({
   selector: 'app-alert-detail',
@@ -18,7 +20,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
       <!-- ── CREATE MODE ────────────────────────────────────── -->
       <ng-container *ngIf="isNew">
         <div class="flex items-center gap-3">
-          <a routerLink="/alerts" class="text-on-surface-variant hover:text-on-surface transition-colors">
+          <a [routerLink]="basePath" class="text-on-surface-variant hover:text-on-surface transition-colors">
             <span class="material-symbols-outlined">arrow_back</span>
           </a>
           <h1 class="text-3xl font-black">New Alert</h1>
@@ -68,14 +70,13 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
                       class="flex-1 bg-error/20 border border-error/30 text-error py-3 rounded-xl font-bold text-sm hover:bg-error/30 transition-all">
                 Create Alert
               </button>
-              <a routerLink="/alerts"
+              <a [routerLink]="basePath"
                  class="px-5 py-3 rounded-xl border border-white/20 font-bold text-sm text-on-surface-variant hover:bg-white/5 transition-all">
                 Cancel
               </a>
             </div>
           </div>
 
-          <!-- Info note about geometry -->
           <div class="glass-1 p-6 rounded-2xl border border-white/5 flex flex-col gap-4">
             <h2 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Affected Area</h2>
             <div class="flex-1 flex flex-col items-center justify-center text-center text-on-surface-variant gap-3">
@@ -90,7 +91,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
       <ng-container *ngIf="!isNew && !editMode && alert">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div class="flex items-center gap-3">
-            <a routerLink="/alerts" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <a [routerLink]="basePath" class="text-on-surface-variant hover:text-on-surface transition-colors">
               <span class="material-symbols-outlined">arrow_back</span>
             </a>
             <div>
@@ -115,7 +116,6 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <!-- Info -->
           <div class="lg:col-span-2 glass-1 p-6 rounded-2xl border border-white/5 space-y-4">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Severity</span>
@@ -147,7 +147,6 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
             </div>
           </div>
 
-          <!-- Map -->
           <div class="lg:col-span-3 glass-1 p-4 rounded-2xl border border-white/5" style="height: 380px;">
             <app-map-view [geometries]="mapGeometries"></app-map-view>
           </div>
@@ -202,8 +201,9 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
 })
 export class AlertDetailComponent implements OnInit {
   alert?: Alert;
-  isNew     = false;
-  editMode  = false;
+  isNew    = false;
+  editMode = false;
+  basePath = '/alerts'; // set dynamically based on role
 
   disasterTypes = ['FLOOD', 'EARTHQUAKE', 'WILDFIRE', 'LANDSLIDE', 'STORM', 'CHEMICAL'];
   severities    = ['LOW', 'MODERATE', 'HIGH', 'CRITICAL'];
@@ -219,12 +219,24 @@ export class AlertDetailComponent implements OnInit {
     return geoms;
   }
 
-  constructor(private route: ActivatedRoute, private router: Router, private alertService: AlertService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private alertService: AlertService,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
-    this.isNew = window.location.href.includes('/new');
+    const role = (this.authService.getRole() || '').trim().toUpperCase();
+    const isAdmin = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN', 'ADMIN'].includes(role);
+    this.basePath = isAdmin ? '/admin/alerts' : '/alerts';
+
+    // Detect "new" by route param — never rely on window.location
+    const idParam = this.route.snapshot.paramMap.get('id');
+    this.isNew = !idParam || idParam === 'new';
+
     if (!this.isNew) {
-      const id = Number(this.route.snapshot.paramMap.get('id'));
+      const id = Number(idParam);
       if (!isNaN(id) && id > 0) {
         this.alertService.getAlertById(id).subscribe(data => {
           this.alert    = data;
@@ -234,23 +246,28 @@ export class AlertDetailComponent implements OnInit {
     }
   }
 
-  createAlert(): void  { this.alertService.createAlert(this.formData).subscribe(() => this.router.navigate(['/alerts'])); }
-  enableEdit(): void   { this.editMode = true; this.editData = { ...this.alert }; }
-  cancelEdit(): void   { this.editMode = false; }
-  updateAlert(): void  {
+  createAlert(): void {
+    this.alertService.createAlert(this.formData)
+      .subscribe(() => this.router.navigate([this.basePath]));
+  }
+  enableEdit(): void  { this.editMode = true; this.editData = { ...this.alert }; }
+  cancelEdit(): void  { this.editMode = false; }
+  updateAlert(): void {
     if (!this.alert) return;
-    this.alertService.updateAlert(this.alert.id, this.editData).subscribe(u => { this.alert = u; this.editMode = false; });
+    this.alertService.updateAlert(this.alert.id, this.editData)
+      .subscribe(u => { this.alert = u; this.editMode = false; });
   }
   deleteAlert(): void {
     if (!this.alert) return;
     if (confirm('Delete this alert?')) {
-      this.alertService.deleteAlert(this.alert.id).subscribe({ next: () => this.router.navigate(['/alerts']) });
+      this.alertService.deleteAlert(this.alert.id)
+        .subscribe({ next: () => this.router.navigate([this.basePath]) });
     }
   }
   resolve(): void {
     if (this.alert) this.alertService.resolveAlert(this.alert.id).subscribe(u => this.alert = u);
   }
   severityClass(s: string): string {
-    return { CRITICAL: 'bg-error text-white', HIGH: 'bg-orange-500/20 text-orange-400', MODERATE: 'bg-amber-500/20 text-amber-400', LOW: 'bg-green-500/20 text-green-400' }[s] ?? '';
+    return ({ CRITICAL: 'bg-error text-white', HIGH: 'bg-orange-500/20 text-orange-400', MODERATE: 'bg-amber-500/20 text-amber-400', LOW: 'bg-green-500/20 text-green-400' } as Record<string,string>)[s] ?? '';
   }
 }

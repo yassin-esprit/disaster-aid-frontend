@@ -1,13 +1,15 @@
-// src/app/pages/sensor-detail/sensor-detail.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SensorService } from '../../core/services/sensor.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Sensor } from '../../shared/models/sensor.model';
 import { MapViewComponent } from '../../shared/components/map-view/map-view.component';
 import { MapPickerComponent } from '../../shared/components/map-picker/map-picker.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
+
+const ADMIN_ROLES = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN', 'ADMIN'];
 
 @Component({
   selector: 'app-sensor-detail',
@@ -19,7 +21,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
       <!-- ── CREATE MODE ────────────────────────────────────────────── -->
       <ng-container *ngIf="isNew">
         <div class="flex items-center gap-3 mb-2">
-          <a routerLink="/sensors" class="text-on-surface-variant hover:text-on-surface transition-colors">
+          <a [routerLink]="basePath" class="text-on-surface-variant hover:text-on-surface transition-colors">
             <span class="material-symbols-outlined">arrow_back</span>
           </a>
           <h1 class="text-3xl font-black">New Sensor</h1>
@@ -27,7 +29,6 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
 
         <form [formGroup]="sensorForm" (ngSubmit)="createSensor()"
               class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Left: fields -->
           <div class="glass-1 p-6 rounded-2xl border border-white/5 space-y-4">
             <h2 class="font-bold text-on-surface-variant text-xs uppercase tracking-widest mb-4">Sensor Info</h2>
 
@@ -71,14 +72,13 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
                       class="flex-1 bg-primary text-on-primary py-3 rounded-xl font-bold text-sm hover:shadow-[0_0_20px_rgba(108,92,231,0.4)] transition-all disabled:opacity-40 disabled:cursor-not-allowed">
                 Create Sensor
               </button>
-              <a routerLink="/sensors"
+              <a [routerLink]="basePath"
                  class="px-5 py-3 rounded-xl border border-white/20 text-on-surface-variant hover:bg-white/5 transition-all font-bold text-sm">
                 Cancel
               </a>
             </div>
           </div>
 
-          <!-- Right: map picker -->
           <div class="glass-1 p-6 rounded-2xl border border-white/5">
             <h2 class="font-bold text-on-surface-variant text-xs uppercase tracking-widest mb-4">Pin Location *</h2>
             <app-map-picker
@@ -93,7 +93,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
       <ng-container *ngIf="!isNew && !editMode && sensor">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div class="flex items-center gap-3">
-            <a routerLink="/sensors" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <a [routerLink]="basePath" class="text-on-surface-variant hover:text-on-surface transition-colors">
               <span class="material-symbols-outlined">arrow_back</span>
             </a>
             <div>
@@ -118,7 +118,6 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <!-- Info panel -->
           <div class="lg:col-span-2 glass-1 p-6 rounded-2xl border border-white/5 space-y-4">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Status</span>
@@ -149,7 +148,6 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
             </div>
           </div>
 
-          <!-- Map view -->
           <div class="lg:col-span-3 glass-1 p-4 rounded-2xl border border-white/5" style="height: 360px;">
             <app-map-view
               [geometries]="[{ type: 'Point', wkt: sensor.location, color: '#6C5CE7' }]">
@@ -195,7 +193,8 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
               <span class="font-mono text-primary">{{ sensorForm.get('location')?.value }}</span>
             </div>
             <div class="flex gap-3 pt-2">
-              <button type="submit" class="flex-1 bg-primary text-on-primary py-3 rounded-xl font-bold text-sm">Save Changes</button>
+              <button type="submit"
+                      class="flex-1 bg-primary text-on-primary py-3 rounded-xl font-bold text-sm">Save Changes</button>
               <button type="button" (click)="cancelEdit()"
                       class="px-5 py-3 rounded-xl border border-white/20 font-bold text-sm">Cancel</button>
             </div>
@@ -214,15 +213,17 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
 })
 export class SensorDetailComponent implements OnInit {
   sensor?: Sensor;
-  isNew     = false;
-  editMode  = false;
+  isNew    = false;
+  editMode = false;
+  basePath = '/sensors';
   sensorForm: FormGroup;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private fb: FormBuilder,
-    private sensorService: SensorService
+    private sensorService: SensorService,
+    private authService: AuthService
   ) {
     this.sensorForm = this.fb.group({
       name:         ['', Validators.required],
@@ -234,6 +235,9 @@ export class SensorDetailComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const role = (this.authService.getRole() || '').trim().toUpperCase();
+    this.basePath = ADMIN_ROLES.includes(role) ? '/admin/sensors' : '/sensors';
+
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam === 'new') { this.isNew = true; return; }
     const id = Number(idParam);
@@ -245,14 +249,12 @@ export class SensorDetailComponent implements OnInit {
     }
   }
 
-  onLocationPicked(wkt: string): void {
-    this.sensorForm.patchValue({ location: wkt });
-  }
+  onLocationPicked(wkt: string): void { this.sensorForm.patchValue({ location: wkt }); }
 
   createSensor(): void {
     if (this.sensorForm.invalid) return;
     this.sensorService.createSensor(this.sensorForm.value)
-      .subscribe(() => this.router.navigate(['/sensors']));
+      .subscribe(() => this.router.navigate([this.basePath]));
   }
 
   enableEdit(): void  { this.editMode = true; }
@@ -261,7 +263,7 @@ export class SensorDetailComponent implements OnInit {
   updateSensor(): void {
     if (!this.sensor || this.sensorForm.invalid) return;
     this.sensorService.updateSensor(this.sensor.id, this.sensorForm.value).subscribe(updated => {
-      this.sensor  = updated;
+      this.sensor   = updated;
       this.editMode = false;
     });
   }
@@ -270,7 +272,7 @@ export class SensorDetailComponent implements OnInit {
     if (!this.sensor) return;
     if (confirm('Delete this sensor permanently?')) {
       this.sensorService.deleteSensor(this.sensor.id)
-        .subscribe(() => this.router.navigate(['/sensors']));
+        .subscribe(() => this.router.navigate([this.basePath]));
     }
   }
 

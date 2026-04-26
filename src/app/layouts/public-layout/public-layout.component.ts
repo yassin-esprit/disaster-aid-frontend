@@ -2,21 +2,29 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { ChatComponent } from '../../modules/communication/chat/chat.component';
+import { AuthService } from '../../core/services/auth.service';
+
+const ADMIN_ROLES = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN', 'ADMIN'];
 
 @Component({
   selector: 'app-public-layout',
   standalone: true,
   imports: [CommonModule, RouterModule, ChatComponent],
   templateUrl: './public-layout.component.html',
-  styleUrls: ['./public-layout.component.scss']
+  styleUrls: ['./public-layout.component.scss'],
 })
 export class PublicLayoutComponent implements OnInit {
   isAuthenticated = false;
   isChatOpen = false;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private authService: AuthService) {}
 
   ngOnInit(): void {
+    const role = (this.authService.getRole() || '').trim().toUpperCase();
+    if (ADMIN_ROLES.includes(role)) {
+      this.router.navigateByUrl('/admin/dashboard');
+      return;
+    }
     this.checkAuthState();
   }
 
@@ -25,9 +33,7 @@ export class PublicLayoutComponent implements OnInit {
     const userId = localStorage.getItem('userId');
     const email = localStorage.getItem('email');
     this.isAuthenticated = !!(token && userId && email);
-    if (!this.isAuthenticated) {
-      this.isChatOpen = false;
-    }
+    if (!this.isAuthenticated) this.isChatOpen = false;
   }
 
   toggleChat(): void {

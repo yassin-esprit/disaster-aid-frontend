@@ -1,11 +1,13 @@
-// src/app/pages/sensor-list/sensor-list.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { SensorService } from '../../core/services/sensor.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Sensor } from '../../shared/models/sensor.model';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
+
+const ADMIN_ROLES = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN', 'ADMIN'];
 
 @Component({
   selector: 'app-sensor-list',
@@ -23,7 +25,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
             <span *ngIf="searchTerm || statusFilter"> matching your filters</span>
           </p>
         </div>
-        <a routerLink="/sensors/new"
+        <a *ngIf="isAdmin" [routerLink]="basePath + '/new'"
            class="flex items-center gap-2 bg-primary text-on-primary px-5 py-2.5 rounded-xl font-bold text-sm hover:shadow-[0_0_20px_rgba(108,92,231,0.4)] transition-all active:scale-95 self-start">
           <span class="material-symbols-outlined text-sm">add</span> Add Sensor
         </a>
@@ -60,51 +62,53 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
       <div class="overflow-x-auto glass-1 rounded-2xl border border-white/5">
         <table class="w-full text-left text-sm">
           <thead class="border-b border-white/10 text-xs uppercase tracking-widest text-on-surface-variant">
-          <tr>
-            <th class="px-5 py-4">Name</th>
-            <th class="px-5 py-4">Type</th>
-            <th class="px-5 py-4">Manufacturer</th>
-            <th class="px-5 py-4">Status</th>
-            <th class="px-5 py-4">Last Ping</th>
-            <th class="px-5 py-4">Calibration</th>
-            <th class="px-5 py-4"></th>
-          </tr>
+            <tr>
+              <th class="px-5 py-4">Name</th>
+              <th class="px-5 py-4">Type</th>
+              <th class="px-5 py-4">Manufacturer</th>
+              <th class="px-5 py-4">Status</th>
+              <th class="px-5 py-4">Last Ping</th>
+              <th class="px-5 py-4">Calibration</th>
+              <th class="px-5 py-4"></th>
+            </tr>
           </thead>
           <tbody>
-          <tr *ngFor="let s of filtered"
-              class="border-b border-white/5 hover:bg-white/5 transition-colors group">
-            <td class="px-5 py-4 font-semibold text-on-surface flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg flex items-center justify-center"
-                   [ngClass]="typeIconBg(s.type)">
-                  <span class="material-symbols-outlined text-sm" [ngClass]="typeIconColor(s.type)">
-                    {{ typeIcon(s.type) }}
-                  </span>
-              </div>
-              {{ s.name }}
-            </td>
-            <td class="px-5 py-4 text-on-surface-variant font-mono text-xs">{{ s.type }}</td>
-            <td class="px-5 py-4 text-on-surface-variant">{{ s.manufacturer || '—' }}</td>
-            <td class="px-5 py-4">
-              <app-status-badge [status]="s.status"></app-status-badge>
-            </td>
-            <td class="px-5 py-4 text-on-surface-variant text-xs">
-              <span *ngIf="s.lastPingAt; else noPing">{{ s.lastPingAt | date:'dd MMM, HH:mm' }}</span>
-              <ng-template #noPing><span class="text-error/70">Never</span></ng-template>
-            </td>
-            <td class="px-5 py-4 text-on-surface-variant text-xs">{{ s.calibrationDate | date:'dd MMM yyyy' }}</td>
-            <td class="px-5 py-4">
-              <a [routerLink]="['/sensors', s.id]"
-                 class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-primary text-xs font-bold">
-                View <span class="material-symbols-outlined text-xs">arrow_forward</span>
-              </a>
-            </td>
-          </tr>
-          <tr *ngIf="filtered.length === 0">
-            <td colspan="7" class="px-5 py-12 text-center text-on-surface-variant">
-              <span class="material-symbols-outlined text-4xl block mb-2">sensors_off</span>
-              No sensors found
-            </td>
-          </tr>
+            <tr *ngFor="let s of filtered"
+                class="border-b border-white/5 hover:bg-white/5 transition-colors group">
+              <td class="px-5 py-4 font-semibold text-on-surface">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                       [ngClass]="typeIconBg(s.type)">
+                    <span class="material-symbols-outlined text-sm" [ngClass]="typeIconColor(s.type)">
+                      {{ typeIcon(s.type) }}
+                    </span>
+                  </div>
+                  {{ s.name }}
+                </div>
+              </td>
+              <td class="px-5 py-4 text-on-surface-variant font-mono text-xs">{{ s.type }}</td>
+              <td class="px-5 py-4 text-on-surface-variant">{{ s.manufacturer || '—' }}</td>
+              <td class="px-5 py-4">
+                <app-status-badge [status]="s.status"></app-status-badge>
+              </td>
+              <td class="px-5 py-4 text-on-surface-variant text-xs">
+                <span *ngIf="s.lastPingAt; else noPing">{{ s.lastPingAt | date:'dd MMM, HH:mm' }}</span>
+                <ng-template #noPing><span class="text-error/70">Never</span></ng-template>
+              </td>
+              <td class="px-5 py-4 text-on-surface-variant text-xs">{{ s.calibrationDate | date:'dd MMM yyyy' }}</td>
+              <td class="px-5 py-4">
+                <a [routerLink]="[basePath, s.id]"
+                   class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-primary text-xs font-bold">
+                  View <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                </a>
+              </td>
+            </tr>
+            <tr *ngIf="filtered.length === 0">
+              <td colspan="7" class="px-5 py-12 text-center text-on-surface-variant">
+                <span class="material-symbols-outlined text-4xl block mb-2">sensors_off</span>
+                No sensors found
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -117,10 +121,19 @@ export class SensorListComponent implements OnInit {
   searchTerm   = '';
   statusFilter = '';
   typeFilter   = '';
+  isAdmin      = false;
+  basePath     = '/sensors';
 
-  constructor(private sensorService: SensorService) {}
+  constructor(
+    private sensorService: SensorService,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
+    const role = (this.authService.getRole() || '').trim().toUpperCase();
+    this.isAdmin  = ADMIN_ROLES.includes(role);
+    this.basePath = this.isAdmin ? '/admin/sensors' : '/sensors';
+
     this.sensorService.getAllSensors().subscribe(data => {
       this.sensors  = data;
       this.filtered = data;
