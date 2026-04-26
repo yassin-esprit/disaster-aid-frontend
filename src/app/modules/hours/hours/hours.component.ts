@@ -421,4 +421,33 @@ export class HoursComponent implements OnInit {
     return this.impactRecords.filter(r => r.confidenceLevel === 'VERIFIED').length;
   }
 
+  /**
+   * Returns a CSS class based on the score tier:
+   *   Gold    → 500+ pts  (top tier)
+   *   Silver  → 200-499 pts
+   *   Bronze  → 50-199 pts
+   *   Default → 0-49 pts
+   */
+  scoreTierClass(score: number): string {
+    if (!score || score <= 0) return 'score-default';
+    if (score >= 500) return 'score-gold';
+    if (score >= 200) return 'score-silver';
+    if (score >= 50)  return 'score-bronze';
+    return 'score-default';
+  }
+
+  /** Highest impact score across all impact records — used in stats tile */
+  get topImpactScore(): number {
+    if (!this.impactRecords.length) return 0;
+    return Math.max(...this.impactRecords.map(r => r.impactScore || 0));
+  }
+
+  /** Average impact score across all records */
+  get avgImpactScore(): string {
+    if (!this.impactRecords.length) return '0';
+    const total = this.impactRecords.reduce((sum, r) => sum + (r.impactScore || 0), 0);
+    return (total / this.impactRecords.length).toFixed(0);
+  }
+
+
 }

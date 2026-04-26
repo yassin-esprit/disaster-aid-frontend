@@ -1,218 +1,313 @@
 <div class="font-body text-on-surface antialiased min-h-screen bg-[#020d27] flex flex-col">
-  <!-- ── Nav ─────────────────────────────────────── -->
+
+  <!-- ── Nav ──────────────────────────────────────── -->
   <nav class="fixed top-0 w-full h-16 z-50 bg-white/10 backdrop-blur-md shadow-[0_0_40px_rgba(108,92,231,0.12)]">
     <div class="flex justify-between items-center px-8 w-full max-w-screen-2xl mx-auto h-full relative">
       <a routerLink="/" class="text-2xl font-black text-white tracking-tighter flex items-center gap-2 hover:opacity-90 transition-opacity">
         CPS
         <span class="text-xs font-mono text-primary px-2 py-0.5 bg-primary/10 rounded-full tracking-normal">HUB</span>
       </a>
-
       <div class="hidden md:flex items-center space-x-8 font-medium text-sm tracking-tight">
         <a routerLink="/" class="text-slate-300 hover:text-white transition-colors pb-1">Home</a>
-        <a routerLink="/my-hours" class="text-slate-300 hover:text-white transition-colors pb-1">My Hours</a>
-        <a routerLink="/my-gamification" class="text-violet-400 border-b-2 border-violet-500 pb-1 font-semibold">Gamification</a>
         <a href="#" class="text-slate-300 hover:text-white transition-colors pb-1">Alerts</a>
         <a href="#" class="text-slate-300 hover:text-white transition-colors pb-1">Opportunities</a>
         <a href="#" class="text-slate-300 hover:text-white transition-colors pb-1">About</a>
+        <a routerLink="/my-hours" class="text-slate-300 hover:text-white transition-colors pb-1">Hours</a>
+        <a routerLink="/my-gamification" class="text-violet-400 border-b-2 border-violet-500 pb-1 font-semibold">Achievements</a>
       </div>
-
       <div class="flex items-center gap-4">
         <div class="h-6 w-[1px] bg-white/10 mx-2 hidden sm:block"></div>
         <a routerLink="/login" class="text-slate-300 text-sm font-medium hover:text-white transition-colors hidden sm:block">Sign In</a>
-        <a routerLink="/register" class="bg-primary text-on-primary px-5 py-2 rounded-full text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
-          Get Started
-        </a>
+        <a routerLink="/register" class="bg-primary text-on-primary px-5 py-2 rounded-full text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">Get Started</a>
       </div>
-
       <div class="bg-gradient-to-r from-violet-500/20 to-transparent h-[1px] bottom-0 absolute left-0 right-0"></div>
     </div>
   </nav>
 
-  <!-- ── Main Content ──────────────────────────── -->
+  <!-- ── Content ───────────────────────────────────── -->
   <main class="pt-20 px-4 flex-1">
-    <div class="my-gamification-page">
+    <div class="my-gam-page">
+
       <div class="page-header">
-        <h1>My Gamification</h1>
-        <p>Achievements, challenges, and leaderboards</p>
+        <h1>My Achievements</h1>
+        <p>Your badges, leaderboard ranking and active challenges</p>
       </div>
 
+      <!-- Tab bar -->
       <div class="tab-bar">
         <button class="tab-btn" [class.active]="activeTab === 'badges'" (click)="switchTab('badges')">
           <span class="material-symbols-outlined">military_tech</span> My Badges
         </button>
-        <button class="tab-btn" [class.active]="activeTab === 'challenges'" (click)="switchTab('challenges')">
-          <span class="material-symbols-outlined">flag</span> My Challenges
-        </button>
         <button class="tab-btn" [class.active]="activeTab === 'leaderboard'" (click)="switchTab('leaderboard')">
           <span class="material-symbols-outlined">leaderboard</span> Leaderboard
         </button>
+        <button class="tab-btn" [class.active]="activeTab === 'challenges'" (click)="switchTab('challenges')">
+          <span class="material-symbols-outlined">flag</span> Challenges
+        </button>
       </div>
 
-      <!-- ═══ MY BADGES ═══ -->
+      <!-- ═══ TAB 1 — MY BADGES ══════════════════════════════════════════════ -->
       <div *ngIf="activeTab === 'badges'" class="section-page">
         <div class="section-header">
           <div>
             <h2>My Badges</h2>
-            <p>Earned achievements and milestones</p>
+            <p>Achievements you've earned through your volunteering</p>
           </div>
         </div>
 
-        <div class="stats-row">
-          <div class="stat-mini">
-            <span class="stat-mini-value">{{ badges.length }}</span>
-            <span class="stat-mini-label">Badges Earned</span>
+        <!-- Progress summary -->
+        <div class="progress-banner" *ngIf="!loading && totalCount > 0">
+          <div class="progress-banner-left">
+            <span class="progress-count">{{ earnedCount }} / {{ totalCount }}</span>
+            <span class="progress-label">Achievements Unlocked</span>
           </div>
-          <div class="stat-mini">
-            <span class="stat-mini-value">{{ totalPoints }} pts</span>
-            <span class="stat-mini-label">Total Points</span>
-          </div>
-          <div class="stat-mini">
-            <span class="stat-mini-value">{{ legendaryCount }}</span>
-            <span class="stat-mini-label">Legendary</span>
-          </div>
-          <div class="stat-mini">
-            <span class="stat-mini-value">{{ epicCount }}</span>
-            <span class="stat-mini-label">Epic</span>
-          </div>
-        </div>
-
-        <div *ngIf="!loading && badges.length > 0" class="badges-grid">
-          <div class="badge-card" *ngFor="let b of badges" [ngClass]="rarityClass(b.achievement?.rarity)">
-            <div class="badge-icon">
-              <img *ngIf="b.achievement?.iconUrl" [src]="b.achievement.iconUrl" [alt]="b.achievement?.name" class="badge-img" />
-              <span *ngIf="!b.achievement?.iconUrl" class="material-symbols-outlined">emoji_events</span>
+          <div class="progress-banner-right">
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill" [style.width.%]="progressPct"></div>
             </div>
-            <div class="badge-info">
-              <h3>{{ b.achievement?.name || 'Achievement #' + b.achievementId }}</h3>
-              <p class="badge-desc">{{ b.achievement?.description || 'No description' }}</p>
-              <div class="badge-meta">
-                <span class="tag" [ngClass]="categoryClass(b.achievement?.category)">{{ b.achievement?.category || 'N/A' }}</span>
-                <span class="tag tag-points">{{ b.achievement?.points || 0 }} pts</span>
-                <span class="badge-date">Earned {{ b.earnedAt | date:'mediumDate' }}</span>
+            <span class="progress-pct">{{ progressPct }}% complete</span>
+          </div>
+        </div>
+
+        <div *ngIf="loading" class="loading-state">Loading badges…</div>
+
+        <!-- Achievement catalog -->
+        <div *ngIf="!loading" class="achievements-grid">
+          <div
+            class="achievement-card"
+            *ngFor="let ach of allAchievements"
+            [class.earned]="hasEarned(ach.achievementId)"
+            [class.locked]="!hasEarned(ach.achievementId)"
+          >
+            <!-- Rarity ribbon -->
+            <div class="rarity-ribbon" [ngClass]="rarityClass(ach.rarity)">
+              {{ rarityEmoji(ach.rarity) }} {{ ach.rarity }}
+            </div>
+
+            <!-- Icon -->
+            <div class="ach-icon-wrap" [ngClass]="rarityClass(ach.rarity)">
+              <img *ngIf="ach.iconUrl" [src]="ach.iconUrl" [alt]="ach.name" class="ach-img" />
+              <span *ngIf="!ach.iconUrl" class="material-symbols-outlined ach-icon-default">
+                {{ hasEarned(ach.achievementId) ? 'emoji_events' : 'lock' }}
+              </span>
+            </div>
+
+            <!-- Info -->
+            <div class="ach-body">
+              <h3 class="ach-name">{{ ach.name }}</h3>
+              <p class="ach-desc">{{ ach.description }}</p>
+              <div class="ach-meta">
+                <span class="ach-points">⚡ {{ ach.points }} pts</span>
+                <span class="ach-category badge-cat">{{ ach.category }}</span>
               </div>
             </div>
+
+            <!-- Footer -->
+            <div class="ach-footer">
+              <ng-container *ngIf="hasEarned(ach.achievementId); else lockedTpl">
+                <span class="earned-badge">
+                  <span class="material-symbols-outlined">check_circle</span>
+                  Earned {{ earnedAt(ach.achievementId) | date:'mediumDate' }}
+                </span>
+              </ng-container>
+              <ng-template #lockedTpl>
+                <span class="locked-badge">
+                  <span class="material-symbols-outlined">lock</span>
+                  Not yet earned
+                </span>
+              </ng-template>
+            </div>
           </div>
         </div>
 
-        <div *ngIf="!loading && badges.length === 0" class="empty-state">
+        <div *ngIf="!loading && allAchievements.length === 0" class="empty-state">
           <span class="material-symbols-outlined empty-icon">military_tech</span>
-          <p>No badges yet</p>
-          <p class="empty-sub">Complete volunteer hours and challenges to earn badges!</p>
+          <p>No achievements defined yet</p>
         </div>
-        <div *ngIf="loading" class="loading-state">Loading your badges…</div>
       </div>
 
-      <!-- ═══ MY CHALLENGES ═══ -->
+      <!-- ═══ TAB 2 — LEADERBOARD ════════════════════════════════════════════ -->
+      <div *ngIf="activeTab === 'leaderboard'" class="section-page">
+        <div class="section-header">
+          <div>
+            <h2>Global Leaderboard</h2>
+            <p>Ranked by Impact Score · updated automatically every night</p>
+          </div>
+        </div>
+
+        <div *ngIf="loading" class="loading-state">Loading leaderboard…</div>
+
+        <ng-container *ngIf="!loading">
+
+          <!-- My rank hero card -->
+          <div class="my-rank-card" *ngIf="myRank" [ngClass]="scoreTierClass(myScore)">
+            <div class="my-rank-left">
+              <span class="rank-big">{{ rankEmoji(myRank) }}</span>
+              <div>
+                <div class="rank-number">Rank #{{ myRank }}</div>
+                <div class="rank-label">Your Position</div>
+              </div>
+            </div>
+            <div class="my-rank-right">
+              <div class="rank-score">{{ myScore | number:'1.0-0' }} pts</div>
+              <div class="rank-tier">{{ scoreTierLabel(myScore) }} Tier</div>
+            </div>
+          </div>
+
+          <!-- Not on leaderboard yet -->
+          <div class="not-ranked-card" *ngIf="!myRank">
+            <span class="material-symbols-outlined" style="font-size:2rem;color:#4a5568">emoji_events</span>
+            <p>You're not on the leaderboard yet — get your hours approved to earn an Impact Score!</p>
+          </div>
+
+          <!-- Full rankings table -->
+          <div class="table-card" *ngIf="leaderboardEntries.length > 0">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Volunteer</th>
+                    <th>Impact Score</th>
+                    <th>Tier</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    *ngFor="let entry of leaderboardEntries"
+                    [class.my-row]="entry.volunteerId === volunteerId"
+                  >
+                    <td>
+                      <span class="rank-cell">{{ rankEmoji(entry.rank) }}</span>
+                    </td>
+                    <td>
+                      <span *ngIf="entry.volunteerId === volunteerId" class="you-label">You</span>
+                      <span *ngIf="entry.volunteerId !== volunteerId">#{{ entry.volunteerId }}</span>
+                    </td>
+                    <td>
+                      <span class="score-pill" [ngClass]="scoreTierClass(entry.value)">
+                        ⚡ {{ entry.value | number:'1.0-0' }} pts
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge" [ngClass]="scoreTierClass(entry.value)">
+                        {{ scoreTierLabel(entry.value) }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="board-footer" *ngIf="boardLastRefreshed">
+              Last updated: {{ boardLastRefreshed | date:'medium' }}
+            </div>
+          </div>
+
+          <div *ngIf="leaderboardEntries.length === 0" class="empty-state">
+            <span class="material-symbols-outlined empty-icon">leaderboard</span>
+            <p>No leaderboard data yet — scores update every night automatically</p>
+          </div>
+
+        </ng-container>
+      </div>
+
+      <!-- ═══ TAB 3 — CHALLENGES ══════════════════════════════════════════════ -->
       <div *ngIf="activeTab === 'challenges'" class="section-page">
         <div class="section-header">
           <div>
-            <h2>My Challenges</h2>
-            <p>Active challenges you've joined</p>
+            <h2>Challenges</h2>
+            <p>Join team challenges and earn bonus points together</p>
           </div>
-          <button class="add-btn" (click)="loadActiveChallenges()">+ Join Challenge</button>
         </div>
 
-        <div *ngIf="!loading && challenges.length > 0" class="challenges-list">
+        <div *ngIf="loading" class="loading-state">Loading challenges…</div>
+
+        <div *ngIf="!loading" class="challenges-list">
           <div class="challenge-card" *ngFor="let c of challenges">
+
+            <!-- Status + participation badges -->
             <div class="challenge-header">
-              <h3>{{ c.title }}</h3>
               <span class="badge" [ngClass]="statusClass(c.status)">{{ c.status }}</span>
+              <span class="participating-badge" *ngIf="isParticipating(c)">
+                <span class="material-symbols-outlined">check_circle</span> Joined
+              </span>
             </div>
+
+            <!-- Title & description -->
+            <h3 class="challenge-title">{{ c.title }}</h3>
             <p class="challenge-desc">{{ c.description }}</p>
-            <div class="challenge-progress">
-              <div class="progress-header">
-                <span>{{ c.targetMetric }}: {{ c.progress || 0 }} / {{ c.targetValue }}</span>
-                <span>{{ progressPercent(c) | number:'1.0-0' }}%</span>
+
+            <!-- Stats row -->
+            <div class="challenge-stats">
+              <div class="chal-stat">
+                <span class="material-symbols-outlined chal-stat-icon">flag</span>
+                <div>
+                  <div class="chal-stat-value">{{ c.targetValue }} {{ c.targetMetric }}</div>
+                  <div class="chal-stat-label">Target</div>
+                </div>
               </div>
-              <div class="progress-bar">
-                <div class="progress-fill" [style.width]="progressPercent(c) + '%'"></div>
+              <div class="chal-stat">
+                <span class="material-symbols-outlined chal-stat-icon">bolt</span>
+                <div>
+                  <div class="chal-stat-value">{{ c.rewardPoints }} pts</div>
+                  <div class="chal-stat-label">Reward</div>
+                </div>
+              </div>
+              <div class="chal-stat">
+                <span class="material-symbols-outlined chal-stat-icon">group</span>
+                <div>
+                  <div class="chal-stat-value">{{ participantCount(c) }}</div>
+                  <div class="chal-stat-label">Participants</div>
+                </div>
+              </div>
+              <div class="chal-stat">
+                <span class="material-symbols-outlined chal-stat-icon">calendar_month</span>
+                <div>
+                  <div class="chal-stat-value">{{ c.endDate }}</div>
+                  <div class="chal-stat-label">Ends</div>
+                </div>
               </div>
             </div>
-            <div class="challenge-footer">
-              <span class="challenge-reward">{{ c.rewardPoints }} pts reward</span>
-              <span class="challenge-period">{{ c.startDate }} → {{ c.endDate }}</span>
-              <button class="leave-btn" (click)="leaveChallenge(c.challengeId)">Leave</button>
+
+            <!-- Action button -->
+            <div class="challenge-action">
+              <button
+                *ngIf="!isParticipating(c)"
+                class="join-btn"
+                [disabled]="joiningId === c.challengeId || c.status === 'COMPLETED'"
+                (click)="joinChallenge(c)"
+              >
+                <span class="material-symbols-outlined">add_circle</span>
+                {{ joiningId === c.challengeId ? 'Joining…' : 'Join Challenge' }}
+              </button>
+              <button
+                *ngIf="isParticipating(c)"
+                class="leave-btn"
+                [disabled]="joiningId === c.challengeId"
+                (click)="leaveChallenge(c)"
+              >
+                <span class="material-symbols-outlined">remove_circle</span>
+                {{ joiningId === c.challengeId ? 'Leaving…' : 'Leave Challenge' }}
+              </button>
             </div>
+
           </div>
         </div>
 
         <div *ngIf="!loading && challenges.length === 0" class="empty-state">
           <span class="material-symbols-outlined empty-icon">flag</span>
-          <p>No challenges joined yet</p>
-          <button class="add-btn" (click)="loadActiveChallenges()">Browse Active Challenges</button>
-        </div>
-        <div *ngIf="loading" class="loading-state">Loading challenges…</div>
-
-        <!-- Join Challenge Modal -->
-        <div class="modal-backdrop" *ngIf="showJoinModal">
-          <div class="modal-card small-modal">
-            <div class="modal-header">
-              <h2>Active Challenges</h2>
-              <button class="close-btn" (click)="showJoinModal = false">&times;</button>
-            </div>
-            <div *ngIf="allChallenges.length === 0" class="empty-state" style="padding:20px">
-              <p>No active challenges available to join right now.</p>
-            </div>
-            <div class="join-list" *ngIf="allChallenges.length > 0">
-              <div class="join-item" *ngFor="let c of allChallenges">
-                <div>
-                  <strong>{{ c.title }}</strong>
-                  <p class="join-meta">{{ c.targetMetric }} · {{ c.rewardPoints }} pts · Ends {{ c.endDate }}</p>
-                </div>
-                <button class="join-btn" (click)="openJoinChallenge(c.challengeId); showJoinModal = false">Join</button>
-              </div>
-            </div>
-            <div class="form-actions">
-              <button class="btn-secondary" (click)="showJoinModal = false">Close</button>
-            </div>
-          </div>
+          <p>No active challenges right now — check back soon!</p>
         </div>
       </div>
 
-      <!-- ═══ LEADERBOARD ═══ -->
-      <div *ngIf="activeTab === 'leaderboard'" class="section-page">
-        <div class="section-header">
-          <div>
-            <h2>Leaderboard</h2>
-            <p>Global rankings by volunteer hours</p>
-          </div>
-        </div>
-
-        <div *ngIf="isOnLeaderboard" class="my-rank-banner">
-          <span class="material-symbols-outlined">emoji_events</span>
-          <span>You're ranked <strong>#{{ myRank }}</strong> on the leaderboard!</span>
-        </div>
-
-        <div *ngIf="!loading && leaderboardData.length > 0" class="leaderboard-table">
-          <div class="lb-header">
-            <span>Rank</span><span>Volunteer</span><span>Hours</span>
-          </div>
-          <div class="lb-row" *ngFor="let row of leaderboardData" [ngClass]="rankClass(row.rank)" [class.is-me]="row.volunteerId === volunteerId">
-            <span class="lb-rank">
-              <span *ngIf="row.rank === 1">🥇</span>
-              <span *ngIf="row.rank === 2">🥈</span>
-              <span *ngIf="row.rank === 3">🥉</span>
-              <span *ngIf="row.rank > 3">#{{ row.rank }}</span>
-            </span>
-            <span class="lb-volunteer">Volunteer #{{ row.volunteerId }} <span *ngIf="row.volunteerId === volunteerId" class="you-tag">YOU</span></span>
-            <span class="lb-value">{{ row.value }}h</span>
-          </div>
-        </div>
-
-        <div *ngIf="!loading && leaderboardData.length === 0" class="empty-state">
-          <span class="material-symbols-outlined empty-icon">leaderboard</span>
-          <p>Leaderboard data not available yet</p>
-          <p class="empty-sub">Check back after logging some hours!</p>
-        </div>
-        <div *ngIf="loading" class="loading-state">Loading leaderboard…</div>
-      </div>
     </div>
   </main>
 
-  <!-- ── Footer ────────────────────────────────── -->
+  <!-- ── Footer ─────────────────────────────────── -->
   <footer class="w-full border-t border-white/5 bg-slate-950/80 backdrop-blur-xl">
     <div class="max-w-7xl mx-auto px-8 py-8 text-center">
       <p class="text-slate-500 text-xs">Powered by DisasterAid ⊕ VolunteerHub © 2025. All rights reserved.</p>
     </div>
   </footer>
+
 </div>

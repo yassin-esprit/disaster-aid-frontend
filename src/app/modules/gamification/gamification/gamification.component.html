@@ -80,32 +80,79 @@
           <button class="close-btn" (click)="closeModal()">✕</button>
         </div>
         <div class="modal-form">
-          <div class="form-group full"><label>Name</label><input type="text" [(ngModel)]="achForm.name" /></div>
+
+          <div class="form-group full">
+            <label>Name</label>
+            <input type="text" [(ngModel)]="achForm.name" placeholder="e.g. Bronze Volunteer" />
+          </div>
+
           <div class="form-group">
             <label>Category</label>
             <select [(ngModel)]="achForm.category">
               <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
             </select>
           </div>
+
           <div class="form-group">
             <label>Rarity</label>
             <select [(ngModel)]="achForm.rarity">
               <option *ngFor="let r of rarities" [value]="r">{{ r }}</option>
             </select>
           </div>
-          <div class="form-group"><label>Points</label><input type="number" [(ngModel)]="achForm.points" /></div>
-          <div class="form-group"><label>Icon URL</label><input type="text" [(ngModel)]="achForm.iconUrl" placeholder="https://…" /></div>
-          <div class="form-group full"><label>Description</label><textarea rows="2" [(ngModel)]="achForm.description"></textarea></div>
-          <div class="form-group full"><label>Criteria (JSON)</label><textarea rows="2" [(ngModel)]="achForm.criteria" placeholder='{"min_hours": 10}'></textarea></div>
+
+          <div class="form-group">
+            <label>Points Awarded</label>
+            <input type="number" [(ngModel)]="achForm.points" />
+          </div>
+
+          <div class="form-group">
+            <label>Icon URL</label>
+            <input type="text" [(ngModel)]="achForm.iconUrl" placeholder="https://…" />
+          </div>
+
+          <!-- ── Auto-award threshold ─────────────────────────────────── -->
+          <div class="form-group full threshold-group">
+            <label>
+              <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle">bolt</span>
+              Auto-Award: Min Impact Score Threshold
+            </label>
+            <div class="threshold-input-row">
+              <input
+                type="number"
+                [(ngModel)]="achForm.minImpactScore"
+                min="0"
+                placeholder="e.g. 50"
+                (ngModelChange)="onThresholdChange()"
+              />
+              <span class="threshold-hint">
+                Leave at 0 to disable auto-awarding
+              </span>
+            </div>
+            <div class="threshold-preview" *ngIf="achForm.minImpactScore > 0">
+              <span class="material-symbols-outlined" style="color:#8ef0b1;font-size:1rem">check_circle</span>
+              Volunteers reaching <strong>{{ achForm.minImpactScore }} pts</strong>
+              will automatically receive this badge
+            </div>
+          </div>
+          <!-- ─────────────────────────────────────────────────────────── -->
+
+          <div class="form-group full">
+            <label>Description</label>
+            <textarea rows="2" [(ngModel)]="achForm.description"></textarea>
+          </div>
+
           <div class="form-group full">
             <label style="display:flex;align-items:center;gap:10px;cursor:pointer;color:#c7d0ff;font-size:0.85rem;font-weight:700">
               <input type="checkbox" [(ngModel)]="achForm.isActive" style="width:18px;height:18px" /> Active
             </label>
           </div>
+
         </div>
         <div class="form-actions">
           <button class="btn-secondary" (click)="closeModal()">Cancel</button>
-          <button class="btn-primary" [disabled]="saving" (click)="submitAch()">{{ saving ? 'Saving…' : (editMode ? 'Update' : 'Create') }}</button>
+          <button class="btn-primary" [disabled]="saving" (click)="submitAch()">
+            {{ saving ? 'Saving…' : (editMode ? 'Update' : 'Create') }}
+          </button>
         </div>
       </div>
     </div>
@@ -195,7 +242,7 @@
     <div class="section-header">
       <div>
         <h2>Leaderboards</h2>
-        <p>Manage ranking boards by scope and metric</p>
+        <p>Rankings are updated automatically every night based on Impact Score</p>
       </div>
       <div class="header-actions">
         <div class="stats-card">
@@ -206,39 +253,97 @@
       </div>
     </div>
 
+    <!-- ── Auto-managed Impact Score leaderboard ────────────────────────── -->
+    <div class="auto-board-card" *ngIf="globalImpactBoard">
+      <div class="auto-board-header">
+        <div class="auto-board-title">
+          <span class="material-symbols-outlined" style="color:#ffd700;font-size:1.6rem">emoji_events</span>
+          <div>
+            <h3>Global Impact Score Ranking</h3>
+            <span class="auto-badge-label">
+              <span class="material-symbols-outlined" style="font-size:0.9rem">bolt</span>
+              Auto-updated · Last refresh: {{ globalImpactBoard.lastRefreshedAt | date:'medium' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="parsedGlobalSnapshot.length === 0" class="empty-state" style="padding:24px">
+        No data yet — scores will appear after the next scheduled run.
+      </div>
+
+      <div class="podium-table" *ngIf="parsedGlobalSnapshot.length > 0">
+        <table>
+          <thead>
+          <tr><th>Rank</th><th>Volunteer ID</th><th>Impact Score</th><th>Tier</th></tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let row of parsedGlobalSnapshot" [class.top-row]="row.rank <= 3">
+            <td>
+                <span class="rank-badge" [ngClass]="rankClass(row.rank)">
+                  {{ row.rank === 1 ? '🥇' : row.rank === 2 ? '🥈' : row.rank === 3 ? '🥉' : '#' + row.rank }}
+                </span>
+            </td>
+            <td><strong>#{{ row.volunteerId }}</strong></td>
+            <td>
+                <span class="score-badge" [ngClass]="scoreTierClass(row.value)">
+                  <span class="material-symbols-outlined" style="font-size:0.85rem">bolt</span>
+                  {{ row.value | number:'1.0-0' }} pts
+                </span>
+            </td>
+            <td>
+                <span class="badge" [ngClass]="scoreTierClass(row.value)">
+                  {{ getTierLabel(row.value) }}
+                </span>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── All leaderboard boards (manual ones) ─────────────────────────── -->
     <div class="table-card">
       <div class="toolbar">
         <input type="text" [(ngModel)]="searchTerm" (input)="filterLeaderboards()"
-          placeholder="Search by scope or metric…" class="search-input" />
+               placeholder="Search by scope or metric…" class="search-input" />
       </div>
       <div *ngIf="loading" class="loading-state">Loading leaderboards…</div>
       <div *ngIf="!loading" class="table-wrapper">
         <table>
           <thead>
-            <tr><th>ID</th><th>Scope</th><th>Metric</th><th>Last Refreshed</th><th>Snapshot</th><th>Actions</th></tr>
+          <tr><th>ID</th><th>Scope</th><th>Metric</th><th>Last Refreshed</th><th>Auto?</th><th>Snapshot</th><th>Actions</th></tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of filteredLeaderboards">
-              <td>{{ item.boardId }}</td>
-              <td><span class="badge badge-blue">{{ item.scope }}</span></td>
-              <td><span class="badge badge-purple">{{ item.metric }}</span></td>
-              <td>{{ item.lastRefreshedAt | date:'medium' }}</td>
-              <td>
-                <button class="action-btn approve-btn" (click)="viewSnapshot(item)">View</button>
-              </td>
-              <td class="actions-cell">
-                <button class="action-btn edit-btn" (click)="openEditBoard(item)">Edit</button>
-                <button class="action-btn approve-btn" (click)="refreshBoard(item.boardId)">Refresh</button>
-                <button class="action-btn delete-btn" (click)="deleteBoard(item.boardId)">Delete</button>
-              </td>
-            </tr>
+          <tr *ngFor="let item of filteredLeaderboards">
+            <td>{{ item.boardId }}</td>
+            <td><span class="badge badge-blue">{{ item.scope }}</span></td>
+            <td><span class="badge badge-purple">{{ item.metric }}</span></td>
+            <td>{{ item.lastRefreshedAt | date:'medium' }}</td>
+            <td>
+                <span class="badge"
+                      [ngClass]="item.metric === 'IMPACT_SCORE' && item.scope === 'GLOBAL' ? 'badge-green' : 'badge-gray'">
+                  {{ item.metric === 'IMPACT_SCORE' && item.scope === 'GLOBAL' ? 'Auto' : 'Manual' }}
+                </span>
+            </td>
+            <td>
+              <button class="action-btn approve-btn" (click)="viewSnapshot(item)">View</button>
+            </td>
+            <td class="actions-cell">
+              <button class="action-btn edit-btn" (click)="openEditBoard(item)">Edit</button>
+              <button class="action-btn approve-btn"
+                      *ngIf="!(item.metric === 'IMPACT_SCORE' && item.scope === 'GLOBAL')"
+                      (click)="refreshBoard(item.boardId)">Refresh</button>
+              <button class="action-btn delete-btn" (click)="deleteBoard(item.boardId)">Delete</button>
+            </td>
+          </tr>
           </tbody>
         </table>
         <div *ngIf="filteredLeaderboards.length === 0" class="empty-state">No leaderboards found.</div>
       </div>
     </div>
 
-    <!-- Leaderboard Modal -->
+    <!-- Leaderboard Create/Edit Modal -->
     <div class="modal-backdrop" *ngIf="showModal">
       <div class="modal-card">
         <div class="modal-header">
@@ -260,12 +365,15 @@
           </div>
           <div class="form-group full">
             <label>Snapshot JSON (optional)</label>
-            <textarea rows="4" [(ngModel)]="boardForm.snapshotJson" placeholder='[{"rank":1,"volunteerId":42,"value":120}]'></textarea>
+            <textarea rows="4" [(ngModel)]="boardForm.snapshotJson"
+                      placeholder='[{"rank":1,"volunteerId":42,"value":120}]'></textarea>
           </div>
         </div>
         <div class="form-actions">
           <button class="btn-secondary" (click)="closeModal()">Cancel</button>
-          <button class="btn-primary" [disabled]="saving" (click)="submitBoard()">{{ saving ? 'Saving…' : (editMode ? 'Update' : 'Create') }}</button>
+          <button class="btn-primary" [disabled]="saving" (click)="submitBoard()">
+            {{ saving ? 'Saving…' : (editMode ? 'Update' : 'Create') }}
+          </button>
         </div>
       </div>
     </div>
@@ -278,16 +386,16 @@
           <button class="close-btn" (click)="showSnapshotModal = false">✕</button>
         </div>
         <div *ngIf="snapshotData.length === 0" class="empty-state" style="padding:20px">
-          No snapshot data yet. Click Refresh to populate.
+          No snapshot data yet.
         </div>
         <table *ngIf="snapshotData.length > 0">
           <thead><tr><th>Rank</th><th>Volunteer ID</th><th>Value</th></tr></thead>
           <tbody>
-            <tr *ngFor="let row of snapshotData">
-              <td><span class="badge" [ngClass]="row.rank === 1 ? 'badge-yellow' : 'badge-gray'">#{{ row.rank }}</span></td>
-              <td>#{{ row.volunteerId }}</td>
-              <td><strong>{{ row.value }}</strong></td>
-            </tr>
+          <tr *ngFor="let row of snapshotData">
+            <td><span class="badge" [ngClass]="row.rank === 1 ? 'badge-yellow' : 'badge-gray'">#{{ row.rank }}</span></td>
+            <td>#{{ row.volunteerId }}</td>
+            <td><strong>{{ row.value }}</strong></td>
+          </tr>
           </tbody>
         </table>
         <div class="form-actions" style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08)">

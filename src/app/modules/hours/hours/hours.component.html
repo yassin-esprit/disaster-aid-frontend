@@ -329,6 +329,13 @@
                   <span class="stat-label">Verified Records</span>
               </div>
           </div>
+          <div class="stat-tile">
+              <span class="material-symbols-outlined stat-icon" style="color:#ffd86b">bolt</span>
+              <div class="stat-body">
+                  <span class="stat-number">{{ topImpactScore | number:'1.0-0' }}</span>
+                  <span class="stat-label">Top Impact Score</span>
+              </div>
+          </div>
       </div>
 
     <div class="table-card">
@@ -342,28 +349,50 @@
         </div>
       <div *ngIf="loading" class="loading-state">Loading impact records…</div>
       <div *ngIf="!loading" class="table-wrapper">
-        <table>
-          <thead>
-            <tr><th>ID</th><th>Volunteer</th><th>Hours</th><th>CO₂ (kg)</th><th>Meals</th><th>People</th><th>Waste (kg)</th><th>Tutoring</th><th>Confidence</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of filteredImpact">
-              <td>{{ item.impactId }}</td>
-              <td>#{{ item.volunteerId }}</td>
-              <td><span class="badge badge-purple">{{ item.totalApprovedHours }}h</span></td>
-              <td>{{ item.co2OffsetKg }}</td>
-              <td>{{ item.mealsServed }}</td>
-              <td>{{ item.peopleHelped }}</td>
-              <td>{{ item.wasteRemovedKg }}</td>
-              <td>{{ item.hoursOfTutoring }}h</td>
-              <td><span class="badge" [ngClass]="confidenceClass(item.confidenceLevel)">{{ item.confidenceLevel }}</span></td>
-              <td class="actions-cell">
-                <button class="action-btn edit-btn" (click)="openEditImpact(item)">Edit</button>
-                <button class="action-btn delete-btn" (click)="deleteImpact(item.impactId)">Delete</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+          <table>
+              <thead>
+              <tr>
+                  <th>ID</th>
+                  <th>Volunteer</th>
+                  <th>Hours</th>
+                  <th>CO₂ (kg)</th>
+                  <th>Meals</th>
+                  <th>People</th>
+                  <th>Waste (kg)</th>
+                  <th>Tutoring</th>
+                  <th>Confidence</th>
+                  <th>Impact Score</th>
+                  <th>Actions</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr *ngFor="let item of filteredImpact">
+                  <td>{{ item.impactId }}</td>
+                  <td>#{{ item.volunteerId }}</td>
+                  <td><span class="badge badge-purple">{{ item.totalApprovedHours }}h</span></td>
+                  <td>{{ item.co2OffsetKg }}</td>
+                  <td>{{ item.mealsServed }}</td>
+                  <td>{{ item.peopleHelped }}</td>
+                  <td>{{ item.wasteRemovedKg }}</td>
+                  <td>{{ item.hoursOfTutoring }}h</td>
+                  <td>
+        <span class="badge" [ngClass]="confidenceClass(item.confidenceLevel)">
+          {{ item.confidenceLevel }}
+        </span>
+                  </td>
+                  <td>
+        <span class="score-badge" [ngClass]="scoreTierClass(item.impactScore)">
+          <span class="material-symbols-outlined" style="font-size:0.9rem">bolt</span>
+            {{ item.impactScore | number:'1.0-0' }} pts
+        </span>
+                  </td>
+                  <td class="actions-cell">
+                      <button class="action-btn edit-btn" (click)="openEditImpact(item)">Edit</button>
+                      <button class="action-btn delete-btn" (click)="deleteImpact(item.impactId)">Delete</button>
+                  </td>
+              </tr>
+              </tbody>
+          </table>
         <div *ngIf="filteredImpact.length === 0" class="empty-state">No impact records found.</div>
       </div>
     </div>

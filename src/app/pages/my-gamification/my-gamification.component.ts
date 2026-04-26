@@ -1,11 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { RouterModule } from '@angular/router';
 import { environment } from '../../../environments/environment';
 
-type GamTab = 'badges' | 'challenges' | 'leaderboard';
+type GamTab = 'badges' | 'leaderboard' | 'challenges';
 
 @Component({
   selector: 'app-my-gamification',
@@ -15,9 +15,9 @@ type GamTab = 'badges' | 'challenges' | 'leaderboard';
   styleUrl: './my-gamification.component.scss'
 })
 export class MyGamificationComponent implements OnInit {
+
   activeTab: GamTab = 'badges';
   loading = false;
-  saving = false;
   volunteerId: number;
 
   private get headers(): HttpHeaders {
@@ -32,164 +32,208 @@ export class MyGamificationComponent implements OnInit {
     this.volunteerId = Number(localStorage.getItem('userId') || '0');
   }
 
-  ngOnInit(): void {
-    this.loadBadges();
-  }
+  ngOnInit(): void { this.loadBadges(); }
 
   switchTab(tab: GamTab): void {
     this.activeTab = tab;
-    if (tab === 'badges') this.loadBadges();
-    if (tab === 'challenges') this.loadChallenges();
+    if (tab === 'badges')      this.loadBadges();
     if (tab === 'leaderboard') this.loadLeaderboard();
+    if (tab === 'challenges')  this.loadChallenges();
   }
 
-  // ═══ MY BADGES ═══
-  badges: any[] = [];
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TAB 1 — MY BADGES
+  // ═══════════════════════════════════════════════════════════════════════════
+  myBadges: any[]        = [];
   allAchievements: any[] = [];
 
   loadBadges(): void {
     this.loading = true;
-    this.http.get<any[]>(`${environment.apiUrl}/volunteer-achievements/volunteer/${this.volunteerId}`, { headers: this.headers })
-      .subscribe({
-        next: (res) => {
-          this.badges = res;
-          this.loadAchievementDetails();
-        },
-        error: (e) => { console.error(e); this.loading = false; }
-      });
+
+    // Load volunteer's earned badges
+    this.http.get<any[]>(
+      `${environment.apiUrl}/volunteer-achievements/volunteer/${this.volunteerId}`,
+      { headers: this.headers }
+    ).subscribe({
+      next: (badges) => {
+        this.myBadges = badges;
+
+        // Also load all achievements to show full catalog with earned/not earned
+        this.http.get<any[]>(
+          `${environment.apiUrl}/achievements`,
+          { headers: this.headers }
+        ).subscribe({
+          next: (all) => { this.allAchievements = all; this.loading = false; },
+          error: ()    => { this.loading = false; }
+        });
+      },
+      error: () => { this.loading = false; }
+    });
   }
 
-  loadAchievementDetails(): void {
-    this.http.get<any[]>(`${environment.apiUrl}/achievements`, { headers: this.headers })
-      .subscribe({
-        next: (achievements) => {
-          this.allAchievements = achievements;
-          this.badges = this.badges.map(b => {
-            const ach = achievements.find(a => a.achievementId === b.achievementId);
-            return { ...b, achievement: ach || null };
-          });
-          this.loading = false;
-        },
-        error: () => { this.loading = false; }
-      });
+  /** Check if volunteer has earned a specific achievement */
+  hasEarned(achievementId: number): boolean {
+    return this.myBadges.some(b => b.achievementId === achievementId);
   }
 
-  rarityClass(r: string): string {
+  /** Get earned date for an achievement */
+  earnedAt(achievementId: number): string | null {
+    const badge = this.myBadges.find(b => b.achievementId === achievementId);
+    return badge ? badge.earnedAt : null;
+  }
+
+  /** Toggle visibility of a badge on profile */
+  toggleDisplay(badge: any): void {
+    this.http.put<any>(
+      `${environment.apiUrl}/volunteer-achievements/${badge.vaId}/display?value=${!badge.isDisplayed}`,
+      {},
+      { headers: this.headers }
+    ).subscribe({ next: () => this.loadBadges() });
+  }
+
+  rarityClass(rarity: string): string {
     const map: any = { LEGENDARY: 'rarity-legendary', EPIC: 'rarity-epic', RARE: 'rarity-rare', COMMON: 'rarity-common' };
-    return map[r] || 'rarity-common';
+    return map[rarity] || 'rarity-common';
   }
 
-  categoryClass(c: string): string {
-    const map: any = { HOURS: 'cat-hours', SKILLS: 'cat-skills', IMPACT: 'cat-impact', DISASTER_RESPONSE: 'cat-disaster', SOCIAL: 'cat-social' };
-    return map[c] || '';
+  rarityEmoji(rarity: string): string {
+    const map: any = { LEGENDARY: '👑', EPIC: '💜', RARE: '💎', COMMON: '⭐' };
+    return map[rarity] || '⭐';
   }
 
-  get totalPoints(): number {
-    return this.badges.reduce((sum, b) => sum + (b.achievement?.points || 0), 0);
+  get earnedCount(): number { return this.myBadges.length; }
+  get totalCount(): number  { return this.allAchievements.length; }
+  get progressPct(): number {
+    if (!this.totalCount) return 0;
+    return Math.round((this.earnedCount / this.totalCount) * 100);
   }
 
-  get legendaryCount(): number {
-    return this.badges.filter(b => b.achievement?.rarity === 'LEGENDARY').length;
-  }
-
-  get epicCount(): number {
-    return this.badges.filter(b => b.achievement?.rarity === 'EPIC').length;
-  }
-
-  // ═══ MY CHALLENGES ═══
-  challenges: any[] = [];
-  showJoinModal = false;
-  joinChallengeId: number | null = null;
-
-  loadChallenges(): void {
-    this.loading = true;
-    this.http.get<any[]>(`${environment.apiUrl}/challenges/volunteer/${this.volunteerId}`, { headers: this.headers })
-      .subscribe({
-        next: (res) => { this.challenges = res; this.loading = false; },
-        error: (e) => { console.error(e); this.loading = false; }
-      });
-  }
-
-  // Also load all active challenges for joining
-  allChallenges: any[] = [];
-
-  loadActiveChallenges(): void {
-    this.http.get<any[]>(`${environment.apiUrl}/challenges/status/ACTIVE`, { headers: this.headers })
-      .subscribe({
-        next: (res) => {
-          this.allChallenges = res.filter(c => !c.participantIds?.includes(this.volunteerId));
-          this.showJoinModal = true;
-        },
-        error: (e) => console.error(e)
-      });
-  }
-
-  openJoinChallenge(id: number): void {
-    this.joinChallengeId = id;
-    this.http.post<any>(`${environment.apiUrl}/challenges/${id}/join?volunteerId=${this.volunteerId}`, {}, { headers: this.headers })
-      .subscribe({
-        next: () => { this.loadChallenges(); },
-        error: (err) => alert(err?.error?.message || 'Failed to join challenge.')
-      });
-  }
-
-  leaveChallenge(id: number): void {
-    if (!confirm('Leave this challenge?')) return;
-    this.http.post<any>(`${environment.apiUrl}/challenges/${id}/leave?volunteerId=${this.volunteerId}`, {}, { headers: this.headers })
-      .subscribe({
-        next: () => { this.loadChallenges(); },
-        error: (err) => alert(err?.error?.message || 'Failed to leave challenge.')
-      });
-  }
-
-  statusClass(s: string): string {
-    const map: any = { ACTIVE: 'badge-green', COMPLETED: 'badge-blue', UPCOMING: 'badge-yellow' };
-    return map[s] || '';
-  }
-
-  progressPercent(c: any): number {
-    if (!c.targetValue || c.targetValue === 0) return 0;
-    return Math.min(100, ((c.progress || 0) / c.targetValue) * 100);
-  }
-
-  // ═══ LEADERBOARD ═══
-  leaderboardData: any[] = [];
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TAB 2 — LEADERBOARD
+  // ═══════════════════════════════════════════════════════════════════════════
+  leaderboardEntries: any[] = [];
+  myRank: number | null = null;
+  myScore: number = 0;
+  boardLastRefreshed: string | null = null;
 
   loadLeaderboard(): void {
     this.loading = true;
-    this.http.get<any[]>(`${environment.apiUrl}/leaderboards`, { headers: this.headers })
-      .subscribe({
-        next: (res) => {
-          // Try to find a GLOBAL HOURS board first
-          const globalBoard = res.find(b => b.scope === 'GLOBAL' && b.metric === 'HOURS');
-          if (globalBoard?.snapshotJson) {
-            try {
-              this.leaderboardData = JSON.parse(globalBoard.snapshotJson);
-            } catch {
-              this.leaderboardData = [];
-            }
-          } else {
-            this.leaderboardData = [];
+    this.http.get<any[]>(
+      `${environment.apiUrl}/leaderboards`,
+      { headers: this.headers }
+    ).subscribe({
+      next: (boards) => {
+        // Find the auto-managed Global/Impact Score board
+        const globalBoard = boards.find(
+          b => b.scope === 'GLOBAL' && b.metric === 'IMPACT_SCORE'
+        );
+
+        if (globalBoard && globalBoard.snapshotJson) {
+          try {
+            this.leaderboardEntries = JSON.parse(globalBoard.snapshotJson);
+            this.boardLastRefreshed = globalBoard.lastRefreshedAt;
+
+            // Find current volunteer's rank
+            const myEntry = this.leaderboardEntries.find(
+              e => e.volunteerId === this.volunteerId
+            );
+            this.myRank  = myEntry ? myEntry.rank  : null;
+            this.myScore = myEntry ? myEntry.value : 0;
+          } catch {
+            this.leaderboardEntries = [];
           }
-          this.loading = false;
-        },
-        error: (e) => { console.error(e); this.leaderboardData = []; this.loading = false; }
-      });
+        } else {
+          this.leaderboardEntries = [];
+        }
+        this.loading = false;
+      },
+      error: () => { this.loading = false; }
+    });
   }
 
-  get isOnLeaderboard(): boolean {
-    return this.leaderboardData.some(row => row.volunteerId === this.volunteerId);
+  rankEmoji(rank: number): string {
+    if (rank === 1) return '🥇';
+    if (rank === 2) return '🥈';
+    if (rank === 3) return '🥉';
+    return `#${rank}`;
   }
 
-  get myRank(): number | null {
-    const me = this.leaderboardData.find(row => row.volunteerId === this.volunteerId);
-    return me ? me.rank : null;
+  scoreTierClass(score: number): string {
+    if (!score || score <= 0) return 'tier-starter';
+    if (score >= 500) return 'tier-gold';
+    if (score >= 200) return 'tier-silver';
+    if (score >= 50)  return 'tier-bronze';
+    return 'tier-starter';
   }
 
-  rankClass(rank: number): string {
-    if (rank === 1) return 'rank-gold';
-    if (rank === 2) return 'rank-silver';
-    if (rank === 3) return 'rank-bronze';
-    return '';
+  scoreTierLabel(score: number): string {
+    if (!score || score <= 0) return 'Starter';
+    if (score >= 500) return 'Gold';
+    if (score >= 200) return 'Silver';
+    if (score >= 50)  return 'Bronze';
+    return 'Starter';
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TAB 3 — CHALLENGES
+  // ═══════════════════════════════════════════════════════════════════════════
+  challenges: any[] = [];
+  joiningId: number | null = null;  // track which challenge is being joined
+
+  loadChallenges(): void {
+    this.loading = true;
+    // Load ALL active/upcoming challenges
+    this.http.get<any[]>(
+      `${environment.apiUrl}/challenges`,
+      { headers: this.headers }
+    ).subscribe({
+      next: (res) => {
+        // Show ACTIVE and UPCOMING only — not completed
+        this.challenges = res.filter(c => c.status !== 'COMPLETED');
+        this.loading = false;
+      },
+      error: () => { this.loading = false; }
+    });
+  }
+
+  isParticipating(challenge: any): boolean {
+    return challenge.participantIds?.includes(this.volunteerId);
+  }
+
+  joinChallenge(challenge: any): void {
+    this.joiningId = challenge.challengeId;
+    this.http.post<any>(
+      `${environment.apiUrl}/challenges/${challenge.challengeId}/join?volunteerId=${this.volunteerId}`,
+      {},
+      { headers: this.headers }
+    ).subscribe({
+      next: () => { this.joiningId = null; this.loadChallenges(); },
+      error: (err) => {
+        this.joiningId = null;
+        alert(err?.error?.message || 'Could not join challenge.');
+      }
+    });
+  }
+
+  leaveChallenge(challenge: any): void {
+    if (!confirm('Leave this challenge?')) return;
+    this.joiningId = challenge.challengeId;
+    this.http.post<any>(
+      `${environment.apiUrl}/challenges/${challenge.challengeId}/leave?volunteerId=${this.volunteerId}`,
+      {},
+      { headers: this.headers }
+    ).subscribe({
+      next: () => { this.joiningId = null; this.loadChallenges(); },
+      error: ()  => { this.joiningId = null; }
+    });
+  }
+
+  statusClass(status: string): string {
+    const map: any = { ACTIVE: 'badge-green', UPCOMING: 'badge-yellow', COMPLETED: 'badge-blue' };
+    return map[status] || '';
+  }
+
+  participantCount(challenge: any): number {
+    return challenge.participantIds?.length || 0;
   }
 }

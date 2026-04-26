@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 
+
 type GamificationTab = 'achievements' | 'badges' | 'leaderboard' | 'challenges';
 type AchievementCategory = 'HOURS' | 'SKILLS' | 'IMPACT' | 'DISASTER_RESPONSE' | 'SOCIAL';
 type Rarity = 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
@@ -81,29 +82,76 @@ export class GamificationComponent implements OnInit {
       : [...this.achievements];
   }
 
-  openCreateAch(): void { this.editMode = false; this.achForm = this.emptyAchForm(); this.showModal = true; }
+  openCreateAch(): void {
+    this.editMode = false;
+    this.achForm = this.emptyAchForm();
+    this.showModal = true;
+  }
 
   openEditAch(item: any): void {
     this.editMode = true;
     this.selectedId = item.achievementId;
+
+    // Parse existing criteria JSON to extract minImpactScore
+    let minImpactScore = 0;
+    try {
+      if (item.criteria) {
+        const parsed = JSON.parse(item.criteria);
+        minImpactScore = parsed.min_impact_score || 0;
+      }
+    } catch { minImpactScore = 0; }
+
     this.achForm = {
-      name: item.name, description: item.description, iconUrl: item.iconUrl || '',
-      category: item.category, criteria: item.criteria || '',
-      points: item.points, rarity: item.rarity, isActive: item.isActive
+      name: item.name,
+      description: item.description,
+      iconUrl: item.iconUrl || '',
+      category: item.category,
+      criteria: item.criteria || '',
+      points: item.points,
+      rarity: item.rarity,
+      isActive: item.isActive,
+      minImpactScore: minImpactScore   // ← extracted from criteria
     };
     this.showModal = true;
+  }
+
+  onThresholdChange(): void {
+    const score = this.achForm.minImpactScore;
+    if (score && score > 0) {
+      this.achForm.criteria = JSON.stringify({ min_impact_score: score });
+    } else {
+      this.achForm.criteria = '';
+    }
   }
 
   closeModal(): void { this.showModal = false; }
 
   submitAch(): void {
     this.saving = true;
+
+    // Make sure criteria is up to date before submitting
+    this.onThresholdChange();
+
+    // Build the payload — strip out the UI-only minImpactScore field
+    const payload = {
+      name:        this.achForm.name,
+      description: this.achForm.description,
+      iconUrl:     this.achForm.iconUrl,
+      category:    this.achForm.category,
+      criteria:    this.achForm.criteria,
+      points:      this.achForm.points,
+      rarity:      this.achForm.rarity,
+      isActive:    this.achForm.isActive
+    };
+
     const url = this.editMode && this.selectedId
       ? `${environment.apiUrl}/achievements/${this.selectedId}`
       : `${environment.apiUrl}/achievements`;
+
     const req$ = this.editMode && this.selectedId
-      ? this.http.put<any>(url, this.achForm, { headers: this.headers })
-      : this.http.post<any>(url, this.achForm, { headers: this.headers });
+      ? this.http.put<any>(url, payload, { headers: this.headers })
+      : this.http.post<any>(url, payload, { headers: this.headers });
+
     req$.subscribe({
       next: () => { this.saving = false; this.closeModal(); this.loadAchievements(); },
       error: () => { this.saving = false; }
@@ -121,7 +169,17 @@ export class GamificationComponent implements OnInit {
   }
 
   private emptyAchForm() {
-    return { name: '', description: '', iconUrl: '', category: 'HOURS', criteria: '', points: 0, rarity: 'COMMON', isActive: true };
+    return {
+      name: '',
+      description: '',
+      iconUrl: '',
+      category: 'HOURS',
+      criteria: '',
+      points: 0,
+      rarity: 'COMMON',
+      isActive: true,
+      minImpactScore: 0    // ← new UI-only field
+    };
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -346,4 +404,48 @@ export class GamificationComponent implements OnInit {
   private emptyChallengeForm() {
     return { title: '', description: '', targetMetric: 'HOURS', targetValue: 0, rewardPoints: 0, startDate: '', endDate: '', participantIds: [], status: 'UPCOMING' };
   }
+
+  /** The auto-managed Global/Impact Score board */
+  get globalImpactBoard(): any {
+    return this.leaderboards.find(
+      b => b.scope === 'GLOBAL' && b.metric === 'IMPACT_SCORE'
+    ) || null;
+  }
+
+  /** Parsed snapshot array ready for the podium table */
+  get parsedGlobalSnapshot(): any[] {
+    const board = this.globalImpactBoard;
+    if (!board || !board.snapshotJson) return [];
+    try {
+      return JSON.parse(board.snapshotJson);
+    } catch {
+      return [];
+    }
+  }
+
+  /** CSS class for rank badge */
+  rankClass(rank: number): string {
+    if (rank === 1) return 'rank-gold';
+    if (rank === 2) return 'rank-silver';
+    if (rank === 3) return 'rank-bronze';
+    return 'rank-default';
+  }
+
+  /** Human-readable tier label based on score value */
+  getTierLabel(score: number): string {
+    if (score >= 500) return '🥇 Gold';
+    if (score >= 200) return '🥈 Silver';
+    if (score >= 50)  return '🥉 Bronze';
+    return 'Starter';
+  }
+
+  /** Score tier CSS class — reused from impact records */
+  scoreTierClass(score: number): string {
+    if (!score || score <= 0) return 'score-default';
+    if (score >= 500) return 'score-gold';
+    if (score >= 200) return 'score-silver';
+    if (score >= 50)  return 'score-bronze';
+    return 'score-default';
+  }
+
 }
