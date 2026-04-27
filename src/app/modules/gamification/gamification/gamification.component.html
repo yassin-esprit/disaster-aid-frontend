@@ -1,0 +1,483 @@
+<div class="hours-page">
+
+  <!-- ── Page Header ─────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div>
+      <h1>Gamification &amp; Recognition</h1>
+      <p>Achievements, badges, leaderboards and team challenges</p>
+    </div>
+  </div>
+
+  <!-- ── Tab Bar ──────────────────────────────────────────────────────────── -->
+  <div class="tab-bar">
+    <button class="tab-btn" [class.active]="activeTab === 'achievements'" (click)="switchTab('achievements')">
+      <span class="material-symbols-outlined">emoji_events</span> Achievements
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'badges'" (click)="switchTab('badges')">
+      <span class="material-symbols-outlined">military_tech</span> Volunteer Badges
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'leaderboard'" (click)="switchTab('leaderboard')">
+      <span class="material-symbols-outlined">leaderboard</span> Leaderboards
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'challenges'" (click)="switchTab('challenges')">
+      <span class="material-symbols-outlined">flag</span> Challenges
+    </button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       TAB 1 — ACHIEVEMENTS
+  ═══════════════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'achievements'" class="section-page">
+    <div class="section-header">
+      <div>
+        <h2>Achievements</h2>
+        <p>Define badges and milestones for volunteer recognition</p>
+      </div>
+      <div class="header-actions">
+        <div class="stats-card">
+          <span class="stats-label">Total</span>
+          <span class="stats-value">{{ achievements.length }}</span>
+        </div>
+        <button class="add-btn" (click)="openCreateAch()">+ New Achievement</button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="toolbar">
+        <input type="text" [(ngModel)]="searchTerm" (input)="filterAchievements()"
+          placeholder="Search by name, category, rarity…" class="search-input" />
+      </div>
+      <div *ngIf="loading" class="loading-state">Loading achievements…</div>
+      <div *ngIf="!loading" class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Name</th><th>Category</th><th>Points</th><th>Rarity</th><th>Active</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of filteredAchievements">
+              <td>{{ item.achievementId }}</td>
+              <td><strong>{{ item.name }}</strong></td>
+              <td><span class="badge badge-blue">{{ item.category }}</span></td>
+              <td><span class="badge badge-purple">{{ item.points }} pts</span></td>
+              <td><span class="badge" [ngClass]="rarityClass(item.rarity)">{{ item.rarity }}</span></td>
+              <td><span class="badge" [ngClass]="item.isActive ? 'badge-green' : 'badge-gray'">{{ item.isActive ? 'YES' : 'NO' }}</span></td>
+              <td class="actions-cell">
+                <button class="action-btn edit-btn" (click)="openEditAch(item)">Edit</button>
+                <button class="action-btn delete-btn" (click)="deleteAch(item.achievementId)">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div *ngIf="filteredAchievements.length === 0" class="empty-state">No achievements found.</div>
+      </div>
+    </div>
+
+    <!-- Achievement Modal -->
+    <div class="modal-backdrop" *ngIf="showModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>{{ editMode ? 'Edit Achievement' : 'New Achievement' }}</h2>
+          <button class="close-btn" (click)="closeModal()">✕</button>
+        </div>
+        <div class="modal-form">
+
+          <div class="form-group full">
+            <label>Name</label>
+            <input type="text" [(ngModel)]="achForm.name" placeholder="e.g. Bronze Volunteer" />
+          </div>
+
+          <div class="form-group">
+            <label>Category</label>
+            <select [(ngModel)]="achForm.category">
+              <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Rarity</label>
+            <select [(ngModel)]="achForm.rarity">
+              <option *ngFor="let r of rarities" [value]="r">{{ r }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Points Awarded</label>
+            <input type="number" [(ngModel)]="achForm.points" />
+          </div>
+
+          <div class="form-group">
+            <label>Icon URL</label>
+            <input type="text" [(ngModel)]="achForm.iconUrl" placeholder="https://…" />
+          </div>
+
+          <!-- ── Auto-award threshold ─────────────────────────────────── -->
+          <div class="form-group full threshold-group">
+            <label>
+              <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle">bolt</span>
+              Auto-Award: Min Impact Score Threshold
+            </label>
+            <div class="threshold-input-row">
+              <input
+                type="number"
+                [(ngModel)]="achForm.minImpactScore"
+                min="0"
+                placeholder="e.g. 50"
+                (ngModelChange)="onThresholdChange()"
+              />
+              <span class="threshold-hint">
+                Leave at 0 to disable auto-awarding
+              </span>
+            </div>
+            <div class="threshold-preview" *ngIf="achForm.minImpactScore > 0">
+              <span class="material-symbols-outlined" style="color:#8ef0b1;font-size:1rem">check_circle</span>
+              Volunteers reaching <strong>{{ achForm.minImpactScore }} pts</strong>
+              will automatically receive this badge
+            </div>
+          </div>
+          <!-- ─────────────────────────────────────────────────────────── -->
+
+          <div class="form-group full">
+            <label>Description</label>
+            <textarea rows="2" [(ngModel)]="achForm.description"></textarea>
+          </div>
+
+          <div class="form-group full">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;color:#c7d0ff;font-size:0.85rem;font-weight:700">
+              <input type="checkbox" [(ngModel)]="achForm.isActive" style="width:18px;height:18px" /> Active
+            </label>
+          </div>
+
+        </div>
+        <div class="form-actions">
+          <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+          <button class="btn-primary" [disabled]="saving" (click)="submitAch()">
+            {{ saving ? 'Saving…' : (editMode ? 'Update' : 'Create') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       TAB 2 — VOLUNTEER BADGES
+  ═══════════════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'badges'" class="section-page">
+    <div class="section-header">
+      <div>
+        <h2>Volunteer Badges</h2>
+        <p>Award achievements to volunteers and manage their display</p>
+      </div>
+      <div class="header-actions">
+        <div class="stats-card">
+          <span class="stats-label">Total</span>
+          <span class="stats-value">{{ badges.length }}</span>
+        </div>
+        <!-- <button class="add-btn" (click)="openAwardBadge()">+ Award Badge</button> -->
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="toolbar">
+        <input type="text" [(ngModel)]="searchTerm" (input)="filterBadges()"
+          placeholder="Search by volunteer ID or achievement ID…" class="search-input" />
+      </div>
+      <div *ngIf="loading" class="loading-state">Loading badges…</div>
+      <div *ngIf="!loading" class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Volunteer</th><th>Achievement</th><th>Earned At</th><th>Displayed</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of filteredBadges">
+              <td>{{ item.vaId }}</td>
+              <td>#{{ item.volunteerId }}</td>
+              <td>#{{ item.achievementId }}</td>
+              <td>{{ item.earnedAt | date:'mediumDate' }}</td>
+              <td>
+                <span class="badge" [ngClass]="item.isDisplayed ? 'badge-green' : 'badge-gray'">
+                  {{ item.isDisplayed ? 'Visible' : 'Hidden' }}
+                </span>
+              </td>
+              <td class="actions-cell">
+                <button class="action-btn edit-btn" (click)="toggleDisplay(item)">
+                  {{ item.isDisplayed ? 'Hide' : 'Show' }}
+                </button>
+                <button class="action-btn delete-btn" (click)="deleteBadge(item.vaId)">Revoke</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div *ngIf="filteredBadges.length === 0" class="empty-state">No badges awarded yet.</div>
+      </div>
+    </div>
+
+    <!-- Award Badge Modal -->
+    <div class="modal-backdrop" *ngIf="showModal">
+      <div class="modal-card small-modal">
+        <div class="modal-header">
+          <h2>Award Badge</h2>
+          <button class="close-btn" (click)="closeModal()">✕</button>
+        </div>
+        <div class="modal-form">
+          <div class="form-group"><label>Volunteer ID</label><input type="number" [(ngModel)]="badgeForm.volunteerId" /></div>
+          <div class="form-group"><label>Achievement ID</label><input type="number" [(ngModel)]="badgeForm.achievementId" /></div>
+          <div class="form-group full">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;color:#c7d0ff;font-size:0.85rem;font-weight:700">
+              <input type="checkbox" [(ngModel)]="badgeForm.isDisplayed" style="width:18px;height:18px" /> Display on profile
+            </label>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+          <button class="btn-primary" [disabled]="saving" (click)="submitBadge()">{{ saving ? 'Awarding…' : 'Award Badge' }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       TAB 3 — LEADERBOARDS
+  ═══════════════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'leaderboard'" class="section-page">
+    <div class="section-header">
+      <div>
+        <h2>Leaderboards</h2>
+        <p>Rankings are updated automatically every night based on Impact Score</p>
+      </div>
+      <div class="header-actions">
+        <div class="stats-card">
+          <span class="stats-label">Boards</span>
+          <span class="stats-value">{{ leaderboards.length }}</span>
+        </div>
+        <button class="add-btn" (click)="openCreateBoard()">+ New Board</button>
+      </div>
+    </div>
+
+    <!-- ── Auto-managed Impact Score leaderboard ────────────────────────── -->
+    <div class="auto-board-card" *ngIf="globalImpactBoard">
+      <div class="auto-board-header">
+        <div class="auto-board-title">
+          <span class="material-symbols-outlined" style="color:#ffd700;font-size:1.6rem">emoji_events</span>
+          <div>
+            <h3>Global Impact Score Ranking</h3>
+            <span class="auto-badge-label">
+              <span class="material-symbols-outlined" style="font-size:0.9rem">bolt</span>
+              Auto-updated · Last refresh: {{ globalImpactBoard.lastRefreshedAt | date:'medium' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="parsedGlobalSnapshot.length === 0" class="empty-state" style="padding:24px">
+        No data yet — scores will appear after the next scheduled run.
+      </div>
+
+      <div class="podium-table" *ngIf="parsedGlobalSnapshot.length > 0">
+        <table>
+          <thead>
+          <tr><th>Rank</th><th>Volunteer ID</th><th>Impact Score</th><th>Tier</th></tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let row of parsedGlobalSnapshot" [class.top-row]="row.rank <= 3">
+            <td>
+                <span class="rank-badge" [ngClass]="rankClass(row.rank)">
+                  {{ row.rank === 1 ? '🥇' : row.rank === 2 ? '🥈' : row.rank === 3 ? '🥉' : '#' + row.rank }}
+                </span>
+            </td>
+            <td><strong>#{{ row.volunteerId }}</strong></td>
+            <td>
+                <span class="score-badge" [ngClass]="scoreTierClass(row.value)">
+                  <span class="material-symbols-outlined" style="font-size:0.85rem">bolt</span>
+                  {{ row.value | number:'1.0-0' }} pts
+                </span>
+            </td>
+            <td>
+                <span class="badge" [ngClass]="scoreTierClass(row.value)">
+                  {{ getTierLabel(row.value) }}
+                </span>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── All leaderboard boards (manual ones) ─────────────────────────── -->
+    <div class="table-card">
+      <div class="toolbar">
+        <input type="text" [(ngModel)]="searchTerm" (input)="filterLeaderboards()"
+               placeholder="Search by scope or metric…" class="search-input" />
+      </div>
+      <div *ngIf="loading" class="loading-state">Loading leaderboards…</div>
+      <div *ngIf="!loading" class="table-wrapper">
+        <table>
+          <thead>
+          <tr><th>ID</th><th>Scope</th><th>Metric</th><th>Last Refreshed</th><th>Auto?</th><th>Snapshot</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let item of filteredLeaderboards">
+            <td>{{ item.boardId }}</td>
+            <td><span class="badge badge-blue">{{ item.scope }}</span></td>
+            <td><span class="badge badge-purple">{{ item.metric }}</span></td>
+            <td>{{ item.lastRefreshedAt | date:'medium' }}</td>
+            <td>
+                <span class="badge"
+                      [ngClass]="item.metric === 'IMPACT_SCORE' && item.scope === 'GLOBAL' ? 'badge-green' : 'badge-gray'">
+                  {{ item.metric === 'IMPACT_SCORE' && item.scope === 'GLOBAL' ? 'Auto' : 'Manual' }}
+                </span>
+            </td>
+            <td>
+              <button class="action-btn approve-btn" (click)="viewSnapshot(item)">View</button>
+            </td>
+            <td class="actions-cell">
+              <button class="action-btn edit-btn" (click)="openEditBoard(item)">Edit</button>
+              <button class="action-btn approve-btn"
+                      *ngIf="!(item.metric === 'IMPACT_SCORE' && item.scope === 'GLOBAL')"
+                      (click)="refreshBoard(item.boardId)">Refresh</button>
+              <button class="action-btn delete-btn" (click)="deleteBoard(item.boardId)">Delete</button>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+        <div *ngIf="filteredLeaderboards.length === 0" class="empty-state">No leaderboards found.</div>
+      </div>
+    </div>
+
+    <!-- Leaderboard Create/Edit Modal -->
+    <div class="modal-backdrop" *ngIf="showModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>{{ editMode ? 'Edit Leaderboard' : 'New Leaderboard' }}</h2>
+          <button class="close-btn" (click)="closeModal()">✕</button>
+        </div>
+        <div class="modal-form">
+          <div class="form-group">
+            <label>Scope</label>
+            <select [(ngModel)]="boardForm.scope">
+              <option *ngFor="let s of scopes" [value]="s">{{ s }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Metric</label>
+            <select [(ngModel)]="boardForm.metric">
+              <option value="IMPACT_SCORE">IMPACT_SCORE</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+          <button class="btn-primary" [disabled]="saving" (click)="submitBoard()">
+            {{ saving ? 'Saving…' : (editMode ? 'Update' : 'Create') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Snapshot Viewer Modal -->
+    <div class="modal-backdrop" *ngIf="showSnapshotModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>{{ snapshotTitle }}</h2>
+          <button class="close-btn" (click)="showSnapshotModal = false">✕</button>
+        </div>
+        <div *ngIf="snapshotData.length === 0" class="empty-state" style="padding:20px">
+          No snapshot data yet.
+        </div>
+        <table *ngIf="snapshotData.length > 0">
+          <thead><tr><th>Rank</th><th>Volunteer ID</th><th>Value</th></tr></thead>
+          <tbody>
+          <tr *ngFor="let row of snapshotData">
+            <td><span class="badge" [ngClass]="row.rank === 1 ? 'badge-yellow' : 'badge-gray'">#{{ row.rank }}</span></td>
+            <td>#{{ row.volunteerId }}</td>
+            <td><strong>{{ row.value }}</strong></td>
+          </tr>
+          </tbody>
+        </table>
+        <div class="form-actions" style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08)">
+          <button class="btn-secondary" (click)="showSnapshotModal = false">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       TAB 4 — CHALLENGES
+  ═══════════════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'challenges'" class="section-page">
+    <div class="section-header">
+      <div>
+        <h2>Challenges</h2>
+        <p>Create team challenges and track volunteer participation</p>
+      </div>
+      <div class="header-actions">
+        <div class="stats-card">
+          <span class="stats-label">Total</span>
+          <span class="stats-value">{{ challenges.length }}</span>
+        </div>
+        <button class="add-btn" (click)="openCreateChallenge()">+ New Challenge</button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="toolbar">
+        <input type="text" [(ngModel)]="searchTerm" (input)="filterChallenges()"
+          placeholder="Search by title, status, metric…" class="search-input" />
+      </div>
+      <div *ngIf="loading" class="loading-state">Loading challenges…</div>
+      <div *ngIf="!loading" class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Title</th><th>Reward</th><th>Period</th><th>Participants</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of filteredChallenges">
+              <td>{{ item.challengeId }}</td>
+              <td><strong>{{ item.title }}</strong></td>
+              <td><span class="badge badge-yellow">{{ item.rewardPoints }} pts</span></td>
+              <td>{{ item.startDate }} → {{ item.endDate }}</td>
+              <td>
+                <span class="badge badge-blue">
+                  {{ (item.participantIds && item.participantIds.length) || 0 }} joined
+                </span>
+              </td>
+              <td><span class="badge" [ngClass]="statusClass(item.status)">{{ item.status }}</span></td>
+              <td class="actions-cell">
+                <button class="action-btn edit-btn" (click)="openEditChallenge(item)">Edit</button>
+                <button class="action-btn delete-btn" (click)="deleteChallenge(item.challengeId)">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div *ngIf="filteredChallenges.length === 0" class="empty-state">No challenges found.</div>
+      </div>
+    </div>
+
+    <!-- Challenge Modal -->
+    <div class="modal-backdrop" *ngIf="showModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>{{ editMode ? 'Edit Challenge' : 'New Challenge' }}</h2>
+          <button class="close-btn" (click)="closeModal()">✕</button>
+        </div>
+        <div class="modal-form">
+          <div class="form-group full"><label>Title</label><input type="text" [(ngModel)]="challengeForm.title" placeholder="Challenge name…" /></div>
+          <div class="form-group">
+            <label>Status</label>
+            <select [(ngModel)]="challengeForm.status">
+              <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Reward Points</label><input type="number" [(ngModel)]="challengeForm.rewardPoints" /></div>
+          <div class="form-group"><label>Start Date</label><input type="date" [(ngModel)]="challengeForm.startDate" /></div>
+          <div class="form-group"><label>End Date</label><input type="date" [(ngModel)]="challengeForm.endDate" /></div>
+          <div class="form-group full"><label>Description</label><textarea rows="3" [(ngModel)]="challengeForm.description" placeholder="Describe the challenge…"></textarea></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+          <button class="btn-primary" [disabled]="saving" (click)="submitChallenge()">{{ saving ? 'Saving…' : (editMode ? 'Update' : 'Create') }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

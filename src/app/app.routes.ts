@@ -18,6 +18,11 @@ import { authGuard, adminGuard } from './core/guards/auth.guard';
 import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password.component';
 
 export const routes: Routes = [
+  { path: '', component: LandingComponent },
+  { path: 'login', component: LoginComponent },
+  { path: 'register', component: RegisterComponent },
+  { path: 'my-hours', loadComponent: () => import('./pages/my-hours/my-hours.component').then(m => m.MyHoursComponent) },
+  { path: 'my-gamification', loadComponent: () => import('./pages/my-gamification/my-gamification.component').then(m => m.MyGamificationComponent) },
 
   // ── Unauthenticated pages ─────────────────────────────────────────────────
   { path: '', redirectTo: 'landing', pathMatch: 'full' },
@@ -43,10 +48,6 @@ export const routes: Routes = [
         .then(m => m.ChatComponent),
   },
 
-  // =========================================================================
-  // ADMIN — sidebar layout, prefixed under /admin so it NEVER overlaps
-  // with citizen paths. roleGuard lets only admin roles through.
-  // =========================================================================
   {
     path: 'admin',
     component: AuthenticatedLayoutComponent,
@@ -175,6 +176,28 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/users-management/users-management.component').then(m => m.UsersManagementComponent),
       },
+
+      {
+        path: 'hours',
+        loadComponent: () =>
+          import('./modules/hours/hours/hours.component')
+            .then(m => m.HoursComponent),
+      },
+
+      {
+        path: 'gamification',
+        loadComponent: () =>
+          import('./modules/gamification/gamification/gamification.component')
+            .then(m => m.GamificationComponent),
+      },
+
+      {
+        path: 'my-hours',
+        loadComponent: () =>
+          import('./pages/my-hours/my-hours.component')
+            .then(m => m.MyHoursComponent),
+      },
+
     ],
   },
 

@@ -1,0 +1,167 @@
+// ── Base layout ───────────────────────────────────────────────────────────────
+.my-gam-page { max-width: 1000px; margin: 0 auto; padding: 32px 20px; color: #fff; }
+
+.page-header { margin-bottom: 28px;
+  h1 { font-size: 2.2rem; font-weight: 800; margin: 0 0 6px; background: linear-gradient(135deg, #fff, #b8c1ec); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  p  { color: #8892b0; margin: 0; font-size: 0.95rem; }
+}
+
+// ── Tab bar ───────────────────────────────────────────────────────────────────
+.tab-bar { display: flex; gap: 8px; margin-bottom: 28px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 6px; flex-wrap: wrap; }
+.tab-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border: none; border-radius: 12px; background: transparent; color: #8892b0; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
+  .material-symbols-outlined { font-size: 1.2rem; }
+  &.active { background: linear-gradient(135deg, #6C5CE7, #a29bfe); color: #fff; box-shadow: 0 8px 20px rgba(108,92,231,0.25); }
+  &:not(.active):hover { background: rgba(255,255,255,0.05); color: #ccd6f6; }
+}
+
+// ── Shared ────────────────────────────────────────────────────────────────────
+.section-page { display: flex; flex-direction: column; gap: 20px; }
+.section-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+  h2 { font-size: 1.5rem; font-weight: 700; margin: 0; }
+  p  { color: #8892b0; margin: 4px 0 0; font-size: 0.9rem; }
+}
+.badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.badge-green  { background: rgba(46,213,115,0.15);  color: #2ed573; }
+.badge-yellow { background: rgba(255,165,2,0.15);   color: #ffa502; }
+.badge-blue   { background: rgba(84,160,255,0.15);  color: #54a0ff; }
+.badge-purple { background: rgba(108,92,231,0.2);   color: #a29bfe; }
+.loading-state { text-align: center; padding: 60px; color: #8892b0; }
+.empty-state { text-align: center; padding: 60px 20px;
+  .empty-icon { font-size: 3rem; color: #4a5568; margin-bottom: 16px; display: block; }
+  p { color: #8892b0; }
+}
+.table-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; overflow: hidden; }
+.table-wrapper { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 500px; }
+th { text-align: left; padding: 14px 16px; font-size: 0.7rem; color: #8892b0; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.06); }
+td { padding: 14px 16px; color: #ccd6f6; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.9rem; vertical-align: middle; }
+
+// ── Progress banner (badges tab) ──────────────────────────────────────────────
+.progress-banner { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; background: rgba(108,92,231,0.08); border: 1px solid rgba(108,92,231,0.2); border-radius: 16px; padding: 20px 24px; }
+.progress-banner-left { display: flex; flex-direction: column; gap: 4px; }
+.progress-count { font-size: 2rem; font-weight: 900; color: #a29bfe; line-height: 1; }
+.progress-label { font-size: 0.75rem; color: #8892b0; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+.progress-banner-right { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 8px; }
+.progress-bar-wrap { width: 100%; height: 8px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: linear-gradient(90deg, #6C5CE7, #a29bfe); border-radius: 999px; transition: width 0.8s ease; min-width: 4px; }
+.progress-pct { font-size: 0.75rem; color: #8892b0; font-weight: 600; }
+
+// ── Achievement cards grid ────────────────────────────────────────────────────
+.achievements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+
+.achievement-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 14px; transition: all 0.2s; position: relative; overflow: hidden;
+  &.earned { border-color: rgba(108,92,231,0.35); background: rgba(108,92,231,0.07);
+    &:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(108,92,231,0.15); }
+  }
+  &.locked { opacity: 0.5; filter: grayscale(0.6); }
+}
+
+// Rarity ribbon
+.rarity-ribbon { display: inline-flex; align-items: center; gap: 5px; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 10px; border-radius: 999px; width: fit-content; }
+.rarity-legendary { background: rgba(255,215,0,0.15); color: #ffd700; border: 1px solid rgba(255,215,0,0.3); }
+.rarity-epic      { background: rgba(155,89,182,0.15); color: #c39bd3; border: 1px solid rgba(155,89,182,0.3); }
+.rarity-rare      { background: rgba(84,160,255,0.15); color: #54a0ff; border: 1px solid rgba(84,160,255,0.3); }
+.rarity-common    { background: rgba(255,255,255,0.07); color: #8892b0; border: 1px solid rgba(255,255,255,0.1); }
+
+// Icon
+.ach-icon-wrap { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 16px; background: rgba(255,255,255,0.05); }
+.ach-img { width: 36px; height: 36px; object-fit: contain; }
+.ach-icon-default { font-size: 2rem; color: #6C5CE7; }
+
+// Body
+.ach-name { margin: 0; font-size: 1rem; font-weight: 700; color: #ccd6f6; }
+.ach-desc { margin: 4px 0 0; font-size: 0.8rem; color: #8892b0; line-height: 1.5; }
+.ach-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ach-points { font-size: 0.78rem; font-weight: 700; color: #a29bfe; }
+.ach-body { display: flex; flex-direction: column; flex: 1; }
+.badge-cat { background: rgba(255,255,255,0.07); color: #8892b0; font-size: 0.65rem; }
+
+// Footer
+.ach-footer { padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+.earned-badge { display: inline-flex; align-items: center; gap: 5px; color: #2ed573; font-size: 0.75rem; font-weight: 700;
+  .material-symbols-outlined { font-size: 1rem; }
+}
+.locked-badge { display: inline-flex; align-items: center; gap: 5px; color: #4a5568; font-size: 0.75rem; font-weight: 600;
+  .material-symbols-outlined { font-size: 1rem; }
+}
+
+// ── Leaderboard ───────────────────────────────────────────────────────────────
+.my-rank-card { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; padding: 24px 28px; border-radius: 20px; border: 1px solid; margin-bottom: 4px;
+  &.tier-gold   { background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,180,0,0.05)); border-color: rgba(255,215,0,0.3); }
+  &.tier-silver { background: rgba(192,192,220,0.08); border-color: rgba(192,192,220,0.2); }
+  &.tier-bronze { background: rgba(205,127,50,0.08); border-color: rgba(205,127,50,0.2); }
+  &.tier-starter { background: rgba(108,92,231,0.07); border-color: rgba(108,92,231,0.2); }
+}
+.my-rank-left { display: flex; align-items: center; gap: 16px; }
+.rank-big { font-size: 3rem; line-height: 1; }
+.rank-number { font-size: 2rem; font-weight: 900; color: #fff; line-height: 1; }
+.rank-label { font-size: 0.72rem; color: #8892b0; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; margin-top: 4px; }
+.my-rank-right { text-align: right; }
+.rank-score { font-size: 1.8rem; font-weight: 900; color: #a29bfe; }
+.rank-tier { font-size: 0.8rem; color: #8892b0; font-weight: 600; margin-top: 4px; }
+
+.not-ranked-card { display: flex; align-items: center; gap: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 20px 24px;
+  p { color: #8892b0; margin: 0; font-size: 0.9rem; }
+}
+
+.my-row td { background: rgba(108,92,231,0.08); }
+.rank-cell { font-size: 1.1rem; }
+.you-label { font-weight: 800; color: #a29bfe; }
+.score-pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 800;
+  &.tier-gold   { background: rgba(255,215,0,0.15);  color: #ffd700; }
+  &.tier-silver { background: rgba(192,192,220,0.12); color: #d4d8f0; }
+  &.tier-bronze { background: rgba(205,127,50,0.15);  color: #e8a96a; }
+  &.tier-starter { background: rgba(255,255,255,0.06); color: #8892b0; }
+}
+.badge.tier-gold   { background: rgba(255,215,0,0.15);  color: #ffd700; }
+.badge.tier-silver { background: rgba(192,192,220,0.12); color: #d4d8f0; }
+.badge.tier-bronze { background: rgba(205,127,50,0.15);  color: #e8a96a; }
+.badge.tier-starter { background: rgba(255,255,255,0.06); color: #8892b0; }
+
+.board-footer { padding: 12px 16px; font-size: 0.72rem; color: #4a5568; border-top: 1px solid rgba(255,255,255,0.04); }
+
+// ── Challenges ────────────────────────────────────────────────────────────────
+.challenges-list { display: flex; flex-direction: column; gap: 16px; }
+
+.challenge-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 18px; padding: 24px; transition: all 0.2s;
+  &:hover { border-color: rgba(108,92,231,0.3); transform: translateY(-2px); }
+}
+
+.challenge-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.participating-badge { display: inline-flex; align-items: center; gap: 4px; color: #2ed573; font-size: 0.75rem; font-weight: 700;
+  .material-symbols-outlined { font-size: 1rem; }
+}
+
+.challenge-title { margin: 0 0 6px; font-size: 1.2rem; font-weight: 700; color: #ccd6f6; }
+.challenge-desc  { margin: 0 0 20px; color: #8892b0; font-size: 0.88rem; line-height: 1.6; }
+
+.challenge-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.chal-stat { display: flex; align-items: center; gap: 10px;
+  .chal-stat-icon { font-size: 1.4rem; color: #6C5CE7; }
+  .chal-stat-value { font-size: 0.95rem; font-weight: 700; color: #ccd6f6; }
+  .chal-stat-label { font-size: 0.68rem; color: #8892b0; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; margin-top: 2px; }
+}
+
+.challenge-action { padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.06); }
+
+.join-btn { display: inline-flex; align-items: center; gap: 7px; padding: 11px 22px; border: none; border-radius: 12px; background: linear-gradient(135deg, #6C5CE7, #a29bfe); color: white; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
+  .material-symbols-outlined { font-size: 1.1rem; }
+  &:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.leave-btn { display: inline-flex; align-items: center; gap: 7px; padding: 11px 22px; border: none; border-radius: 12px; background: rgba(255,71,87,0.12); color: #ff6b81; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255,71,87,0.2);
+  .material-symbols-outlined { font-size: 1.1rem; }
+  &:hover:not(:disabled) { background: rgba(255,71,87,0.2); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .my-gam-page { padding: 20px 16px; }
+  .achievements-grid { grid-template-columns: 1fr; }
+  .progress-banner { flex-direction: column; align-items: flex-start; }
+  .my-rank-card { flex-direction: column; align-items: flex-start; }
+  .my-rank-right { text-align: left; }
+  .challenge-stats { grid-template-columns: repeat(2, 1fr); }
+}
