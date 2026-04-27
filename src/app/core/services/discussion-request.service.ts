@@ -12,7 +12,7 @@ import {
   providedIn: 'root'
 })
 export class DiscussionRequestService {
-  private apiUrl = `${environment.apiUrl}/api/conversation-requests`;
+  private apiUrl = `${environment.apiUrl}/conversation-requests`;
 
   constructor(private http: HttpClient) {}
 
