@@ -28,6 +28,7 @@ export const routes: Routes = [
   {
     path: 'analytics',
     component: AuthenticatedLayoutComponent,
+    canActivate: [authGuard],
     children: [
       {
         path: '',

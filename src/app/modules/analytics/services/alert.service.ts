@@ -13,7 +13,7 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class AlertService {
-  private readonly base = '/api/alerts';
+  private readonly base = '/alerts';
 
   constructor(private http: HttpService) {}
 
@@ -65,49 +65,42 @@ export class AlertService {
 
   // SLA
   getSlaMetrics(): Observable<SlaMetric[]> {
-    return this.http.get<ApiResponse<SlaMetric[]>>('/api/sla').pipe(this.extract());
+    return this.http.get<ApiResponse<SlaMetric[]>>('/sla').pipe(this.extract());
   }
 
   getSlaSummary(): Observable<SlaSummary> {
-    return this.http.get<ApiResponse<SlaSummary>>('/api/sla/summary').pipe(this.extract());
-  }
-
-  // Comparison
-  compareAlerts(a: number, b: number): Observable<ComparisonResult> {
-    return this.http
-      .get<ApiResponse<ComparisonResult>>(`${this.base}/compare?alertIdA=${a}&alertIdB=${b}`)
-      .pipe(this.extract());
+    return this.http.get<ApiResponse<SlaSummary>>('/sla/summary').pipe(this.extract());
   }
 
   // Rules
   getRules(): Observable<AlertRule[]> {
-    return this.http.get<ApiResponse<AlertRule[]>>('/api/rules').pipe(this.extract());
+    return this.http.get<ApiResponse<AlertRule[]>>('/rules').pipe(this.extract());
   }
 
   createRule(rule: AlertRule): Observable<AlertRule> {
-    return this.http.post<ApiResponse<AlertRule>>('/api/rules', rule).pipe(this.extract());
+    return this.http.post<ApiResponse<AlertRule>>('/rules', rule).pipe(this.extract());
   }
 
   updateRule(id: number, rule: AlertRule): Observable<AlertRule> {
-    return this.http.put<ApiResponse<AlertRule>>(`/api/rules/${id}`, rule).pipe(this.extract());
+    return this.http.put<ApiResponse<AlertRule>>(`/rules/${id}`, rule).pipe(this.extract());
   }
 
   deleteRule(id: number): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(`/api/rules/${id}`).pipe(this.extract());
+    return this.http.delete<ApiResponse<void>>(`/rules/${id}`).pipe(this.extract());
   }
 
   evaluateRules(): Observable<RuleExecutionResult[]> {
-    return this.http.post<ApiResponse<RuleExecutionResult[]>>('/api/rules/evaluate', {}).pipe(this.extract());
+    return this.http.post<ApiResponse<RuleExecutionResult[]>>('/rules/evaluate', {}).pipe(this.extract());
   }
 
   // Data Quality
   analyzeDataQuality(): Observable<DataQualityReport> {
-    return this.http.get<ApiResponse<DataQualityReport>>('/api/data-quality/analyze').pipe(this.extract());
+    return this.http.get<ApiResponse<DataQualityReport>>('/data-quality/analyze').pipe(this.extract());
   }
 
   // Risk Zones
   getRiskZones(): Observable<RiskZone[]> {
-    return this.http.get<ApiResponse<RiskZone[]>>('/api/risk-zones').pipe(this.extract());
+    return this.http.get<ApiResponse<RiskZone[]>>('/risk-zones').pipe(this.extract());
   }
 
   // Replay

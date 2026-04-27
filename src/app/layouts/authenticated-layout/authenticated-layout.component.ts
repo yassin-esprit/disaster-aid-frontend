@@ -5,8 +5,6 @@ import { SidebarComponent } from '../../shared/components/sidebar/sidebar.compon
 import { HeaderComponent } from '../../shared/components/header/header.component';
 import { MobileNavComponent } from '../../shared/components/mobile-nav/mobile-nav.component';
 
-const ADMIN_ROLES = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN', 'ADMIN'];
-
 @Component({
   selector: 'app-authenticated-layout',
   standalone: true,
@@ -14,19 +12,13 @@ const ADMIN_ROLES = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN', 'ADMIN'];
   templateUrl: './authenticated-layout.component.html',
 })
 export class AuthenticatedLayoutComponent implements OnInit {
-  currentRole: string = 'PLATFORM_ADMIN';
+  currentRole: string = 'VOLUNTEER';
 
   constructor(private authService: AuthService, private router: Router) {}
 
   ngOnInit(): void {
     const role = (this.authService.getRole() || '').trim().toUpperCase();
-
-    if (!ADMIN_ROLES.includes(role)) {
-      this.router.navigateByUrl('/home');
-      return;
-    }
-
-    this.currentRole = ADMIN_ROLES.includes(role) ? role : 'ADMIN';
+    this.currentRole = role || 'VOLUNTEER';
   }
 
   logout(): void {

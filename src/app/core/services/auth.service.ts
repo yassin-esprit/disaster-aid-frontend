@@ -1,7 +1,8 @@
 // src/app/core/services/auth.service.ts
 import { Injectable } from '@angular/core';
-import { Observable, tap, catchError, throwError } from 'rxjs';
+import { Observable, tap, catchError, throwError, from, EMPTY, defaultIfEmpty, mergeMap, of, concatMap, take } from 'rxjs';
 import { HttpService } from './http.service';
+import { environment } from '../../../environments/environment';
 
 export interface AuthResponse {
   token: string;
@@ -37,6 +38,43 @@ export class AuthService {
     console.log('AuthService initialized with HttpService');
   }
 
+  private buildAuthEndpoints(path: string): string[] {
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    const apiUrl = environment.apiUrl.replace(/\/+$/, '');
+    const baseWithoutApi = apiUrl.replace(/\/api$/, '');
+    const candidates = [
+      `${apiUrl}${normalizedPath}`,
+      `${baseWithoutApi}${normalizedPath}`,
+      `${baseWithoutApi}/api/v1${normalizedPath}`
+    ];
+
+    const seen = new Set<string>();
+    return candidates.filter(url => {
+      if (seen.has(url)) return false;
+      seen.add(url);
+      return true;
+    });
+  }
+
+  private postWithFallback<T>(endpoints: string[], body: unknown): Observable<T> {
+    let lastError: unknown;
+
+    return from(endpoints).pipe(
+      concatMap(url =>
+        this.httpService.post<T>(url, body).pipe(
+          catchError(error => {
+            lastError = error;
+            console.warn('⚠️ API endpoint failed:', url, error);
+            return EMPTY;
+          })
+        )
+      ),
+      take(1),
+      defaultIfEmpty(null),
+      mergeMap(result => (result ? of(result) : throwError(() => lastError)))
+    );
+  }
+
   register(data: RegisterRequest): Observable<AuthResponse> {
     const registrationData = {
       ...data,
@@ -45,18 +83,10 @@ export class AuthService {
 
     console.log('📝 Registering user:', registrationData.email);
 
-    // Try different endpoint paths based on your backend configuration
-    const endpoints = [
-      '/auth/register',      // Direct
-      '/api/auth/register',  // With /api prefix
-      '/api/v1/auth/register' // With /api/v1 prefix
-    ];
+    const endpoints = this.buildAuthEndpoints('/auth/register');
+    console.log('📍 Register endpoints:', endpoints);
 
-    // Use the first endpoint, we'll test others if this fails
-    const endpoint = '/auth/register';
-    console.log('📍 Register endpoint:', endpoint);
-
-    return this.httpService.post<AuthResponse>(endpoint, registrationData).pipe(
+    return this.postWithFallback<AuthResponse>(endpoints, registrationData).pipe(
       tap(res => {
         console.log('✅ Registration API response:', res);
         this.storeAuthData(res);
@@ -71,10 +101,10 @@ export class AuthService {
 
   login(data: LoginRequest): Observable<AuthResponse> {
     console.log('🔐 Logging in user:', data.email);
-    const endpoint = '/auth/login';
-    console.log('📍 Login endpoint:', endpoint);
+    const endpoints = this.buildAuthEndpoints('/auth/login');
+    console.log('📍 Login endpoints:', endpoints);
 
-    return this.httpService.post<AuthResponse>(endpoint, data).pipe(
+    return this.postWithFallback<AuthResponse>(endpoints, data).pipe(
       tap(res => {
         console.log('✅ Login API response:', res);
         this.storeAuthData(res);
@@ -88,8 +118,8 @@ export class AuthService {
 
   logout(): Observable<LogoutResponse> {
     console.log('🚪 Logging out');
-    const endpoint = '/auth/logout';
-    return this.httpService.post<LogoutResponse>(endpoint, {}).pipe(
+    const endpoints = this.buildAuthEndpoints('/auth/logout');
+    return this.postWithFallback<LogoutResponse>(endpoints, {}).pipe(
       tap(() => {
         console.log('✅ Logout successful');
         this.clearAuthData();

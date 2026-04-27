@@ -14,7 +14,7 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class VolunteerAnalyticsService {
-  private readonly base = '/api/analytics/volunteer';
+  private readonly base = '/analytics/volunteer';
 
   constructor(private http: HttpService) {}
 

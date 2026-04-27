@@ -13,6 +13,13 @@ export class HttpService {
     console.log('🌐 HttpService initialized with API URL:', this.apiUrl);
   }
 
+  private buildUrl(endpoint: string): string {
+    if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+      return endpoint;
+    }
+    return `${this.apiUrl}${endpoint}`;
+  }
+
   private buildHeaders(additional?: HttpHeaders, isFormData = false): HttpHeaders {
     const token = localStorage.getItem('token');
     let headers = new HttpHeaders();
@@ -61,23 +68,24 @@ export class HttpService {
     return throwError(() => error);
   }
 
-  get<T>(endpoint: string, params?: { polygon: string }, customHeaders?: HttpHeaders): Observable<T> {
+  get<T>(endpoint: string, params?: HttpParams | Record<string, string | number | boolean>, customHeaders?: HttpHeaders): Observable<T> {
     const options = {
       headers: this.buildHeaders(customHeaders, false),
       params
     };
-    return this.http.get<T>(`${this.apiUrl}${endpoint}`, options);}
+    return this.http.get<T>(this.buildUrl(endpoint), options);
+  }
 
 
   post<T>(endpoint: string, body: unknown, params?: HttpParams, customHeaders?: HttpHeaders): Observable<T> {
-    const url = `${this.apiUrl}${endpoint}`;
+    const url = this.buildUrl(endpoint);
     const isFormData = body instanceof FormData;
     console.log('📡 POST Request:', url, body);
     return this.http.post<T>(url, body as any, { headers: this.buildHeaders(customHeaders, isFormData), params }).pipe(catchError(this.handleError));
   }
 
   put<T>(endpoint: string, body: unknown, params?: HttpParams, customHeaders?: HttpHeaders): Observable<T> {
-    const url = `${this.apiUrl}${endpoint}`;
+    const url = this.buildUrl(endpoint);
     const isFormData = body instanceof FormData;
     return this.http.put<T>(url, body as any, { headers: this.buildHeaders(customHeaders, isFormData), params }).pipe(catchError(this.handleError));
   }
@@ -89,10 +97,10 @@ export class HttpService {
       headers: this.buildHeaders(customHeaders, isFormData),
       params
     };
-    return this.http.patch<T>(`${this.apiUrl}${endpoint}`, body as any, options);
+    return this.http.patch<T>(this.buildUrl(endpoint), body as any, options);
   }
   delete<T>(endpoint: string, params?: HttpParams, customHeaders?: HttpHeaders): Observable<T> {
-    const url = `${this.apiUrl}${endpoint}`;
+    const url = this.buildUrl(endpoint);
     return this.http.delete<T>(url, { headers: this.buildHeaders(customHeaders), params }).pipe(catchError(this.handleError));
   }
 }
