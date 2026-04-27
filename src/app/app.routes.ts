@@ -19,16 +19,89 @@ import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password
 
 export const routes: Routes = [
   { path: '', component: LandingComponent },
+  { path: 'landing', component: LandingComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
-
-
-  // ── Unauthenticated pages ─────────────────────────────────────────────────
-  { path: '', redirectTo: 'landing', pathMatch: 'full' },
-  { path: 'landing',         component: LandingComponent },
-  { path: 'login',           component: LoginComponent },
-  { path: 'register',        component: RegisterComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
+
+  // Analytics module (M13)
+  {
+    path: 'analytics',
+    component: AuthenticatedLayoutComponent,
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./pages/analytics-dashboard/analytics-dashboard.component').then(
+            (m) => m.AnalyticsDashboardComponent
+          ),
+      },
+      {
+        path: 'models',
+        loadComponent: () =>
+          import('./pages/analytics-models/analytics-models.component').then(
+            (m) => m.AnalyticsModelsComponent
+          ),
+      },
+      {
+        path: 'lookups',
+        loadComponent: () =>
+          import('./pages/analytics-lookups/analytics-lookups.component').then(
+            (m) => m.AnalyticsLookupsComponent
+          ),
+      },
+      {
+        path: 'alerts',
+        loadComponent: () =>
+          import('./pages/alerts-map/alerts-map.component').then(
+            (m) => m.AlertsMapComponent
+          ),
+      },
+      {
+        path: 'emergency',
+        loadComponent: () =>
+          import('./pages/emergency-dashboard/emergency-dashboard.component').then(
+            (m) => m.EmergencyDashboardComponent
+          ),
+      },
+      {
+        path: 'sla',
+        loadComponent: () =>
+          import('./pages/sla-tracking/sla-tracking.component').then(
+            (m) => m.SlaTrackingComponent
+          ),
+      },
+      {
+        path: 'comparison',
+        loadComponent: () =>
+          import('./pages/disaster-comparison/disaster-comparison.component').then(
+            (m) => m.DisasterComparisonComponent
+          ),
+      },
+      {
+        path: 'rules',
+        loadComponent: () =>
+          import('./pages/rule-engine/rule-engine.component').then(
+            (m) => m.RuleEngineComponent
+          ),
+      },
+      {
+        path: 'data-quality',
+        loadComponent: () =>
+          import('./pages/data-quality/data-quality.component').then(
+            (m) => m.DataQualityComponent
+          ),
+      },
+      {
+        path: 'risk-zones',
+        loadComponent: () =>
+          import('./pages/risk-zones/risk-zones.component').then(
+            (m) => m.RiskZonesComponent
+          ),
+      },
+    ],
+  },
 
   // Social login callback
   {

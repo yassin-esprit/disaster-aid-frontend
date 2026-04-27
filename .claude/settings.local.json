@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx ng:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8081/api/analytics/disaster/report)",
+      "Bash(curl -s http://localhost:8081/api/analytics/disaster/report)",
+      "Bash(python3 -c \"import zipfile; z=zipfile.ZipFile\\(r'C:/Users/21658/.m2/repository/org/springframework/boot/spring-boot-autoconfigure/4.0.4/spring-boot-autoconfigure-4.0.4.jar'\\); [print\\(n\\) for n in z.namelist\\(\\) if 'jackson' in n.lower\\(\\)]\")",
+      "Bash(./mvnw compile *)",
+      "Bash(npm install *)",
+      "Bash(npm uninstall *)",
+      "Bash(git *)",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" http://localhost:8081/api/alerts)"
+    ]
+  }
+}

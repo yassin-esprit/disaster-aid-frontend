@@ -24,6 +24,7 @@ export class SidebarComponent implements OnInit, OnChanges {
     { label: 'Overview',        icon: 'dashboard',          route: '/admin/dashboard'              },
     { label: 'Incidents',       icon: 'report_problem',     route: '/admin/dashboard/incidents'    },
     { label: 'Coordination',    icon: 'volunteer_activism', route: '/admin/dashboard/coordination' },
+    { label: 'Analytics',       icon: 'analytics',          route: '/analytics'                    },
     { label: 'Resource Agency / Resource', icon: 'inventory_2', route: '/admin/resource-form'      },
     { label: 'Shelter Agency / Shelter',   icon: 'home_work',    route: '/admin/shelter-form'       },
     { label: 'Back Office / Resources',    icon: 'warehouse',    route: '/admin/backoffice-resources' },

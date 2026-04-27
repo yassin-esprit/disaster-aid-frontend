@@ -1,0 +1,135 @@
+<div class="p-6 space-y-6">
+  <app-analytics-nav></app-analytics-nav>
+
+  <div>
+    <h1 class="text-2xl font-black text-on-surface flex items-center gap-3">
+      <span class="material-symbols-outlined text-error">map</span>
+      Historical Risk Zones
+    </h1>
+    <p class="text-sm text-on-surface-variant mt-1">Identify the most affected regions based on historical disaster data</p>
+  </div>
+
+  <!-- Fallback / error notice -->
+  <div *ngIf="usedFallback && zones.length > 0" class="glass-2 rounded-2xl border border-amber-500/30 p-3 flex items-center gap-2">
+    <span class="material-symbols-outlined text-amber-400 text-base">info</span>
+    <p class="text-xs text-amber-300">Backend risk-zones endpoint unavailable — computed client-side from alerts.</p>
+  </div>
+
+  <div *ngIf="errorMsg && !loading" class="glass-2 rounded-2xl border border-error/30 p-3 flex items-center gap-2">
+    <span class="material-symbols-outlined text-error text-base">error</span>
+    <p class="text-xs text-error">{{ errorMsg }}</p>
+  </div>
+
+  <!-- Summary -->
+  <div class="grid grid-cols-4 gap-4" *ngIf="!loading">
+    <div class="glass-2 rounded-2xl border border-white/10 p-4">
+      <p class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold mb-1">Total Alerts (all time)</p>
+      <p class="text-3xl font-black text-on-surface">{{ totalAlerts }}</p>
+    </div>
+    <div class="glass-2 rounded-2xl border border-white/10 p-4">
+      <p class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold mb-1">Total Regions</p>
+      <p class="text-3xl font-black text-on-surface">{{ zones.length }}</p>
+    </div>
+    <div class="glass-2 rounded-2xl border border-error/20 p-4">
+      <p class="text-[9px] uppercase tracking-widest text-error/60 font-bold mb-1">Critical Zones</p>
+      <p class="text-3xl font-black text-error">{{ criticalZones }}</p>
+    </div>
+    <div class="glass-2 rounded-2xl border border-white/10 p-4">
+      <p class="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-bold mb-1">Total Incidents</p>
+      <p class="text-3xl font-black text-on-surface">{{ totalIncidents }}</p>
+    </div>
+  </div>
+
+  <!-- Historical timeline -->
+  <div *ngIf="!loading && history.length > 0" class="glass-2 rounded-2xl border border-white/10 p-5">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="material-symbols-outlined text-primary">timeline</span>
+      <h2 class="font-bold text-on-surface">Monthly Incident History</h2>
+      <span class="text-[10px] text-on-surface-variant/60 ml-auto">{{ history.length }} months</span>
+    </div>
+    <div class="space-y-2">
+      <div *ngFor="let h of history" class="flex items-center gap-3">
+        <span class="text-[11px] text-on-surface-variant w-24 shrink-0">{{ h.label }}</span>
+        <div class="flex-1 h-6 rounded-lg bg-white/5 relative overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-primary/40 to-secondary/40 flex items-center justify-end pr-2"
+            [style.width.%]="historyBarPct(h.count)">
+            <span class="text-[10px] font-bold text-on-surface">{{ h.count }}</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 w-32 shrink-0 justify-end">
+          <span *ngIf="h.active > 0" class="text-[10px] px-2 py-0.5 rounded-full bg-error/10 text-error font-bold">{{ h.active }} active</span>
+          <span *ngIf="h.resolved > 0" class="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 font-bold">{{ h.resolved }} resolved</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk Zone Cards -->
+  <div *ngIf="!loading && zones.length > 0">
+    <h2 class="font-bold text-on-surface mb-3 flex items-center gap-2">
+      <span class="material-symbols-outlined text-error">warning</span>
+      Risk Zones Ranking
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div *ngFor="let zone of zones; let i = index"
+        class="glass-2 rounded-2xl border p-5 hover:bg-white/5 transition-all"
+        [class]="riskBg[zone.riskLevel]">
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-lg font-black"
+              [style.background]="riskColors[zone.riskLevel] + '20'"
+              [style.color]="riskColors[zone.riskLevel]">
+              {{ i + 1 }}
+            </div>
+            <div>
+              <h3 class="font-bold text-on-surface text-lg">{{ zone.region }}</h3>
+              <p class="text-[10px] text-on-surface-variant">{{ zone.country }}</p>
+            </div>
+          </div>
+          <span
+            class="text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider"
+            [style.background]="riskColors[zone.riskLevel] + '20'"
+            [style.color]="riskColors[zone.riskLevel]"
+            [style.border]="'1px solid ' + riskColors[zone.riskLevel] + '30'"
+          >{{ zone.riskLevel }}</span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          <div class="text-center p-2 rounded-lg bg-white/5">
+            <p class="text-xs font-black text-on-surface">{{ zone.totalAlerts }}</p>
+            <p class="text-[9px] text-on-surface-variant">Total</p>
+          </div>
+          <div class="text-center p-2 rounded-lg bg-error/5">
+            <p class="text-xs font-black text-error">{{ zone.activeAlerts }}</p>
+            <p class="text-[9px] text-on-surface-variant">Active</p>
+          </div>
+          <div class="text-center p-2 rounded-lg bg-green-500/5">
+            <p class="text-xs font-black text-green-400">{{ zone.resolvedAlerts }}</p>
+            <p class="text-[9px] text-on-surface-variant">Resolved</p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-1">
+          <span *ngFor="let t of zone.disasterTypes"
+            class="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-on-surface-variant border border-white/10 font-bold">
+            {{ t }}
+          </span>
+        </div>
+
+        <div class="mt-3 text-[10px] text-on-surface-variant/50">
+          {{ zone.avgLatitude | number:'1.4-4' }}, {{ zone.avgLongitude | number:'1.4-4' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="zones.length === 0 && !loading" class="py-12 text-center">
+    <span class="material-symbols-outlined text-4xl text-on-surface-variant/30 block mb-2">location_off</span>
+    <p class="text-sm text-on-surface-variant">No risk zones identified yet</p>
+  </div>
+
+  <div *ngIf="loading" class="py-16 text-center">
+    <span class="material-symbols-outlined text-4xl text-primary animate-spin block mb-3">progress_activity</span>
+    <p class="text-sm text-on-surface-variant">Computing risk zones...</p>
+  </div>
+</div>

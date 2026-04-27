@@ -1,5 +1,5 @@
 <div class="min-h-screen text-on-surface">
-  <app-sidebar [role]="currentRole"></app-sidebar>
+  <app-sidebar [role]="currentRole" (logoutClicked)="logout()"></app-sidebar>
   <app-header pageTitle="" breadcrumb="" userName="Amina" userRole="Volunteer"></app-header>
   <main class="md:ml-[240px] pt-16 pb-20 md:pb-0 min-h-screen">
     <div class="p-6 md:p-8">
@@ -7,4 +7,4 @@
     </div>
   </main>
   <app-mobile-nav></app-mobile-nav>
-</div><
+</div>

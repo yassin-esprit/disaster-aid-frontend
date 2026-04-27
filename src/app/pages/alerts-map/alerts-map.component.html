@@ -1,1 +1,290 @@
-<p>alerts-map works!</p>
+<!-- Nav -->
+<div class="absolute top-0 left-0 right-0 z-[1001] p-4 flex justify-center pointer-events-none">
+  <div class="pointer-events-auto">
+    <app-analytics-nav></app-analytics-nav>
+  </div>
+</div>
+
+<!-- Map container -->
+<div id="disaster-map"></div>
+
+<!-- Toggle sidebar button -->
+<button
+  (click)="toggleSidebar()"
+  class="absolute top-16 left-4 z-[1000] w-10 h-10 rounded-lg glass-3 border border-white/10 flex items-center justify-center text-on-surface hover:bg-white/10 transition-all"
+>
+  <span class="material-symbols-outlined text-sm">
+    {{ sidebarOpen ? 'left_panel_close' : 'left_panel_open' }}
+  </span>
+</button>
+
+<!-- Refresh button -->
+<button
+  (click)="loadData()"
+  [disabled]="loading"
+  class="absolute top-16 left-16 z-[1000] flex items-center gap-2 px-4 py-2 rounded-lg glass-3 border border-white/10 text-on-surface text-xs font-bold hover:bg-white/10 transition-all disabled:opacity-50"
+>
+  <span class="material-symbols-outlined text-sm" [class.animate-spin]="loading">refresh</span>
+  {{ loading ? 'Loading...' : 'Refresh' }}
+</button>
+
+<!-- Live badge -->
+<div class="absolute top-16 right-4 z-[1000] flex items-center gap-2 px-4 py-2 rounded-lg glass-3"
+  [class]="wsConnected ? 'border border-green-500/20' : 'border border-error/20'">
+  <span class="w-2 h-2 rounded-full animate-pulse" [class]="wsConnected ? 'bg-green-500' : 'bg-error'"></span>
+  <span class="text-xs font-bold uppercase tracking-widest" [class]="wsConnected ? 'text-green-400' : 'text-error'">Live</span>
+  <span class="text-xs text-on-surface-variant">{{ wsConnected ? 'WebSocket' : '30s polling' }}</span>
+</div>
+
+<!-- Error banner -->
+<div
+  *ngIf="error"
+  class="absolute top-28 left-4 right-4 z-[1000] p-3 rounded-lg glass-3 border border-error/20 text-error text-sm flex items-center gap-2"
+>
+  <span class="material-symbols-outlined text-sm">error</span>
+  {{ error }}
+</div>
+
+<!-- Left sidebar panel -->
+<div
+  class="absolute top-28 left-4 bottom-4 z-[1000] w-80 rounded-2xl glass-3 border border-white/10 flex flex-col overflow-hidden transition-all duration-300"
+  [class.translate-x-0]="sidebarOpen"
+  [class.-translate-x-[350px]]="!sidebarOpen"
+  [class.opacity-100]="sidebarOpen"
+  [class.opacity-0]="!sidebarOpen"
+  [class.pointer-events-none]="!sidebarOpen"
+>
+  <!-- Summary KPIs -->
+  <div class="p-4 border-b border-white/5" *ngIf="summary">
+    <h3 class="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-2">
+      <span class="material-symbols-outlined text-sm">monitoring</span>
+      Command Overview
+    </h3>
+    <div class="grid grid-cols-3 gap-2 mb-3">
+      <div class="p-2 rounded-lg bg-error/10 border border-error/20 text-center">
+        <p class="text-lg font-black text-error">{{ summary.activeAlerts }}</p>
+        <p class="text-[9px] uppercase tracking-widest text-error/70">Active</p>
+      </div>
+      <div class="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
+        <p class="text-lg font-black text-amber-400">{{ summary.monitoringAlerts }}</p>
+        <p class="text-[9px] uppercase tracking-widest text-amber-400/70">Watching</p>
+      </div>
+      <div class="p-2 rounded-lg bg-secondary/10 border border-secondary/20 text-center">
+        <p class="text-lg font-black text-secondary">{{ summary.resolvedAlerts }}</p>
+        <p class="text-[9px] uppercase tracking-widest text-secondary/70">Resolved</p>
+      </div>
+    </div>
+    <div class="flex items-center justify-between text-xs text-on-surface-variant">
+      <span>
+        <span class="material-symbols-outlined text-xs align-middle mr-1">groups</span>
+        {{ summary.totalResponders }} responders
+      </span>
+      <span>
+        {{ resolvedPct }}% requests resolved
+      </span>
+    </div>
+  </div>
+
+  <!-- Alert list -->
+  <div class="flex-1 overflow-y-auto">
+    <div class="p-3">
+      <h3 class="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-2 px-1">
+        Active Alerts ({{ alertsWithStats.length }})
+      </h3>
+      <div class="space-y-2">
+        <button
+          *ngFor="let aws of alertsWithStats"
+          (click)="selectAlert(aws)"
+          class="w-full text-left p-3 rounded-xl border transition-all hover:bg-white/5"
+          [ngClass]="selectedAlert?.alert?.alertId === aws.alert.alertId
+            ? 'bg-white/5 border-primary/30'
+            : 'border-white/5'"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+              [style.background]="severityColors[aws.alert.severity] + '20'"
+              [style.border]="'1px solid ' + severityColors[aws.alert.severity] + '40'"
+            >
+              <span
+                class="material-symbols-outlined text-sm"
+                [style.color]="severityColors[aws.alert.severity]"
+              >
+                {{ typeIcons[aws.alert.type] }}
+              </span>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <h4 class="text-sm font-bold text-on-surface truncate">{{ aws.alert.title }}</h4>
+                <span
+                  class="shrink-0 text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider"
+                  [style.background]="severityColors[aws.alert.severity] + '20'"
+                  [style.color]="severityColors[aws.alert.severity]"
+                  [style.border]="'1px solid ' + severityColors[aws.alert.severity] + '30'"
+                >
+                  {{ aws.alert.severity }}
+                </span>
+              </div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-[10px] text-on-surface-variant">
+                  {{ aws.alert.region }}
+                </span>
+                <span
+                  class="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-on-surface-variant uppercase"
+                >
+                  {{ aws.alert.status }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <!-- Mini stats bar if available -->
+          <div *ngIf="aws.latestStats" class="mt-2 flex items-center gap-3 text-[10px] text-on-surface-variant">
+            <span>
+              <span class="material-symbols-outlined text-[10px] align-middle">description</span>
+              {{ aws.latestStats.totalReports }} reports
+            </span>
+            <span>
+              <span class="material-symbols-outlined text-[10px] align-middle">groups</span>
+              {{ aws.latestStats.activeResponders }}
+            </span>
+            <span *ngIf="aws.latestStats.avgResponseTimeMin != null">
+              <span class="material-symbols-outlined text-[10px] align-middle">schedule</span>
+              {{ aws.latestStats.avgResponseTimeMin | number:'1.0-0' }}m
+            </span>
+          </div>
+        </button>
+      </div>
+
+      <div *ngIf="alertsWithStats.length === 0 && !loading" class="py-8 text-center">
+        <span class="material-symbols-outlined text-3xl text-on-surface-variant/30 block mb-2">verified_user</span>
+        <p class="text-sm text-on-surface-variant">No active alerts</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom detail panel (selected alert) -->
+<div
+  *ngIf="selectedAlert"
+  class="absolute bottom-4 z-[1000] rounded-2xl glass-3 border border-white/10 overflow-hidden transition-all duration-300"
+  [ngClass]="sidebarOpen ? 'left-[22rem] right-4' : 'left-4 right-4'"
+>
+  <div class="p-5">
+    <!-- Header -->
+    <div class="flex items-start justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <div
+          class="w-12 h-12 rounded-xl flex items-center justify-center"
+          [style.background]="severityColors[selectedAlert.alert.severity] + '20'"
+          [style.border]="'1px solid ' + severityColors[selectedAlert.alert.severity] + '40'"
+        >
+          <span
+            class="material-symbols-outlined"
+            [style.color]="severityColors[selectedAlert.alert.severity]"
+          >
+            {{ typeIcons[selectedAlert.alert.type] }}
+          </span>
+        </div>
+        <div>
+          <h3 class="text-lg font-black text-on-surface">{{ selectedAlert.alert.title }}</h3>
+          <p class="text-xs text-on-surface-variant">
+            {{ selectedAlert.alert.region }}, {{ selectedAlert.alert.country }}
+            &middot; {{ selectedAlert.alert.reportedAt | date:'medium' }}
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span
+          class="text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider"
+          [style.background]="severityColors[selectedAlert.alert.severity] + '20'"
+          [style.color]="severityColors[selectedAlert.alert.severity]"
+          [style.border]="'1px solid ' + severityColors[selectedAlert.alert.severity] + '30'"
+        >
+          {{ selectedAlert.alert.severity }}
+        </span>
+        <button
+          (click)="closeDetail()"
+          class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-on-surface-variant hover:bg-white/10 transition-all"
+        >
+          <span class="material-symbols-outlined text-sm">close</span>
+        </button>
+      </div>
+    </div>
+
+    <p *ngIf="selectedAlert.alert.description" class="text-sm text-on-surface-variant mb-4">
+      {{ selectedAlert.alert.description }}
+    </p>
+
+    <!-- Stats grid -->
+    <div *ngIf="selectedAlert.latestStats" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
+      <div class="p-3 rounded-xl bg-white/5 border border-white/5">
+        <p class="text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Reports</p>
+        <p class="text-xl font-black text-on-surface">{{ selectedAlert.latestStats.totalReports }}</p>
+        <p class="text-[10px] text-secondary">{{ selectedAlert.latestStats.verifiedReports }} verified</p>
+      </div>
+      <div class="p-3 rounded-xl bg-white/5 border border-white/5">
+        <p class="text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Help Requests</p>
+        <p class="text-xl font-black text-on-surface">{{ selectedAlert.latestStats.totalHelpRequests }}</p>
+        <p class="text-[10px] text-secondary">{{ selectedAlert.latestStats.resolvedRequests }} resolved</p>
+      </div>
+      <div class="p-3 rounded-xl bg-white/5 border border-white/5">
+        <p class="text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Responders</p>
+        <p class="text-xl font-black text-on-surface">{{ selectedAlert.latestStats.activeResponders }}</p>
+      </div>
+      <div class="p-3 rounded-xl bg-white/5 border border-white/5">
+        <p class="text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Response Time</p>
+        <p class="text-xl font-black text-on-surface">
+          {{ selectedAlert.latestStats.avgResponseTimeMin != null
+            ? (selectedAlert.latestStats.avgResponseTimeMin | number:'1.0-1') + 'm'
+            : '---' }}
+        </p>
+      </div>
+      <div class="p-3 rounded-xl bg-white/5 border border-white/5">
+        <p class="text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Affected Area</p>
+        <p class="text-xl font-black text-on-surface">
+          {{ selectedAlert.latestStats.affectedAreaKm2 != null
+            ? (selectedAlert.latestStats.affectedAreaKm2 | number:'1.0-1') + ' km2'
+            : '---' }}
+        </p>
+      </div>
+      <div class="p-3 rounded-xl bg-white/5 border border-white/5">
+        <p class="text-[9px] uppercase tracking-widest text-on-surface-variant mb-1">Zone Radius</p>
+        <p class="text-xl font-black text-on-surface">{{ selectedAlert.alert.radiusKm }} km</p>
+      </div>
+    </div>
+
+    <!-- Shelter occupancy -->
+    <div *ngIf="selectedAlert.latestStats?.shelterOccupancy">
+      <h4 class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2 flex items-center gap-1">
+        <span class="material-symbols-outlined text-xs">night_shelter</span>
+        Shelter Occupancy
+      </h4>
+      <div class="flex flex-wrap gap-3">
+        <div
+          *ngFor="let s of parseShelters(selectedAlert.latestStats?.shelterOccupancy)"
+          class="flex items-center gap-2"
+        >
+          <span class="text-xs text-on-surface-variant font-mono">{{ s.name }}</span>
+          <div class="w-24 h-2 bg-surface-container rounded-full overflow-hidden">
+            <div
+              class="h-full rounded-full transition-all"
+              [ngClass]="s.occupancy > 80 ? 'bg-error' : s.occupancy > 50 ? 'bg-amber-400' : 'bg-secondary'"
+              [style.width.%]="s.occupancy"
+            ></div>
+          </div>
+          <span
+            class="text-xs font-bold"
+            [ngClass]="s.occupancy > 80 ? 'text-error' : s.occupancy > 50 ? 'text-amber-400' : 'text-secondary'"
+          >
+            {{ s.occupancy }}%
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!selectedAlert.latestStats" class="text-sm text-on-surface-variant flex items-center gap-2">
+      <span class="material-symbols-outlined text-sm">info</span>
+      No statistics available for this alert yet.
+    </div>
+  </div>
+</div>
