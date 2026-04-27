@@ -26,7 +26,7 @@ export class AuthenticatedLayoutComponent implements OnInit {
       return;
     }
 
-    this.currentRole = role;
+    this.currentRole = ADMIN_ROLES.includes(role) ? role : 'ADMIN';
   }
 
   logout(): void {

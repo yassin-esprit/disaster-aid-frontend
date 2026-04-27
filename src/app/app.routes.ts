@@ -135,6 +135,41 @@ export const routes: Routes = [
       { path: 'evacuation/:id',   canActivate: [adminGuard], component: RouteDetailComponent },
       { path: 'spatial',          canActivate: [adminGuard], component: SpatialDashboardComponent },
       {
+        path: 'reviews',
+        loadComponent: () =>
+          import('./pages/reviews/reviews.component').then(m => m.ReviewsComponent),
+      },
+      {
+        path: 'nearby-shelters',
+        loadComponent: () =>
+          import('./pages/nearby-shelters/nearby-shelters.component').then(m => m.NearbySheltersComponent),
+      },
+      {
+        path: 'resource-form',
+        loadComponent: () =>
+          import('./pages/resource-form/resource-form.component').then(m => m.ResourceFormComponent),
+      },
+      {
+        path: 'shelter-form',
+        loadComponent: () =>
+          import('./pages/shelter-form/shelter-form.component').then(m => m.ShelterFormComponent),
+      },
+      {
+        path: 'backoffice-resources',
+        loadComponent: () =>
+          import('./pages/admin/backoffice-resources/backoffice-resources.component').then(m => m.BackofficeResourcesComponent),
+      },
+      {
+        path: 'backoffice-shelters',
+        loadComponent: () =>
+          import('./pages/admin/backoffice-shelters/backoffice-shelters.component').then(m => m.BackofficeSheltersComponent),
+      },
+      {
+        path: 'backoffice-reports',
+        loadComponent: () =>
+          import('./pages/admin/reports/reports.component').then(m => m.ReportsComponent),
+      },
+      {
         path: 'users-management',
         canActivate: [adminGuard],
         loadComponent: () =>
@@ -200,6 +235,20 @@ export const routes: Routes = [
           import('./pages/route-detail/route-detail.component').then(m => m.RouteDetailComponent) },
       { path: 'spatial',        loadComponent: () =>
           import('./pages/spatial-dashboard/spatial-dashboard.component').then(m => m.SpatialDashboardComponent) },
+      { path: 'reviews', loadComponent: () =>
+          import('./pages/reviews/reviews.component').then(m => m.ReviewsComponent) },
+      { path: 'add-review', loadComponent: () =>
+          import('./pages/add-review/add-review.component').then(m => m.AddReviewComponent) },
+      { path: 'nearby-shelters', loadComponent: () =>
+          import('./pages/nearby-shelters/nearby-shelters.component').then(m => m.NearbySheltersComponent) },
+      { path: 'shelter-details/:id', loadComponent: () =>
+          import('./pages/shelter-details/shelter-details.component').then(m => m.ShelterDetailsComponent) },
+      { path: 'shelter-recommender', loadComponent: () =>
+          import('./pages/shelter-recommender/shelter-recommender.component').then(m => m.ShelterRecommenderComponent) },
+      { path: 'resource-form', loadComponent: () =>
+          import('./pages/resource-form/resource-form.component').then(m => m.ResourceFormComponent) },
+      { path: 'shelter-form', loadComponent: () =>
+          import('./pages/shelter-form/shelter-form.component').then(m => m.ShelterFormComponent) },
     ],
   },
 

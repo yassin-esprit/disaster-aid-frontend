@@ -1,0 +1,114 @@
+<section class="space-y-6">
+        <div class="glass-1 rounded-2xl border border-white/10 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-black">{{ editingId === null ? 'Add Shelter' : 'Edit Shelter #' + editingId }}</h2>
+                <button *ngIf="editingId !== null" type="button" (click)="cancelEdit()" class="px-4 py-2 rounded-lg bg-white/10 border border-white/10 text-xs font-bold uppercase">
+          Cancel Edit
+        </button>
+            </div>
+
+            <form [formGroup]="form" (ngSubmit)="submit()" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <label class="field md:col-span-2">
+          <span>Name</span>
+          <input type="text" formControlName="name" placeholder="Shelter name" />
+        </label>
+
+                <label class="field md:col-span-2">
+          <span>Location</span>
+          <input type="url" formControlName="locationUrl" placeholder="https://maps.google.com/..." />
+        </label>
+
+                <label class="field">
+          <span>Capacity</span>
+          <input type="number" min="1" formControlName="capacity" />
+        </label>
+
+             <!--   <label class="field md:col-span-3">
+          <span>Address</span>
+          <input type="text" formControlName="address" />
+        </label>-->
+
+                <label class="field md:col-span-2">
+          <span>Type</span>
+          <select formControlName="shelterType">
+            <option *ngFor="let item of shelterTypes" [value]="item">{{ item }}</option>
+          </select>
+        </label>
+
+                <div class="md:col-span-5 flex flex-wrap items-center gap-3">
+                    <button type="submit" [disabled]="isSubmitting" class="px-6 py-2.5 rounded-lg bg-secondary text-on-secondary text-xs font-bold uppercase tracking-widest disabled:opacity-60">
+            {{ isSubmitting ? 'Saving...' : editingId === null ? 'Save' : 'Update' }}
+          </button>
+                    <p *ngIf="successMessage" class="text-sm font-semibold text-tertiary-dim">{{ successMessage }}</p>
+                    <p *ngIf="errorMessage" class="text-sm font-semibold text-error">{{ errorMessage }}</p>
+                </div>
+            </form>
+        </div>
+
+        <div class="glass-1 rounded-2xl border border-white/10 overflow-hidden">
+            <div class="p-5 border-b border-white/10 flex items-center justify-between">
+                <h3 class="text-lg font-black">Shelters</h3>
+                <button type="button" (click)="loadShelters()" class="px-4 py-2 rounded-lg bg-secondary/20 text-secondary border border-secondary/30 text-xs font-bold uppercase tracking-widest">
+          Refresh
+        </button>
+            </div>
+
+            <div *ngIf="isLoading" class="p-6 text-on-surface-variant">Chargement...</div>
+
+            <div *ngIf="!isLoading" class="overflow-x-auto">
+                <table class="w-full min-w-[1000px]">
+                    <thead class="bg-white/5 text-left text-xs uppercase tracking-widest text-on-surface-variant">
+                        <tr>
+                            <th class="px-4 py-3">Name</th>
+                            <th class="px-4 py-3">Location</th>
+                            <th class="px-4 py-3">Type</th>
+                            <th class="px-4 py-3">Capacity</th>
+                            <th class="px-4 py-3">Current</th>
+                            <th class="px-4 py-3">Remaining</th>
+                            <th class="px-4 py-3">Status</th>
+                            <th class="px-4 py-3">Check-in / Check-out</th>
+                            <th class="px-4 py-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let item of shelters" class="border-t border-white/5 hover:bg-white/5">
+                            <td class="px-4 py-3 font-semibold">{{ item.name }}</td>
+                            <td class="px-4 py-3 max-w-[280px] truncate">{{ item.locationUrl }}</td>
+                            <td class="px-4 py-3">{{ shelterType(item) }}</td>
+                            <td class="px-4 py-3">{{ item.capacity }}</td>
+                            <td class="px-4 py-3">{{ displayOccupancy(item) }}</td>
+                            <td class="px-4 py-3">{{ remainingCapacity(item) }}</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 rounded text-[11px] font-bold uppercase" [ngClass]="availabilityStatus(item) === 'FULL' ? 'bg-error/20 text-error' : 'bg-tertiary-dim/20 text-tertiary-dim'">
+                  {{ availabilityStatus(item) }}
+                </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-2">
+                                    <button type="button" (click)="checkIn(item)" class="px-3 py-1.5 rounded-md bg-tertiary-dim/20 text-tertiary-dim text-[11px] font-bold uppercase">
+                    + Add
+                  </button>
+                                    <button type="button" (click)="checkOut(item)" class="px-3 py-1.5 rounded-md bg-error/20 text-error text-[11px] font-bold uppercase">
+                    - Remove
+                  </button>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-2">
+                                    <button type="button" (click)="startEdit(item)" class="px-3 py-1.5 rounded-md bg-primary/20 text-primary text-[11px] font-bold uppercase">
+                    EDIT
+                  </button>
+                                    <button type="button" (click)="remove(item)" class="px-3 py-1.5 rounded-md bg-error/20 text-error text-[11px] font-bold uppercase">
+                    Delete
+                  </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr *ngIf="shelters.length === 0">
+                            <td class="px-4 py-6 text-on-surface-variant" colspan="9">Aucun shelter disponible.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>

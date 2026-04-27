@@ -1,0 +1,107 @@
+<app-front-office-layout>
+  <section class="space-y-6 pb-6">
+    <div class="glass-1 rounded-2xl border border-white/10 p-6 md:p-8">
+      <h2 class="text-2xl font-black">Shelter Recommendations</h2>
+      <p class="text-on-surface-variant mt-2 max-w-3xl">
+        Enter your location and needs to get real shelter recommendations from the backend API.
+      </p>
+    </div>
+
+    <form class="glass-1 rounded-2xl border border-white/10 p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-4" (ngSubmit)="findRecommendations()">
+      <label class="field">
+        <span>Latitude</span>
+        <input type="number" step="0.000001" [(ngModel)]="request.lat" name="lat" required />
+      </label>
+
+      <label class="field">
+        <span>Longitude</span>
+        <input type="number" step="0.000001" [(ngModel)]="request.lng" name="lng" required />
+      </label>
+
+      <label class="field">
+        <span>Max distance (km)</span>
+        <input type="number" min="1" [(ngModel)]="request.maxDistanceKm" name="maxDistanceKm" required />
+      </label>
+
+      <label class="field">
+        <span>People count</span>
+        <input type="number" min="1" [(ngModel)]="request.peopleCount" name="peopleCount" required />
+      </label>
+
+      <label class="field">
+        <span>Needs medical shelter</span>
+        <select [(ngModel)]="request.needsMedical" name="needsMedical">
+          <option [ngValue]="false">No</option>
+          <option [ngValue]="true">Yes</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Needs accessibility support</span>
+        <select [(ngModel)]="request.needsAccessible" name="needsAccessible">
+          <option [ngValue]="false">No</option>
+          <option [ngValue]="true">Yes</option>
+        </select>
+      </label>
+
+      <label class="field md:col-span-2">
+        <span>Has pets</span>
+        <select [(ngModel)]="request.hasPets" name="hasPets">
+          <option [ngValue]="false">No</option>
+          <option [ngValue]="true">Yes</option>
+        </select>
+      </label>
+
+      <div class="md:col-span-2 flex items-center gap-3">
+        <button type="submit" [disabled]="isLoading" class="px-5 py-2.5 rounded-lg bg-primary/20 text-primary border border-primary/30 text-sm font-bold uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed">
+          {{ isLoading ? 'Loading...' : 'Find Recommendations' }}
+        </button>
+      </div>
+    </form>
+
+    <div *ngIf="errorMessage" class="glass-1 rounded-2xl border border-error/30 p-4 text-error">
+      {{ errorMessage }}
+    </div>
+
+    <div *ngIf="hasSearched && !isLoading && recommendations.length === 0 && !errorMessage" class="glass-1 rounded-2xl border border-white/10 p-6 text-on-surface-variant">
+      No shelters found within {{ request.maxDistanceKm }} km.
+    </div>
+
+    <div *ngIf="recommendations.length > 0" class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <article *ngFor="let item of recommendations" class="glass-1 rounded-2xl border border-white/10 p-5">
+        <div class="flex items-start justify-between gap-3">
+          <h3 class="text-lg font-black">{{ item.name }}</h3>
+          <span
+            class="px-2 py-1 rounded text-[11px] font-bold uppercase"
+            [ngClass]="isAvailable(item) ? 'bg-tertiary-dim/20 text-tertiary-dim' : 'bg-error/20 text-error'"
+          >
+            {{ item.status }}
+          </span>
+        </div>
+
+        <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+          <div class="bg-white/5 rounded-lg p-3">
+            <p class="text-on-surface-variant text-xs uppercase">Distance</p>
+            <p class="font-bold">{{ item.distanceKm }} km</p>
+          </div>
+          <div class="bg-white/5 rounded-lg p-3">
+            <p class="text-on-surface-variant text-xs uppercase">Remaining</p>
+            <p class="font-bold">{{ item.remaining }}</p>
+          </div>
+          <div class="bg-white/5 rounded-lg p-3">
+            <p class="text-on-surface-variant text-xs uppercase">Type</p>
+            <p class="font-bold">{{ item.type }}</p>
+          </div>
+          <div class="bg-white/5 rounded-lg p-3">
+            <p class="text-on-surface-variant text-xs uppercase">Score</p>
+            <p class="font-bold">{{ item.score }}</p>
+          </div>
+        </div>
+
+        <div class="mt-4 flex flex-wrap gap-2">
+          <span *ngFor="let reason of item.reasons" class="reason-chip">{{ reason }}</span>
+        </div>
+      </article>
+    </div>
+  </section>
+</app-front-office-layout>

@@ -1,0 +1,47 @@
+:host {
+  display: block;
+}
+
+.field {
+  display: grid;
+  gap: 0.5rem;
+
+  span {
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgba(213, 221, 255, 0.85);
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: #f6f7ff;
+    padding: 0.7rem 0.85rem;
+    outline: none;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: rgba(124, 141, 255, 0.9);
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.reason-chip {
+  border-radius: 999px;
+  border: 1px solid rgba(124, 141, 255, 0.35);
+  background: rgba(124, 141, 255, 0.15);
+  color: #dbe4ff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.28rem 0.62rem;
+}

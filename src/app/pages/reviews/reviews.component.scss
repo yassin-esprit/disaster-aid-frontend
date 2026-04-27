@@ -1,0 +1,162 @@
+.reviews-filter .field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+}
+
+.reviews-filter .field span {
+	font-size: 0.7rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: rgb(159 171 204);
+}
+
+.reviews-filter .field input,
+.reviews-filter .field select {
+	width: 100%;
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 0.65rem;
+	padding: 0.62rem 0.75rem;
+	color: rgb(221 229 255);
+	outline: none;
+}
+
+.reviews-filter .field input:focus,
+.reviews-filter .field select:focus {
+	border-color: rgba(105, 156, 255, 0.8);
+	box-shadow: 0 0 0 2px rgba(105, 156, 255, 0.2);
+}
+
+.star-rating {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.45rem 0.55rem;
+	border-radius: 0.75rem;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: rgba(255, 255, 255, 0.04);
+	width: fit-content;
+}
+
+.star-btn {
+	font-size: 1.8rem;
+	line-height: 1;
+	color: rgba(255, 255, 255, 0.25);
+	background: transparent;
+	border: none;
+	cursor: default;
+	padding: 0.1rem;
+	transition: transform 0.12s ease, color 0.15s ease;
+}
+
+.star-btn.star-active {
+	color: #fbbf24;
+	text-shadow: 0 0 12px rgba(251, 191, 36, 0.35);
+}
+
+.reaction-bar {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.35rem 0.45rem;
+	border-radius: 999px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	background: rgba(255, 255, 255, 0.04);
+}
+
+.like-control {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+}
+
+.like-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	padding: 0.42rem 0.7rem;
+	border-radius: 999px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: rgba(255, 255, 255, 0.04);
+	color: rgb(188 199 232);
+	font-size: 0.76rem;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.like-btn.like-btn-active {
+	border-color: rgba(105, 156, 255, 0.6);
+	background: rgba(105, 156, 255, 0.2);
+	color: rgb(223 231 255);
+}
+
+.emoji-picker {
+	position: absolute;
+	top: calc(100% + 0.45rem);
+	left: 0;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.3rem 0.35rem;
+	border-radius: 999px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: rgba(29, 42, 83, 0.95);
+	box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+	opacity: 0;
+	pointer-events: none;
+	transform: translateY(-4px);
+	transition: opacity 0.14s ease, transform 0.14s ease;
+	z-index: 20;
+}
+
+.like-control:hover .emoji-picker,
+.like-control:focus-within .emoji-picker {
+	opacity: 1;
+	pointer-events: auto;
+	transform: translateY(0);
+}
+
+.review-row:nth-last-child(1) .emoji-picker,
+.review-row:nth-last-child(2) .emoji-picker {
+	top: auto;
+	bottom: calc(100% + 0.45rem);
+	transform: translateY(4px);
+}
+
+.review-row:nth-last-child(1) .like-control:hover .emoji-picker,
+.review-row:nth-last-child(1) .like-control:focus-within .emoji-picker,
+.review-row:nth-last-child(2) .like-control:hover .emoji-picker,
+.review-row:nth-last-child(2) .like-control:focus-within .emoji-picker {
+	transform: translateY(0);
+}
+
+.reaction-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.65rem;
+	height: 1.65rem;
+	border-radius: 999px;
+	border: 1px solid transparent;
+	background: transparent;
+	font-size: 0.9rem;
+	cursor: pointer;
+	transition: transform 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.reaction-btn:hover {
+	transform: translateY(-1px) scale(1.04);
+	background: rgba(255, 255, 255, 0.08);
+}
+
+.reaction-btn.reaction-btn-selected {
+	border-color: rgba(105, 156, 255, 0.6);
+	background: rgba(105, 156, 255, 0.2);
+	box-shadow: 0 0 0 1px rgba(105, 156, 255, 0.25) inset;
+}
