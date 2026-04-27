@@ -38,8 +38,8 @@ export class SidebarComponent implements OnInit, OnChanges {
     { label: 'Opportunities',   icon: 'explore',            route: '/admin/opportunities'          },
     { label: 'Users',           icon: 'people',             route: '/admin/users-management'       },
     { label: 'My Profile',      icon: 'person',             route: '/admin/profile'                },
-    { label: 'Hours', icon: 'watch', route: '/hours' },
-    { label: 'Gamification', icon: 'celebration', route: '/gamification' },
+    { label: 'Hours', icon: 'watch', route: '/admin/hours' },
+    { label: 'Gamification', icon: 'celebration', route: '/admin/gamification' },
   ];
 
   private userNav: NavItem[] = [

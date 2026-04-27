@@ -21,8 +21,7 @@ export const routes: Routes = [
   { path: '', component: LandingComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
-  { path: 'my-hours', loadComponent: () => import('./pages/my-hours/my-hours.component').then(m => m.MyHoursComponent) },
-  { path: 'my-gamification', loadComponent: () => import('./pages/my-gamification/my-gamification.component').then(m => m.MyGamificationComponent) },
+
 
   // ── Unauthenticated pages ─────────────────────────────────────────────────
   { path: '', redirectTo: 'landing', pathMatch: 'full' },
@@ -272,6 +271,20 @@ export const routes: Routes = [
           import('./pages/resource-form/resource-form.component').then(m => m.ResourceFormComponent) },
       { path: 'shelter-form', loadComponent: () =>
           import('./pages/shelter-form/shelter-form.component').then(m => m.ShelterFormComponent) },
+
+      // hours & gamification
+      {
+        path: 'my-hours',
+        loadComponent: () =>
+          import('./pages/my-hours/my-hours.component')
+            .then(m => m.MyHoursComponent),
+      },
+      {
+        path: 'my-gamification',
+        loadComponent: () =>
+          import('./pages/my-gamification/my-gamification.component')
+            .then(m => m.MyGamificationComponent),
+      },
     ],
   },
 
