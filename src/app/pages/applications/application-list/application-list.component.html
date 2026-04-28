@@ -1,0 +1,81 @@
+<section class="p-6 space-y-6 bg-surface min-h-full text-on-surface">
+  <div>
+    <h1 class="text-2xl font-semibold">Applications</h1>
+    <p class="text-on-surface-variant">Administrative overview of all opportunity applications.</p>
+  </div>
+
+  <div class="flex flex-wrap gap-2">
+    <button
+      *ngFor="let f of filters"
+      type="button"
+      class="rounded-full border border-outline-variant px-3 py-1 text-xs"
+      [ngClass]="activeFilter === f ? 'bg-surface-container-high text-primary' : 'text-on-surface-variant'"
+      (click)="applyFilter(f)"
+    >
+      {{ f }}
+    </button>
+  </div>
+
+  <div *ngIf="isLoading" class="flex justify-center items-center py-16">
+    <span class="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+  </div>
+
+  <div *ngIf="errorMessage" class="bg-error/10 border border-error/30 rounded-xl p-4 text-error">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="!isLoading && filtered.length === 0" class="text-center py-16 text-on-surface-variant">
+    <span class="material-symbols-outlined text-5xl mb-3 block">inbox</span>
+    <p>No items found.</p>
+  </div>
+
+  <div *ngIf="!isLoading && filtered.length > 0" class="bg-surface-container rounded-xl border border-outline-variant overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="text-left text-on-surface-variant">
+        <tr class="border-b border-outline-variant">
+          <th class="px-4 py-3">ID</th>
+          <th class="px-4 py-3">Opportunity</th>
+          <th class="px-4 py-3">Volunteer</th>
+          <th class="px-4 py-3">Status</th>
+          <th class="px-4 py-3">ML Score</th>
+          <th class="px-4 py-3">Applied</th>
+          <th class="px-4 py-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-outline-variant">
+        <tr *ngFor="let app of filtered">
+          <td class="px-4 py-3">#{{ app.id }}</td>
+          <td class="px-4 py-3">#{{ app.opportunityId }}</td>
+          <td class="px-4 py-3">#{{ app.volunteerId }}</td>
+          <td class="px-4 py-3">
+            <span
+              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+              [ngClass]="{
+                'bg-secondary/20 text-secondary': app.status === 'PENDING',
+                'bg-emerald-500/20 text-emerald-300': app.status === 'ACCEPTED',
+                'bg-error/20 text-error': app.status === 'REJECTED' || app.status === 'WITHDRAWN'
+              }"
+            >
+              {{ app.status || 'PENDING' }}
+            </span>
+          </td>
+          <td class="px-4 py-3">{{ app.mlMatchScore ?? '-' }}</td>
+          <td class="px-4 py-3">{{ app.createdAt || '-' }}</td>
+          <td class="px-4 py-3">
+            <div class="flex flex-wrap gap-2">
+              <button type="button" class="rounded bg-secondary/20 px-2.5 py-1 text-secondary text-xs" (click)="accept(app.id)">Accept</button>
+              <button type="button" class="rounded bg-error/20 px-2.5 py-1 text-error text-xs" (click)="reject(app.id)">Reject</button>
+              <button
+                type="button"
+                class="rounded bg-surface-container-high px-2.5 py-1 text-on-surface-variant text-xs"
+                (click)="withdraw(app.id)"
+              >
+                Withdraw
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

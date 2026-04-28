@@ -1,0 +1,100 @@
+<section class="p-6 bg-surface min-h-full text-on-surface">
+  <div class="max-w-3xl mx-auto bg-surface-container rounded-xl p-6 border border-outline-variant space-y-5">
+    <div class="flex items-center justify-between gap-3">
+      <h1 class="text-2xl font-semibold">{{ isEdit ? 'Edit Skill' : 'Create Skill' }}</h1>
+      <button
+        type="button"
+        class="rounded-lg bg-surface-container-high px-3 py-1.5 text-on-surface-variant"
+        routerLink="/skills"
+      >
+        Back
+      </button>
+    </div>
+
+    <div *ngIf="errorMessage" class="bg-error/10 border border-error/30 rounded-xl p-4 text-error">
+      {{ errorMessage }}
+    </div>
+
+    <div *ngIf="isLoading" class="flex justify-center items-center py-10">
+      <span class="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+    </div>
+
+    <div *ngIf="!isLoading" class="space-y-4">
+      <div>
+        <label class="text-sm text-on-surface-variant">Name</label>
+        <input
+          type="text"
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.name"
+          (blur)="generateSlug()"
+        />
+        <p *ngIf="inv('name')" class="mt-1 text-xs text-error">Name is required (min 2 chars).</p>
+      </div>
+
+      <div>
+        <label class="text-sm text-on-surface-variant">Slug</label>
+        <input
+          type="text"
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.slug"
+        />
+        <p *ngIf="inv('slug')" class="mt-1 text-xs text-error">Slug is required.</p>
+      </div>
+
+      <div>
+        <label class="text-sm text-on-surface-variant">Category</label>
+        <select
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.category"
+        >
+          <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="text-sm text-on-surface-variant">Parent Skill ID (optional)</label>
+        <input
+          type="number"
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.parentSkillId"
+        />
+      </div>
+
+      <div>
+        <label class="text-sm text-on-surface-variant">Description</label>
+        <textarea
+          rows="4"
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.description"
+        ></textarea>
+      </div>
+
+      <div class="grid gap-3 md:grid-cols-2">
+        <button
+          type="button"
+          class="rounded-lg border border-outline-variant px-3 py-2 text-left"
+          [ngClass]="form.value.isVerifiable ? 'bg-secondary/20 text-secondary' : 'bg-surface-container-high text-on-surface-variant'"
+          (click)="toggleBoolean('isVerifiable')"
+        >
+          Verifiable: {{ form.value.isVerifiable ? 'Yes' : 'No' }}
+        </button>
+        <button
+          type="button"
+          class="rounded-lg border border-outline-variant px-3 py-2 text-left"
+          [ngClass]="form.value.isActive ? 'bg-primary/20 text-primary' : 'bg-surface-container-high text-on-surface-variant'"
+          (click)="toggleBoolean('isActive')"
+        >
+          Active: {{ form.value.isActive ? 'Yes' : 'No' }}
+        </button>
+      </div>
+
+      <button
+        type="button"
+        class="w-full rounded-lg bg-primary/20 px-4 py-2 text-primary hover:bg-primary/30"
+        (click)="onSubmit()"
+      >
+        {{ isEdit ? 'Update Skill' : 'Create Skill' }}
+      </button>
+    </div>
+  </div>
+</section>

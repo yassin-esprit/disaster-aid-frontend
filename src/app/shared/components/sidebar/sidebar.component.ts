@@ -20,7 +20,12 @@ export class SidebarComponent {
     { label: 'Alerts', icon: 'emergency', route: '/alerts' },
     { label: 'Incidents', icon: 'report_problem', route: '/incidents' },
     { label: 'Help Requests', icon: 'volunteer_activism', route: '/help' },
+    { label: 'Skills', icon: 'psychology', route: '/skills' },
+    { label: 'Import Skills', icon: 'upload_file', route: '/skills/import' },
+    { label: 'Skill Timeline', icon: 'timeline', route: '/skills/timeline' },
+    { label: 'Volunteer Skills', icon: 'verified', route: '/volunteer-skills' },
     { label: 'Opportunities', icon: 'explore', route: '/opportunities' },
+    { label: 'Applications', icon: 'assignment', route: '/applications' },
     { label: 'My Profile', icon: 'person', route: '/profile' },
     { label: 'Settings', icon: 'settings', route: '/settings' },
   ];

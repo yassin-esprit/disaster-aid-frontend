@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 import { HeaderComponent } from '../../shared/components/header/header.component';
 import { MobileNavComponent } from '../../shared/components/mobile-nav/mobile-nav.component';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-authenticated-layout',
@@ -14,6 +15,7 @@ import { MobileNavComponent } from '../../shared/components/mobile-nav/mobile-na
     SidebarComponent,
     HeaderComponent,
     MobileNavComponent,
+    RouterOutlet,
   ],
   templateUrl: './authenticated-layout.component.html',
 })

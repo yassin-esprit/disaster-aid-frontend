@@ -1,0 +1,156 @@
+<section class="p-6 bg-surface min-h-full text-on-surface">
+  <div class="max-w-4xl mx-auto bg-surface-container rounded-xl p-6 border border-outline-variant space-y-5">
+    <div class="flex items-center justify-between gap-3">
+      <h1 class="text-2xl font-semibold">{{ isEdit ? 'Edit Opportunity' : 'Post Opportunity' }}</h1>
+      <button
+        type="button"
+        class="rounded-lg bg-surface-container-high px-3 py-1.5 text-on-surface-variant"
+        routerLink="/opportunities"
+      >
+        Back
+      </button>
+    </div>
+
+    <div *ngIf="errorMessage" class="bg-error/10 border border-error/30 rounded-xl p-4 text-error">
+      {{ errorMessage }}
+    </div>
+
+    <div *ngIf="isLoading" class="flex justify-center items-center py-10">
+      <span class="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+    </div>
+
+    <div *ngIf="!isLoading" class="grid gap-4 md:grid-cols-2">
+      <div class="md:col-span-2">
+        <label class="text-sm text-on-surface-variant">Title</label>
+        <input
+          type="text"
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.title"
+        />
+        <p *ngIf="inv('title')" class="mt-1 text-xs text-error">Title is required (min 3 chars).</p>
+      </div>
+
+      <div class="md:col-span-2">
+        <label class="text-sm text-on-surface-variant">Description</label>
+        <textarea
+          rows="4"
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.description"
+        ></textarea>
+      </div>
+
+      <div>
+        <label class="text-sm text-on-surface-variant">Category</label>
+        <select
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.category"
+        >
+          <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="text-sm text-on-surface-variant">Status</label>
+        <select
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.status"
+        >
+          <option value="DRAFT">DRAFT</option>
+          <option value="OPEN">OPEN</option>
+        </select>
+      </div>
+
+      <div class="md:col-span-2">
+        <button
+          type="button"
+          class="rounded-lg border border-outline-variant px-3 py-2"
+          [ngClass]="form.value.isRemote ? 'bg-secondary/20 text-secondary' : 'bg-surface-container-high text-on-surface-variant'"
+          (click)="toggleBoolean('isRemote')"
+        >
+          Remote Opportunity: {{ form.value.isRemote ? 'Yes' : 'No' }}
+        </button>
+      </div>
+
+      <div *ngIf="!form.value.isRemote" class="md:col-span-2">
+        <label class="text-sm text-on-surface-variant">Location</label>
+        <input
+          type="text"
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.location"
+        />
+      </div>
+
+      <div>
+        <label class="text-sm text-on-surface-variant">Scheduled Date</label>
+        <input
+          type="date"
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.scheduledDate"
+        />
+      </div>
+
+      <div>
+        <label class="text-sm text-on-surface-variant">Duration Hours</label>
+        <input
+          type="number"
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.durationHours"
+        />
+      </div>
+
+      <div>
+        <label class="text-sm text-on-surface-variant">Slots</label>
+        <input
+          type="number"
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.slots"
+        />
+      </div>
+
+      <div>
+        <label class="text-sm text-on-surface-variant">Minimum Age (optional)</label>
+        <input
+          type="number"
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.minAge"
+        />
+      </div>
+
+      <div class="md:col-span-2">
+        <button
+          type="button"
+          class="rounded-lg border border-outline-variant px-3 py-2"
+          [ngClass]="form.value.requiresBackgroundCheck ? 'bg-primary/20 text-primary' : 'bg-surface-container-high text-on-surface-variant'"
+          (click)="toggleBoolean('requiresBackgroundCheck')"
+        >
+          Background Check Required: {{ form.value.requiresBackgroundCheck ? 'Yes' : 'No' }}
+        </button>
+      </div>
+
+      <div class="md:col-span-2">
+        <p class="text-sm text-on-surface-variant mb-2">Required Skills</p>
+        <div class="grid gap-2 sm:grid-cols-2">
+          <button
+            *ngFor="let skill of skills"
+            type="button"
+            class="rounded-lg border border-outline-variant px-3 py-2 text-left"
+            [ngClass]="hasSkill(skill.id) ? 'bg-primary/20 text-primary' : 'bg-surface-container-high text-on-surface-variant'"
+            (click)="toggleSkill(skill.id || 0)"
+          >
+            {{ skill.name }} <span class="text-xs">({{ skill.category }})</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="md:col-span-2">
+        <button
+          type="button"
+          class="w-full rounded-lg bg-primary/20 px-4 py-2 text-primary hover:bg-primary/30"
+          (click)="onSubmit()"
+        >
+          {{ isEdit ? 'Update Opportunity' : 'Create Opportunity' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</section>

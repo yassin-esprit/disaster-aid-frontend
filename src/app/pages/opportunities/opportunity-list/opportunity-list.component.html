@@ -1,0 +1,106 @@
+<section class="p-6 space-y-6 bg-surface min-h-full text-on-surface">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-semibold">Opportunities</h1>
+      <p class="text-on-surface-variant">Browse and manage volunteer opportunities.</p>
+    </div>
+    <button
+      type="button"
+      class="inline-flex items-center gap-2 rounded-lg bg-primary/20 px-4 py-2 text-primary hover:bg-primary/30"
+      (click)="openCreate()"
+    >
+      <span class="material-symbols-outlined text-lg">add</span>
+      Post Opportunity
+    </button>
+  </div>
+
+  <div class="flex flex-wrap gap-2">
+    <button
+      *ngFor="let f of filters"
+      type="button"
+      class="rounded-full border border-outline-variant px-3 py-1 text-xs"
+      [ngClass]="activeFilter === f ? 'bg-surface-container-high text-primary' : 'text-on-surface-variant'"
+      (click)="applyFilter(f)"
+    >
+      {{ f }}
+    </button>
+  </div>
+
+  <div *ngIf="isLoading" class="flex justify-center items-center py-16">
+    <span class="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+  </div>
+
+  <div *ngIf="errorMessage" class="bg-error/10 border border-error/30 rounded-xl p-4 text-error">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="!isLoading && filtered.length === 0" class="text-center py-16 text-on-surface-variant">
+    <span class="material-symbols-outlined text-5xl mb-3 block">inbox</span>
+    <p>No items found.</p>
+  </div>
+
+  <div *ngIf="!isLoading && filtered.length > 0" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div
+      *ngFor="let opp of filtered"
+      class="bg-surface-container rounded-xl p-6 border border-outline-variant cursor-pointer hover:border-primary/40"
+      (click)="openDetail(opp.id)"
+    >
+      <div class="flex items-start justify-between gap-3">
+        <h3 class="text-lg font-semibold">{{ opp.title }}</h3>
+        <span
+          class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+          [ngClass]="{
+            'bg-secondary/20 text-secondary': opp.status === 'OPEN',
+            'bg-outline/20 text-on-surface-variant': opp.status === 'DRAFT' || opp.status === 'CLOSED',
+            'bg-error/20 text-error': opp.status === 'REJECTED' || opp.status === 'CANCELLED',
+            'bg-emerald-500/20 text-emerald-300': opp.status === 'ACCEPTED' || opp.status === 'COMPLETED'
+          }"
+        >
+          {{ opp.status || 'DRAFT' }}
+        </span>
+      </div>
+
+      <div class="mt-2 flex flex-wrap gap-2">
+        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary">
+          {{ opp.category }}
+        </span>
+        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-surface-container-high text-on-surface-variant">
+          {{ opp.isRemote ? 'Remote' : (opp.location || 'No location') }}
+        </span>
+      </div>
+
+      <p class="mt-3 text-sm text-on-surface-variant">
+        Slots: {{ opp.filledSlots || 0 }}/{{ opp.slots }}
+      </p>
+      <p class="text-sm text-on-surface-variant">
+        Date: {{ opp.scheduledDate || 'Not scheduled' }}
+      </p>
+
+      <div class="mt-5 flex flex-wrap gap-2" (click)="$event.stopPropagation()">
+        <button
+          *ngIf="opp.status === 'OPEN'"
+          type="button"
+          class="rounded-lg bg-secondary/20 px-3 py-1.5 text-sm text-secondary"
+          (click)="applyFor(opp)"
+        >
+          Apply
+        </button>
+        <button
+          *ngIf="opp.status === 'OPEN'"
+          type="button"
+          class="rounded-lg bg-primary/20 px-3 py-1.5 text-sm text-primary"
+          (click)="closeOpportunity(opp.id)"
+        >
+          Close
+        </button>
+        <button
+          type="button"
+          class="rounded-lg bg-error/20 px-3 py-1.5 text-sm text-error"
+          (click)="deleteOpportunity(opp.id)"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</section>

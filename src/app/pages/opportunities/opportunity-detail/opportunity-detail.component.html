@@ -1,0 +1,144 @@
+<section class="p-6 bg-surface min-h-full text-on-surface space-y-6">
+  <div *ngIf="isLoading" class="flex justify-center items-center py-16">
+    <span class="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+  </div>
+
+  <div *ngIf="errorMessage" class="bg-error/10 border border-error/30 rounded-xl p-4 text-error">
+    {{ errorMessage }}
+  </div>
+
+  <ng-container *ngIf="!isLoading && opportunity">
+    <article class="bg-surface-container rounded-xl p-6 border border-outline-variant space-y-4">
+      <div class="flex items-start justify-between gap-3">
+        <h1 class="text-2xl font-semibold">{{ opportunity.title }}</h1>
+        <span
+          class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+          [ngClass]="{
+            'bg-secondary/20 text-secondary': opportunity.status === 'OPEN',
+            'bg-outline/20 text-on-surface-variant': opportunity.status === 'DRAFT' || opportunity.status === 'CLOSED',
+            'bg-error/20 text-error': opportunity.status === 'REJECTED' || opportunity.status === 'CANCELLED',
+            'bg-emerald-500/20 text-emerald-300': opportunity.status === 'ACCEPTED' || opportunity.status === 'COMPLETED'
+          }"
+        >
+          {{ opportunity.status || 'DRAFT' }}
+        </span>
+      </div>
+
+      <p class="text-on-surface-variant">{{ opportunity.description || 'No description.' }}</p>
+
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 text-sm">
+        <div><span class="text-on-surface-variant">Category:</span> {{ opportunity.category }}</div>
+        <div>
+          <span class="text-on-surface-variant">Location:</span>
+          {{ opportunity.isRemote ? 'Remote' : (opportunity.location || 'N/A') }}
+        </div>
+        <div><span class="text-on-surface-variant">Date:</span> {{ opportunity.scheduledDate || 'N/A' }}</div>
+        <div><span class="text-on-surface-variant">Duration:</span> {{ opportunity.durationHours || 0 }}h</div>
+        <div><span class="text-on-surface-variant">Slots:</span> {{ opportunity.filledSlots || 0 }}/{{ opportunity.slots }}</div>
+      </div>
+
+      <div class="space-y-1">
+        <div class="h-2 w-full rounded bg-surface-container-high overflow-hidden">
+          <div class="h-full bg-secondary" [style.width.%]="slotsRatio()"></div>
+        </div>
+        <p class="text-xs text-on-surface-variant">{{ slotsRatio() | number:'1.0-0' }}% filled</p>
+      </div>
+
+      <div>
+        <p class="text-sm text-on-surface-variant mb-2">Required Skills</p>
+        <div class="flex flex-wrap gap-2">
+          <span
+            *ngFor="let skillId of opportunity.requiredSkillIds || []"
+            class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary"
+          >
+            {{ skillName(skillId) }}
+          </span>
+          <span *ngIf="!(opportunity.requiredSkillIds?.length)" class="text-sm text-on-surface-variant">None</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="rounded-lg bg-secondary/20 px-4 py-2 text-secondary hover:bg-secondary/30"
+        (click)="toggleApplyForm()"
+      >
+        {{ showApplyForm ? 'Cancel Application' : 'Apply' }}
+      </button>
+
+      <div *ngIf="showApplyForm" class="rounded-lg border border-outline-variant bg-surface-container-high p-4 space-y-3">
+        <div>
+          <label class="text-sm text-on-surface-variant">Volunteer ID</label>
+          <input
+            type="number"
+            class="mt-1 w-full rounded-lg border border-outline-variant bg-surface px-3 py-2"
+            [formControl]="applyForm.controls.volunteerId"
+          />
+          <p *ngIf="inv('volunteerId')" class="mt-1 text-xs text-error">Volunteer ID is required.</p>
+        </div>
+        <div>
+          <label class="text-sm text-on-surface-variant">Motivation Letter</label>
+          <textarea
+            rows="3"
+            class="mt-1 w-full rounded-lg border border-outline-variant bg-surface px-3 py-2"
+            [formControl]="applyForm.controls.motivationLetter"
+          ></textarea>
+          <p *ngIf="inv('motivationLetter')" class="mt-1 text-xs text-error">Minimum 10 characters required.</p>
+        </div>
+        <button
+          type="button"
+          class="rounded bg-primary/20 px-4 py-2 text-primary hover:bg-primary/30"
+          (click)="submitApplication()"
+        >
+          Submit Application
+        </button>
+      </div>
+    </article>
+
+    <section class="bg-surface-container rounded-xl p-6 border border-outline-variant">
+      <h2 class="text-xl font-semibold mb-4">Applications</h2>
+      <div *ngIf="applications.length === 0" class="text-on-surface-variant">No applications yet.</div>
+      <div *ngIf="applications.length > 0" class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="text-left text-on-surface-variant">
+            <tr class="border-b border-outline-variant">
+              <th class="px-3 py-2">Volunteer</th>
+              <th class="px-3 py-2">Status</th>
+              <th class="px-3 py-2">Motivation</th>
+              <th class="px-3 py-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-outline-variant">
+            <tr *ngFor="let app of applications">
+              <td class="px-3 py-2">#{{ app.volunteerId }}</td>
+              <td class="px-3 py-2">
+                <span
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                  [ngClass]="{
+                    'bg-secondary/20 text-secondary': app.status === 'PENDING',
+                    'bg-emerald-500/20 text-emerald-300': app.status === 'ACCEPTED',
+                    'bg-error/20 text-error': app.status === 'REJECTED' || app.status === 'WITHDRAWN'
+                  }"
+                >
+                  {{ app.status || 'PENDING' }}
+                </span>
+              </td>
+              <td class="px-3 py-2 text-on-surface-variant">
+                {{ (app.motivationLetter || 'No motivation').slice(0, 80) }}{{ (app.motivationLetter || '').length > 80 ? '...' : '' }}
+              </td>
+              <td class="px-3 py-2">
+                <div *ngIf="app.status === 'PENDING'" class="flex gap-2">
+                  <button type="button" class="rounded bg-secondary/20 px-2.5 py-1 text-secondary text-xs" (click)="accept(app.id)">
+                    Accept
+                  </button>
+                  <button type="button" class="rounded bg-error/20 px-2.5 py-1 text-error text-xs" (click)="reject(app.id)">
+                    Reject
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </ng-container>
+</section>
