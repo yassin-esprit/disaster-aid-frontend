@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -30,11 +30,19 @@ type CommunicationTab =
   templateUrl: './communication.component.html',
   styleUrl: './communication.component.scss'
 })
-export class CommunicationComponent {
+export class CommunicationComponent implements OnInit {
+  private readonly lastConversationStorageKey = 'bo_selected_conversation_id';
   currentUserRole = (localStorage.getItem('role') || '').toUpperCase();
   selectedConversationId: number | null = null;
 
   activeTab: CommunicationTab = this.isAdmin() ? 'requests' : 'conversations';
+
+  ngOnInit(): void {
+    const storedConversationId = Number(localStorage.getItem(this.lastConversationStorageKey));
+    this.selectedConversationId = Number.isFinite(storedConversationId) && storedConversationId > 0
+      ? storedConversationId
+      : null;
+  }
 
   isAdmin(): boolean {
     return [
@@ -51,6 +59,7 @@ export class CommunicationComponent {
 
   onRequestAccepted(conversationId: number): void {
     this.selectedConversationId = conversationId;
+    localStorage.setItem(this.lastConversationStorageKey, String(conversationId));
     this.activeTab = 'messages';
   }
 }

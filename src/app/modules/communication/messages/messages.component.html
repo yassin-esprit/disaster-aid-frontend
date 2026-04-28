@@ -13,7 +13,30 @@
         <span class="live-dot"></span>
         ONLINE
       </div>
+      <div class="voice-actions" *ngIf="conversationId">
+        <button class="voice-btn primary" *ngIf="callState === 'idle' || callState === 'ended' || callState === 'rejected'" (click)="startVoiceCall()">
+          Appeler
+        </button>
+
+        <ng-container *ngIf="callState === 'calling' || callState === 'ringing'">
+          <span class="voice-state">{{ callState === 'calling' ? 'Appel...' : 'Ca sonne...' }}</span>
+          <button class="voice-btn danger" (click)="endVoiceCall(true)">Raccrocher</button>
+        </ng-container>
+
+        <ng-container *ngIf="callState === 'incoming'">
+          <span class="voice-state">Appel entrant</span>
+          <button class="voice-btn success" (click)="acceptIncomingCall()">Accepter</button>
+          <button class="voice-btn danger" (click)="rejectIncomingCall()">Refuser</button>
+        </ng-container>
+
+        <ng-container *ngIf="callState === 'in-call'">
+          <span class="voice-state in-call">En appel</span>
+          <button class="voice-btn mute" (click)="toggleMute()">{{ isMuted ? 'Activer micro' : 'Couper micro' }}</button>
+          <button class="voice-btn danger" (click)="endVoiceCall(true)">Raccrocher</button>
+        </ng-container>
+      </div>
     </div>
+    <div *ngIf="voiceErrorMessage" class="state-box error-box">{{ voiceErrorMessage }}</div>
 
     <div *ngIf="loading" class="state-box">
       Loading messages...
@@ -99,5 +122,6 @@
         </button>
       </div>
     </div>
+    <audio #remoteAudio autoplay playsinline></audio>
   </div>
 </div>

@@ -225,10 +225,10 @@
             <div class="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                (click)="selectRole('ORGANISATION')"
+                (click)="selectRole('ORGANIZATION')"
                 class="flex flex-col gap-2 p-4 rounded-xl glass-2 ghost-border transition-all"
                 [ngClass]="
-                  getRoleActive('ORGANISATION')
+                  getRoleActive('ORGANIZATION')
                     ? 'ring-2 ring-tertiary-dim bg-tertiary-dim/10'
                     : 'hover:bg-white/5'
                 "
@@ -236,14 +236,14 @@
                 <span
                   class="material-symbols-outlined"
                   [ngClass]="
-                    getRoleActive('ORGANISATION')
+                    getRoleActive('ORGANIZATION')
                       ? 'text-tertiary-dim'
                       : 'text-on-surface-variant'
                   "
                   >corporate_fare</span
                 >
                 <p class="text-sm font-bold text-white text-left">
-                  Organisation
+                  Organization
                 </p>
               </button>
               <button

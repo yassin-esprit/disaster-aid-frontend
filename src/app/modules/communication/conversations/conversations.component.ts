@@ -46,10 +46,10 @@ export class ConversationsComponent implements OnInit {
 
   loadConversations(): void {
     this.loading = true;
-    this.conversationService.getAllConversations().subscribe({
+    this.conversationService.getMyConversations().subscribe({
       next: (res) => {
-        this.conversations = res;
-        this.filteredConversations = res;
+        this.conversations = res || [];
+        this.filteredConversations = this.conversations;
         this.loading = false;
       },
       error: (err) => {

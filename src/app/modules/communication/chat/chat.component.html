@@ -45,10 +45,41 @@
       </div>
 
       <div class="header-status" *ngIf="selectedConversationId">
-        <span class="status-dot"></span>
-        Online
+        <div class="presence-line">
+          <span class="status-dot"></span>
+          Online
+        </div>
+        <div class="voice-controls">
+          <button
+            class="voice-btn primary"
+            *ngIf="callState === 'idle' || callState === 'ended' || callState === 'rejected'"
+            (click)="startVoiceCall()"
+          >
+            Appeler
+          </button>
+
+          <ng-container *ngIf="callState === 'calling' || callState === 'ringing'">
+            <span class="voice-state">{{ callState === 'calling' ? 'Appel...' : 'Ca sonne...' }}</span>
+            <button class="voice-btn danger" (click)="endVoiceCall(true)">Raccrocher</button>
+          </ng-container>
+
+          <ng-container *ngIf="callState === 'incoming'">
+            <span class="voice-state">Appel entrant</span>
+            <button class="voice-btn success" (click)="acceptIncomingCall()">Accepter</button>
+            <button class="voice-btn danger" (click)="rejectIncomingCall()">Refuser</button>
+          </ng-container>
+
+          <ng-container *ngIf="callState === 'in-call'">
+            <span class="voice-state in-call">En appel</span>
+            <button class="voice-btn mute" (click)="toggleMute()">
+              {{ isMuted ? 'Activer micro' : 'Couper micro' }}
+            </button>
+            <button class="voice-btn danger" (click)="endVoiceCall(true)">Raccrocher</button>
+          </ng-container>
+        </div>
       </div>
     </div>
+    <div class="voice-error" *ngIf="voiceErrorMessage">{{ voiceErrorMessage }}</div>
 
     <div class="messages-wrapper">
       <div class="messages-body" #scrollContainer>
@@ -88,6 +119,7 @@
               <button (click)="sendRequest()">Send</button>
             </div>
           </div>
+
         </ng-template>
       </div>
 
@@ -118,5 +150,6 @@
         [disabled]="!selectedConversationId || !newMessage.trim()"
       >Send</button>
     </div>
+    <audio #remoteAudio autoplay playsinline></audio>
   </div>
 </section>

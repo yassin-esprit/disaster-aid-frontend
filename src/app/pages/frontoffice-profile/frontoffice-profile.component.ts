@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UserService } from '../../core/services/user.service';
@@ -6,14 +6,35 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
+interface AuroraOrb {
+  xRatio: number;
+  yRatio: number;
+  radius: number;
+  color: string;
+  speed: number;
+  alpha: number;
+}
+
+interface RingParticle {
+  baseAngle: number;
+  orbitRadius: number;
+  speed: number;
+  size: number;
+  alpha: number;
+}
+
 @Component({
   selector: 'app-profile',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './frontoffice-profile.component.html',
-  styleUrl: './frontoffice-profile.component.scss'
+  styleUrls: ['./frontoffice-profile.component.scss']
 })
-export class FrontofficeProfileComponent implements OnInit, OnDestroy {
+export class FrontofficeProfileComponent implements OnInit, OnDestroy, AfterViewInit {
+  @ViewChild('auroraCanvas') auroraCanvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('ringCanvas') ringCanvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('fileInputRef') fileInputRef!: ElementRef<HTMLInputElement>;
+
   user: any = {};
   editableUser: any = {};
   loading = true;
@@ -25,16 +46,35 @@ export class FrontofficeProfileComponent implements OnInit, OnDestroy {
   previewUrl: string | null = null;
 
   private subs: Subscription[] = [];
+  private auroraAnimId = 0;
+  private ringAnimId = 0;
+  private auroraT = 0;
+  private ringT = 0;
+  private auroraOrbs: AuroraOrb[] = [
+    { xRatio: 0.70, yRatio: 0.5, radius: 130, color: '127,140,255', speed: 0.55, alpha: 0.55 },
+    { xRatio: 0.86, yRatio: 0.2, radius: 95, color: '154,115,255', speed: 0.40, alpha: 0.42 },
+    { xRatio: 0.55, yRatio: 0.85, radius: 85, color: '255,140,200', speed: 0.50, alpha: 0.30 },
+    { xRatio: 0.92, yRatio: 0.75, radius: 70, color: '80,160,255', speed: 0.35, alpha: 0.22 }
+  ];
+  private ringParticles: RingParticle[] = [];
+  private animationsStarted = false;
 
   constructor(private userService: UserService, private router: Router) {}
 
   ngOnInit(): void {
     this.loadProfile();
+    this.buildRingParticles();
+  }
+
+  ngAfterViewInit(): void {
+    this.startAnimationsIfReady();
   }
 
   ngOnDestroy(): void {
     this.revokePreview();
     this.subs.forEach(s => s.unsubscribe());
+    cancelAnimationFrame(this.auroraAnimId);
+    cancelAnimationFrame(this.ringAnimId);
   }
 
   loadProfile(): void {
@@ -47,27 +87,35 @@ export class FrontofficeProfileComponent implements OnInit, OnDestroy {
           this.user.profilePhoto = this.buildPhotoUrl(res.profilePhoto);
         }
         this.loading = false;
+        this.startAnimationsAfterRender();
       },
       error: () => { this.loading = false; }
     });
     this.subs.push(s);
   }
 
-  onFileSelected(event: any): void {
-    const file = event.target.files?.[0];
-    if (file) {
-      this.selectedFile = file;
-      this.setPreview(file);
-    } else {
-      this.selectedFile = null;
-      this.revokePreview();
-      this.previewUrl = null;
-    }
+  private startAnimationsAfterRender(): void {
+    setTimeout(() => this.startAnimationsIfReady());
   }
 
-  private setPreview(file: File): void {
-    this.revokePreview();
-    this.previewUrl = URL.createObjectURL(file);
+  private startAnimationsIfReady(): void {
+    if (this.animationsStarted || this.loading) return;
+    if (!this.auroraCanvasRef?.nativeElement || !this.ringCanvasRef?.nativeElement) return;
+    this.startAurora();
+    this.startRing();
+    this.animationsStarted = true;
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+
+    this.selectedFile = input.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.previewUrl = e.target?.result as string;
+    };
+    reader.readAsDataURL(this.selectedFile);
   }
 
   private revokePreview(): void {
@@ -162,12 +210,113 @@ export class FrontofficeProfileComponent implements OnInit, OnDestroy {
   }
 
   getRoleLabel(role: string): string {
-    return role?.replaceAll('_', ' ') || 'USER';
+    const map: Record<string, string> = {
+      PLATFORM_ADMIN: 'Platform Admin',
+      ADMIN: 'Admin',
+      USER: 'User',
+      MODERATOR: 'Moderator'
+    };
+    return map[role] ?? role;
+  }
+
+  triggerFileInput(): void {
+    this.fileInputRef?.nativeElement.click();
   }
 
   logout(): void {
     localStorage.clear();
     this.isAuthenticated = false;
     this.router.navigateByUrl('/landing');
+  }
+
+  private startAurora(): void {
+    const canvas = this.auroraCanvasRef?.nativeElement;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth || canvas.parentElement?.offsetWidth || 800;
+      canvas.height = canvas.offsetHeight || canvas.parentElement?.offsetHeight || 110;
+    };
+    resize();
+
+    const draw = () => {
+      resize();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      this.auroraOrbs.forEach((orb, i) => {
+        const ox = orb.xRatio * canvas.width + Math.sin(this.auroraT * 0.4 + i * 1.3) * 20;
+        const oy = orb.yRatio * canvas.height + Math.cos(this.auroraT * 0.3 + i * 0.9) * 12;
+
+        const grad = ctx.createRadialGradient(ox, oy, 0, ox, oy, orb.radius);
+        grad.addColorStop(0, `rgba(${orb.color},${orb.alpha})`);
+        grad.addColorStop(1, `rgba(${orb.color},0)`);
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(ox, oy, orb.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      this.auroraT += 0.010;
+      this.auroraAnimId = requestAnimationFrame(draw);
+    };
+
+    draw();
+  }
+
+  private buildRingParticles(): void {
+    this.ringParticles = Array.from({ length: 22 }, (_, i) => ({
+      baseAngle: (i / 22) * Math.PI * 2,
+      orbitRadius: 46 + Math.random() * 12,
+      speed: 0.35 + Math.random() * 0.55,
+      size: 1.2 + Math.random() * 2.0,
+      alpha: 0.40 + Math.random() * 0.55
+    }));
+  }
+
+  private startRing(): void {
+    const canvas = this.ringCanvasRef?.nativeElement;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const size = 104;
+    canvas.width = size;
+    canvas.height = size;
+    const cx = size / 2;
+    const cy = size / 2;
+
+    const draw = () => {
+      ctx.clearRect(0, 0, size, size);
+
+      ctx.strokeStyle = 'rgba(127,140,255,0.10)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 50, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(127,140,255,0.07)';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 43, 0, Math.PI * 2);
+      ctx.stroke();
+
+      this.ringParticles.forEach((p) => {
+        const angle = p.baseAngle + this.ringT * p.speed;
+        const px = cx + Math.cos(angle) * p.orbitRadius;
+        const py = cy + Math.sin(angle) * p.orbitRadius;
+
+        ctx.beginPath();
+        ctx.arc(px, py, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(160,170,255,${p.alpha})`;
+        ctx.fill();
+      });
+
+      this.ringT += 0.007;
+      this.ringAnimId = requestAnimationFrame(draw);
+    };
+
+    draw();
   }
 }

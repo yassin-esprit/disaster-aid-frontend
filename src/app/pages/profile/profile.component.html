@@ -1,27 +1,50 @@
 <div class="profile-page text-white">
   <div class="profile-container">
+
     <div class="page-heading">
       <h1>My Profile</h1>
       <p>View your personal information and update it when needed.</p>
     </div>
 
     <div *ngIf="loading" class="profile-card">
-      <p>Loading profile...</p>
+      <p class="loading-text">Loading profile...</p>
     </div>
 
     <div *ngIf="!loading" class="profile-card">
+
+      <!-- ① Aurora Banner -->
+      <div class="profile-banner">
+        <canvas class="aurora-canvas" #auroraCanvas></canvas>
+        <div class="banner-overlay"></div>
+        <div class="banner-accent-line"></div>
+      </div>
+
+      <!-- Top section -->
       <div class="profile-top">
 
-        <!-- Avatar : photo si disponible, sinon initiales -->
-        <div class="avatar">
-          <img
-            *ngIf="previewUrl || user.profilePhoto"
-            [src]="previewUrl || user.profilePhoto"
-            alt="Profile photo"
-          />
-          <span *ngIf="!previewUrl && !user.profilePhoto">{{ getInitials() }}</span>
+        <!-- ③ Particle ring avatar -->
+        <div class="avatar-wrap">
+          <canvas class="ring-canvas" #ringCanvas></canvas>
+          <div class="avatar">
+            <img
+              *ngIf="previewUrl || user.profilePhoto"
+              [src]="previewUrl || user.profilePhoto"
+              alt="Profile photo"
+            />
+            <span *ngIf="!previewUrl && !user.profilePhoto">{{ getInitials() }}</span>
+          </div>
+          <div class="status-dot"></div>
+          <label *ngIf="editMode" class="avatar-upload-overlay" for="avatarInput" title="Change photo">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 3v7M5 6l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3 13h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </label>
+          <input *ngIf="editMode" id="avatarInput" type="file" accept="image/*"
+            (change)="onFileSelected($event)" style="display:none" />
         </div>
 
+        <!-- Identity -->
         <div class="identity">
           <h2>{{ user.firstName }} {{ user.lastName }}</h2>
           <div class="identity-meta">
@@ -33,8 +56,25 @@
 
         <div class="top-actions">
           <button *ngIf="!editMode" class="edit-btn" (click)="enableEdit()">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M11.5 2.5a1.414 1.414 0 0 1 2 2L5 13H3v-2L11.5 2.5z"
+                stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
             Edit Profile
           </button>
+        </div>
+      </div>
+
+      <!-- ⑤ Skill tags -->
+      <div class="skills-section">
+        <div class="skills-label">Specialties</div>
+        <div class="skills-row">
+          <span class="skill-tag tag-purple">Disaster Response</span>
+          <span class="skill-tag tag-green">Crisis Management</span>
+          <span class="skill-tag tag-pink">Community Aid</span>
+          <span class="skill-tag tag-amber">Field Coordination</span>
+          <span class="skill-tag tag-purple">Platform Admin</span>
+          <span class="skill-tag tag-pink">Volunteer Network</span>
         </div>
       </div>
 
@@ -42,83 +82,177 @@
 
       <!-- VIEW MODE -->
       <div *ngIf="!editMode" class="info-grid">
+
         <div class="info-item">
-          <label>First Name</label>
-          <div>{{ user.firstName || '-' }}</div>
+          <label>
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="8" cy="6" r="3" stroke="currentColor" stroke-width="1.4"/>
+              <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            First Name
+          </label>
+          <div [class.empty-val]="!user.firstName">{{ user.firstName || '—' }}</div>
         </div>
 
         <div class="info-item">
-          <label>Last Name</label>
-          <div>{{ user.lastName || '-' }}</div>
+          <label>
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="8" cy="6" r="3" stroke="currentColor" stroke-width="1.4"/>
+              <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            Last Name
+          </label>
+          <div [class.empty-val]="!user.lastName">{{ user.lastName || '—' }}</div>
         </div>
 
         <div class="info-item">
-          <label>Email</label>
-          <div>{{ user.email || '-' }}</div>
+          <label>
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="4" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+              <path d="M2 6l6 4 6-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            Email
+          </label>
+          <div [class.empty-val]="!user.email">{{ user.email || '—' }}</div>
         </div>
 
         <div class="info-item">
-          <label>Phone</label>
-          <div>{{ user.phone || '-' }}</div>
+          <label>
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 3a1 1 0 0 1 1-1h2.5l1 3-1.5 1A8 8 0 0 0 10 10.5l1-1.5 3 1V12a1 1 0 0 1-1 1C6.268 13 3 9.732 3 5.5V3z"
+                stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+            </svg>
+            Phone
+          </label>
+          <div [class.empty-val]="!user.phone">{{ user.phone || '—' }}</div>
         </div>
 
         <div class="info-item">
-          <label>Location</label>
-          <div>{{ user.location || '-' }}</div>
+          <label>
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 2a5 5 0 0 1 5 5c0 3-5 8-5 8S3 10 3 7a5 5 0 0 1 5-5z" stroke="currentColor" stroke-width="1.4"/>
+              <circle cx="8" cy="7" r="1.5" stroke="currentColor" stroke-width="1.4"/>
+            </svg>
+            Location
+          </label>
+          <div [class.empty-val]="!user.location">{{ user.location || '—' }}</div>
         </div>
 
         <div class="info-item">
-          <label>Role</label>
-          <div>{{ getRoleLabel(user.role) }}</div>
+          <label>
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 2l1.5 3 3.5.5-2.5 2.5.5 3.5L8 10l-3 1.5.5-3.5L3 5.5 6.5 5z"
+                stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+            </svg>
+            Role
+          </label>
+          <div class="role-val">{{ getRoleLabel(user.role) }}</div>
         </div>
+
       </div>
 
-      <!-- EDIT MODE — photo upload inclus ici uniquement -->
+      <!-- EDIT MODE -->
       <form *ngIf="editMode" (ngSubmit)="updateProfile()" class="form-grid">
 
-        <div class="field-group" style="grid-column: 1 / -1;">
-          <label>Profile Photo</label>
-          <input type="file" accept="image/*" (change)="onFileSelected($event)" />
+        <div class="field-group full-width">
+          <label>
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="2" width="12" height="12" rx="3" stroke="currentColor" stroke-width="1.4"/>
+              <path d="M2 10l3-3 2 2 3-4 4 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Profile Photo
+          </label>
+          <div class="file-upload-area" (click)="triggerFileInput()">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 5v10M7 9l5-4 5 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M5 19h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            <span *ngIf="!previewUrl">Click to upload a photo</span>
+            <span *ngIf="previewUrl" class="file-chosen">Photo selected — click to change</span>
+            <input #fileInputRef type="file" accept="image/*" (change)="onFileSelected($event)" style="display:none" />
+          </div>
         </div>
 
         <div class="field-group">
-          <label>First Name</label>
-          <input [(ngModel)]="editableUser.firstName" name="firstName" type="text" />
+          <label>
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="8" cy="6" r="3" stroke="currentColor" stroke-width="1.4"/>
+              <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            First Name
+          </label>
+          <input [(ngModel)]="editableUser.firstName" name="firstName" type="text" placeholder="Your first name" />
         </div>
 
         <div class="field-group">
-          <label>Last Name</label>
-          <input [(ngModel)]="editableUser.lastName" name="lastName" type="text" />
+          <label>
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="8" cy="6" r="3" stroke="currentColor" stroke-width="1.4"/>
+              <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            Last Name
+          </label>
+          <input [(ngModel)]="editableUser.lastName" name="lastName" type="text" placeholder="Your last name" />
         </div>
 
         <div class="field-group">
-          <label>Email</label>
+          <label>
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="4" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+              <path d="M2 6l6 4 6-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            Email
+          </label>
           <input [value]="user.email" name="email" type="email" disabled />
         </div>
 
         <div class="field-group">
-          <label>Phone</label>
+          <label>
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 3a1 1 0 0 1 1-1h2.5l1 3-1.5 1A8 8 0 0 0 10 10.5l1-1.5 3 1V12a1 1 0 0 1-1 1C6.268 13 3 9.732 3 5.5V3z"
+                stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+            </svg>
+            Phone
+          </label>
           <input [(ngModel)]="editableUser.phone" name="phone" type="text" placeholder="Phone number" />
         </div>
 
         <div class="field-group">
-          <label>Location</label>
+          <label>
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 2a5 5 0 0 1 5 5c0 3-5 8-5 8S3 10 3 7a5 5 0 0 1 5-5z" stroke="currentColor" stroke-width="1.4"/>
+              <circle cx="8" cy="7" r="1.5" stroke="currentColor" stroke-width="1.4"/>
+            </svg>
+            Location
+          </label>
           <input [(ngModel)]="editableUser.location" name="location" type="text" placeholder="Your city" />
         </div>
 
         <div class="field-group">
-          <label>Role</label>
+          <label>
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 2l1.5 3 3.5.5-2.5 2.5.5 3.5L8 10l-3 1.5.5-3.5L3 5.5 6.5 5z"
+                stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+            </svg>
+            Role
+          </label>
           <input [value]="getRoleLabel(user.role)" name="role" type="text" disabled />
         </div>
 
         <div class="form-actions">
-          <button type="button" class="cancel-btn" (click)="cancelEdit()">
-            Cancel
-          </button>
+          <button type="button" class="cancel-btn" (click)="cancelEdit()">Cancel</button>
           <button type="submit" class="save-btn" [disabled]="saving">
-            {{ saving ? 'Saving...' : 'Save Changes' }}
+            <span *ngIf="!saving">Save Changes</span>
+            <span *ngIf="saving" class="saving-inner">
+              <svg class="spin-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-dasharray="40 20"/>
+              </svg>
+              Saving...
+            </span>
           </button>
         </div>
+
       </form>
     </div>
   </div>

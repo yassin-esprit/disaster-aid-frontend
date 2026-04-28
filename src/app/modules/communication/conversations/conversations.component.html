@@ -52,7 +52,7 @@
             </td>
             <td>{{ item.relatedEntityId || '-' }}</td>
             <td>{{ item.relatedEntityType || '-' }}</td>
-            <td>{{ item.participantIds.join(', ') }}</td>
+            <td>{{ (item.participantIds || []).join(', ') || '-' }}</td>
             <td>{{ item.createdAt ? (item.createdAt | date:'short') : '-' }}</td>
             <td class="actions-cell">
               <button class="action-btn edit-btn" (click)="openEditModal(item)">Edit</button>

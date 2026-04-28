@@ -12,7 +12,7 @@ import {
 import { AuthService } from '../../core/services/auth.service';
 
 type ActiveTab = 'signin' | 'register';
-type UserRole = 'VOLUNTEER' | 'ORGANISATION' | 'RESPONDER';
+type UserRole = 'VOLUNTEER' | 'ORGANIZATION' | 'RESPONDER';
 
 @Component({
   selector: 'app-register',
@@ -44,8 +44,8 @@ export class RegisterComponent implements OnInit {
       iconClass: 'text-primary bg-primary/20',
     },
     {
-      id: 'ORGANISATION' as UserRole,
-      label: 'Organisation',
+      id: 'ORGANIZATION' as UserRole,
+      label: 'Organization',
       desc: 'Post opportunities & manage volunteers',
       icon: 'corporate_fare',
       accent: 'tertiary-dim',
