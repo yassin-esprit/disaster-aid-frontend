@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule, RouterLinkActive } from '@angular/router';
 import { NavItem } from '../../models/nav-item.model';
 import { AuthService } from '../../../core/services/auth.service';
+import { ReportService } from '../../../core/services/report.service';
 
 const ADMIN_ROLES = ['PLATFORM_ADMIN', 'ORG_ADMIN', 'AGENCY_ADMIN', 'ADMIN'];
 
@@ -70,7 +71,42 @@ export class SidebarComponent implements OnInit, OnChanges {
     return this.isAdmin ? 'New Incident' : 'Report Incident';
   }
 
-  constructor(private authService: AuthService, private router: Router) {}
+  downloadingReport = false;
+  reportError = '';
+
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private reportService: ReportService,
+  ) {}
+
+  downloadReport(): void {
+    if (this.downloadingReport) return;
+    this.downloadingReport = true;
+    this.reportError = '';
+    this.reportService.downloadAnalyticsReport().subscribe({
+      next: (res) => {
+        const blob = res.body;
+        if (!blob) {
+          this.reportError = 'Empty response';
+          this.downloadingReport = false;
+          return;
+        }
+        const filename = this.reportService.filenameFromResponse(
+          res.headers,
+          `analytics_report_${new Date().toISOString().slice(0, 10)}.pdf`,
+        );
+        this.reportService.saveBlob(blob, filename);
+        this.downloadingReport = false;
+      },
+      error: (err) => {
+        console.error('Report download failed', err);
+        this.reportError = err?.error?.message || 'Failed to generate report';
+        this.downloadingReport = false;
+        setTimeout(() => (this.reportError = ''), 5000);
+      },
+    });
+  }
 
   ngOnInit(): void {
     const roleFromService = (this.authService.getRole() || '').trim().toUpperCase();

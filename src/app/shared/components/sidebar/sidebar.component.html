@@ -46,13 +46,32 @@
       {{ ctaLabel }}
     </a>
   </div>
-<div class="px-4 mt-auto">
-  <button
-    type="button"
-    (click)="onLogout()"
-    class="block w-full bg-red-500/80 text-white py-3 rounded-lg font-bold text-xs uppercase tracking-widest text-center hover:bg-red-500 transition-all active:scale-95"
-  >
-    Logout
-  </button>
-</div>
+
+  <!-- Download analytics report (admin only) -->
+  <div *ngIf="isAdmin" class="px-4 mt-3">
+    <button
+      type="button"
+      (click)="downloadReport()"
+      [disabled]="downloadingReport"
+      class="block w-full py-3 rounded-lg font-bold text-xs uppercase tracking-widest text-center transition-all active:scale-95 text-white bg-emerald-600/80 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center gap-2"
+    >
+      <span class="material-symbols-outlined text-base">
+        {{ downloadingReport ? 'hourglass_top' : 'download' }}
+      </span>
+      {{ downloadingReport ? 'Generating…' : 'Download Report' }}
+    </button>
+    <p *ngIf="reportError" class="text-[10px] text-red-300 mt-1 text-center break-words">
+      {{ reportError }}
+    </p>
+  </div>
+
+  <div class="px-4 mt-3">
+    <button
+      type="button"
+      (click)="onLogout()"
+      class="block w-full bg-red-500/80 text-white py-3 rounded-lg font-bold text-xs uppercase tracking-widest text-center hover:bg-red-500 transition-all active:scale-95"
+    >
+      Logout
+    </button>
+  </div>
 </aside>
