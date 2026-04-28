@@ -1,0 +1,193 @@
+<section class="min-h-full bg-surface p-6 text-on-surface">
+  <div *ngIf="isLoading" class="animate-pulse rounded-xl bg-surface-container-high p-8">
+    <div class="mb-4 h-6 w-48 rounded bg-surface-container"></div>
+    <div class="mb-3 h-10 w-64 rounded bg-surface-container"></div>
+    <div class="h-40 rounded bg-surface-container"></div>
+  </div>
+
+  <div
+    *ngIf="!isLoading && errorMessage"
+    class="rounded-xl border border-error/30 bg-error/10 p-4 text-error"
+  >
+    <p>{{ errorMessage }}</p>
+    <button
+      type="button"
+      class="mt-3 rounded-lg bg-error/20 px-4 py-2 text-sm hover:bg-error/30"
+      (click)="retry()"
+    >
+      Retry
+    </button>
+  </div>
+
+  <div *ngIf="!isLoading && volunteerSkill" class="grid grid-cols-1 gap-6 md:grid-cols-2">
+    <article #certificateCard class="rounded-xl border border-outline-variant bg-surface-container p-6">
+      <div class="mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">workspace_premium</span>
+        <h2 class="text-lg font-semibold">Skill Credential</h2>
+      </div>
+
+      <h1 class="text-2xl font-bold text-on-surface">{{ skillName }}</h1>
+
+      <div class="mt-4">
+        <span
+          *ngIf="!isExpert(volunteerSkill.proficiency)"
+          class="inline-flex rounded-full px-4 py-2 text-sm font-semibold"
+          [ngClass]="badgeClass(volunteerSkill.proficiency)"
+        >
+          {{ volunteerSkill.proficiency }}
+        </span>
+        <span
+          *ngIf="isExpert(volunteerSkill.proficiency)"
+          class="inline-flex rounded-full px-4 py-2 text-sm font-semibold"
+          style="color:#a78bfa;background:rgba(167,139,250,0.15)"
+        >
+          {{ volunteerSkill.proficiency }}
+        </span>
+      </div>
+
+      <div class="mt-6 space-y-3 text-sm">
+        <div class="flex items-center gap-2" *ngIf="volunteerSkill.isVerified; else pendingVerification">
+          <span class="material-symbols-outlined text-secondary">check_circle</span>
+          <span class="font-medium text-secondary">Verified</span>
+        </div>
+        <ng-template #pendingVerification>
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-on-surface-variant">schedule</span>
+            <span class="text-on-surface-variant">Pending Verification</span>
+          </div>
+        </ng-template>
+
+        <div class="flex items-center gap-2 text-on-surface-variant">
+          <span class="material-symbols-outlined">person</span>
+          <span>Volunteer #{{ volunteerSkill.volunteerId }}</span>
+        </div>
+
+        <div class="flex items-center gap-2 text-on-surface-variant">
+          <span class="material-symbols-outlined">thumb_up</span>
+          <span>{{ volunteerSkill.endorsementCount || 0 }} endorsements</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="mt-6 rounded-lg bg-primary/20 px-4 py-2 text-primary hover:bg-primary/30"
+        (click)="viewPublicCredential()"
+      >
+        View Public Credential
+      </button>
+      <button
+        type="button"
+        class="mt-3 inline-flex items-center gap-2 rounded-lg bg-secondary/20 px-4 py-2 text-secondary hover:bg-secondary/30"
+        [disabled]="isPredicting"
+        (click)="predictAcceptance()"
+      >
+        <span
+          *ngIf="isPredicting"
+          class="material-symbols-outlined animate-spin text-base"
+          >progress_activity</span
+        >
+        <span *ngIf="!isPredicting" class="material-symbols-outlined text-base"
+          >query_stats</span
+        >
+        {{ isPredicting ? 'Predicting...' : 'Predict Acceptance' }}
+      </button>
+
+      <div *ngIf="predictionResult" class="mt-3">
+        <span
+          *ngIf="predictionResult.prediction === 'ACCEPTED'; else rejectedPrediction"
+          class="inline-flex rounded-full bg-secondary/20 px-4 py-2 text-sm font-semibold text-secondary"
+        >
+          Likely Accepted ({{ (predictionResult.probability * 100).toFixed(1) }}%)
+        </span>
+        <ng-template #rejectedPrediction>
+          <span class="inline-flex rounded-full bg-error/20 px-4 py-2 text-sm font-semibold text-error">
+            Likely Rejected ({{ (predictionResult.probability * 100).toFixed(1) }}%)
+          </span>
+        </ng-template>
+      </div>
+      &nbsp;
+      <button
+    type="button"
+    class="inline-flex items-center gap-2 rounded-lg bg-secondary/20 px-4 py-2 text-secondary hover:bg-secondary/30"
+    (click)="downloadCertificate()"
+  >
+    <span class="material-symbols-outlined text-base">download</span>
+    Download PDF
+  </button>
+    </article>
+
+    <article class="rounded-xl border border-outline-variant bg-surface-container p-6">
+      <div class="mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">description</span>
+        <h2 class="text-lg font-semibold">Verification Document</h2>
+      </div>
+
+      <div *ngIf="volunteerSkill.verificationDocUrl; else uploadBlock" class="space-y-4">
+        <!-- Only show images inline; PDFs get a button -->
+        <img
+          *ngIf="isImage(volunteerSkill.verificationDocUrl)"
+          [src]="volunteerSkill.verificationDocUrl"
+          alt="Verification document"
+          class="w-full rounded-lg border border-outline-variant"
+        />
+      
+        <div class="flex flex-col items-center justify-center py-8 bg-surface-container-low rounded-lg border border-outline-variant" *ngIf="isPdf(volunteerSkill.verificationDocUrl)">
+          <span class="material-symbols-outlined text-5xl text-primary mb-2">picture_as_pdf</span>
+          <p class="text-sm text-on-surface-variant mb-4">PDF Verification Document</p>
+          
+          <a
+            [href]="volunteerSkill.verificationDocUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2 text-on-primary hover:bg-primary/90 transition-colors"
+          >
+            <span class="material-symbols-outlined text-base">open_in_new</span>
+            View Document
+          </a>
+        </div>
+      
+        <!-- Fallback "Open in new tab" for images -->
+        <a
+          *ngIf="isImage(volunteerSkill.verificationDocUrl)"
+          [href]="volunteerSkill.verificationDocUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+        >
+          <span class="material-symbols-outlined text-base">open_in_new</span>
+          Open image in new tab
+        </a>
+      </div>
+
+      <ng-template #uploadBlock>
+        <div class="rounded-xl border-2 border-dashed border-outline-variant p-8 text-center">
+          <span class="material-symbols-outlined text-4xl text-on-surface-variant">upload_file</span>
+          <p class="mt-3 text-on-surface-variant">Upload verification document</p>
+          <p class="mt-1 text-sm text-on-surface-variant">PDF, JPG, PNG accepted</p>
+
+          <input
+            #fileInput
+            type="file"
+            class="hidden"
+            accept=".pdf,.jpg,.jpeg,.png"
+            (change)="onFileSelected($event)"
+          />
+
+          <button
+            type="button"
+            class="mt-4 rounded-lg bg-primary/20 px-4 py-2 text-primary hover:bg-primary/30"
+            [disabled]="isUploading"
+            (click)="fileInput.click()"
+          >
+            Choose File
+          </button>
+
+          <div *ngIf="isUploading" class="mt-3 inline-flex items-center gap-2 text-on-surface-variant">
+            <span class="material-symbols-outlined animate-spin text-base">progress_activity</span>
+            Uploading...
+          </div>
+        </div>
+      </ng-template>
+    </article>
+  </div>
+</section>

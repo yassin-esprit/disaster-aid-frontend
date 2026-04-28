@@ -1,0 +1,73 @@
+<section class="p-6 bg-surface min-h-full text-on-surface">
+  <div class="max-w-2xl mx-auto bg-surface-container rounded-xl p-6 border border-outline-variant space-y-5">
+    <div class="flex items-center justify-between gap-3">
+      <h1 class="text-2xl font-semibold">Assign Skill</h1>
+      <button
+        type="button"
+        class="rounded-lg bg-surface-container-high px-3 py-1.5 text-on-surface-variant"
+        routerLink="/admin/volunteer-skills"
+      >
+        Back
+      </button>
+    </div>
+
+    <div *ngIf="errorMessage" class="bg-error/10 border border-error/30 rounded-xl p-4 text-error">
+      {{ errorMessage }}
+    </div>
+
+    <div *ngIf="isLoading" class="flex justify-center items-center py-10">
+      <span class="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+    </div>
+
+    <div *ngIf="!isLoading" class="space-y-4">
+      <div>
+        <label class="text-sm text-on-surface-variant">Volunteer ID</label>
+        <input
+          type="number"
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.volunteerId"
+        />
+        <p *ngIf="inv('volunteerId')" class="mt-1 text-xs text-error">Valid volunteer ID is required.</p>
+      </div>
+
+      <div>
+        <label class="text-sm text-on-surface-variant">Skill</label>
+        <select
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.skillId"
+        >
+          <option value="">Select a skill</option>
+          <option *ngFor="let skill of skills" [value]="skill.id">{{ skill.name }} ({{ skill.category }})</option>
+        </select>
+        <p *ngIf="inv('skillId')" class="mt-1 text-xs text-error">Skill is required.</p>
+      </div>
+
+      <div>
+        <label class="text-sm text-on-surface-variant">Proficiency</label>
+        <select
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.proficiency"
+        >
+          <option *ngFor="let p of proficiencies" [value]="p">{{ p }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="text-sm text-on-surface-variant">Verification Document URL (optional)</label>
+        <input
+          type="text"
+          class="mt-1 w-full rounded-lg border border-outline-variant bg-surface-container-high px-3 py-2"
+          [formControl]="form.controls.verificationDocUrl"
+        />
+      </div>
+
+      <button
+        type="button"
+        class="w-full rounded-lg bg-primary/20 px-4 py-2 text-primary hover:bg-primary/30"
+        (click)="onSubmit()"
+      >
+        Save Assignment
+      </button>
+    </div>
+  </div>
+</section>
