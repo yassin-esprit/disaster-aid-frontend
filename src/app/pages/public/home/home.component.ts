@@ -53,6 +53,18 @@ export class HomeComponent implements OnInit {
       btnBg: 'bg-secondary',
       btnText: 'text-on-secondary'
     },
+    {
+      label: 'Browse Skills',
+      icon: 'psychology',
+      route: '/skills-browse',
+      desc: 'Explore skills available for volunteers on the platform',
+      color: 'text-primary',
+      border: 'border-primary/30',
+      bg: 'bg-primary/10',
+      glow: 'hover:shadow-[0_0_25px_rgba(172,163,255,0.2)]',
+      btnBg: 'bg-primary',
+      btnText: 'text-on-primary'
+    },
   ];
 
   severityConfig: Record<string, { bar: string; dot: string; label: string }> = {

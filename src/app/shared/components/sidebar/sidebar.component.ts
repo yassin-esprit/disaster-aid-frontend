@@ -55,6 +55,7 @@ export class SidebarComponent implements OnInit, OnChanges {
     { label: 'Report',        icon: 'report_problem', route: '/report'              },
     { label: 'Get Help',      icon: 'sos',            route: '/help'                },
     { label: 'Missions',      icon: 'explore',        route: '/missions'            },
+    { label: 'Browse Skills', icon: 'psychology',     route: '/skills-browse'       },
     { label: 'My Reports',    icon: 'list_alt',       route: '/incidents'           },
     { label: 'Alerts',        icon: 'emergency',      route: '/alerts'              },
     { label: 'Communication', icon: 'forum',          route: '/communication/chat'  },

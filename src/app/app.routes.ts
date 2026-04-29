@@ -375,6 +375,12 @@ export const routes: Routes = [
           import('./pages/public/help-portal/help-portal.component').then(m => m.HelpPortalComponent) },
       { path: 'missions', loadComponent: () =>
           import('./pages/public/mission-board/mission-board.component').then(m => m.MissionBoardComponent) },
+      {
+        path: 'skills-browse',
+        loadComponent: () =>
+          import('./pages/public/skills-browse/skills-browse.component')
+            .then(m => m.SkillsBrowseComponent)
+      },
       { path: 'frontoffice-profile', loadComponent: () =>
           import('./pages/frontoffice-profile/frontoffice-profile.component').then(m => m.FrontofficeProfileComponent) },
 
